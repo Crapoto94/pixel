@@ -1,0 +1,2 @@
+# Forcer les fins de ligne LF pour les scripts shell (sinon \r casse bash sous Linux)
+*.sh text eol=lf

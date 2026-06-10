@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>PIXEL PANIC — Joueur</title>
+<link rel="stylesheet" href="/static/arcade.css" />
+</head>
+<body class="scanlines">
+<div class="wrap" id="app">
+  <div class="card center"><span class="pixel blink">CONNEXION…</span></div>
+</div>
+
+<script>
+const TOKEN = location.pathname.split('/').pop();
+const app = document.getElementById('app');
+let STATE = null;
+
+function api(path, body) {
+  return fetch(path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: TOKEN, ...body })
+  }).then(r => r.json());
+}
+
+// --- Flux temps réel ---
+const es = new EventSource('/events?token=' + encodeURIComponent(TOKEN));
+es.onmessage = (e) => { STATE = JSON.parse(e.data); render(); };
+es.onerror = () => { /* l'EventSource se reconnecte tout seul */ };
+
+function h(strings, ...vals) { return strings.map((s,i)=>s+(vals[i]??'')).join(''); }
+function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function render() {
+  if (!STATE) return;
+  const me = STATE.me;
+  if (!me) { app.innerHTML = `<div class="card center"><h2 class="neon-pink">TOKEN INVALIDE</h2><p>Scanne ton QR code perso.</p></div>`; return; }
+
+  const av = me.avatarInfo;
+  const hearts = '❤️'.repeat(me.lives) + '🖤'.repeat(Math.max(0,3-me.lives));
+
+  let html = `
+  <div class="card" style="border-color:${av.color}">
+    <div class="row" style="align-items:center">
+      <div style="flex:0 0 auto;font-size:46px">${av.emoji}</div>
+      <div style="flex:1">
+        <div class="pixel" style="color:${av.color};font-size:14px">${esc(av.name)}</div>
+        <div class="muted">${esc(me.name)}</div>
+      </div>
+    </div>
+    <div class="row mt">
+      <div class="hearts">${hearts}</div>
+      <div class="coins center">🪙 ${me.coins}</div>
+    </div>
+    <div class="muted mt" style="font-size:16px">${esc(av.tagline)}</div>
+  </div>`;
+
+  // --- Activité BORNE en cours : la page devient une manette ---
+  if (STATE.phase === 'activity' && STATE.activity) {
+    html += controllerView(STATE.activity);
+    app.innerHTML = html + footer();
+    return;
+  }
+
+  // --- Vote du Glitch ---
+  if (STATE.phase === 'vote') {
+    html += voteView();
+    app.innerHTML = html + footer();
+    return;
+  }
+
+  // --- Lobby ---
+  if (STATE.phase === 'lobby') {
+    html += `
+    <div class="card center">
+      <h2 class="neon-cyan">SALLE D'ATTENTE</h2>
+      <p>La BORNE chauffe… Prépare-toi, ${esc(me.name)}.</p>
+      <button class="btn ${me.ready?'secondary':''}" onclick="toggleReady()">
+        ${me.ready ? '✔ PRÊT' : 'JE SUIS PRÊT'}
+      </button>
+    </div>`;
+  }
+
+  // --- En jeu : monde courant ---
+  if ((STATE.phase === 'world') && STATE.world) {
+    const w = STATE.world;
+    html += `
+    <div class="card glow-box">
+      <div class="pill neon-yellow">MONDE ${w.num}/${STATE.worldCount}</div>
+      <h2 class="neon-pink">${esc(w.titre)}</h2>
+      <p>${esc(w.enigme)}</p>
+      <p class="muted">📦 Colis ${w.colis} livré par les Pixels.</p>`;
+
+    if (me.indices) {
+      html += `<div class="card" style="background:#1a0b00;border-color:${av.color}">
+        <div class="pill" style="color:${av.color}">TON INDICE SECRET</div>
+        <ul>${(Array.isArray(me.indices)?me.indices:[me.indices]).filter(Boolean).map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
+      </div>`;
+    }
+
+    if (!w.resoluParVote) {
+      html += `
+      <input id="codeInput" type="text" placeholder="CODE" />
+      <button class="btn secondary mt" onclick="submitCode()">VALIDER LE CODE</button>
+      <div id="codeMsg" class="center mt"></div>`;
+    }
+    html += `</div>`;
+  }
+
+  // --- Mission secrète du Glitch ---
+  if (me.glitchMission) {
+    html += `
+    <div class="card" style="border-color:var(--danger);background:#1a0008">
+      <div class="pill" style="color:var(--danger)">🐛 MISSION SECRÈTE — GLITCH</div>
+      <p>${esc(me.glitchMission)}</p>
+      <p class="muted">Personne d'autre ne voit ce message. Sabote… mais ne te fais pas griller.</p>
+    </div>`;
+  }
+
+  // --- Panneau Game Master (Vincent éveillé) ou hôte (Marc) ---
+  if (me.gameMaster || me.isHost) {
+    html += gmPlayerPanel(me);
+  }
+
+  // --- Gage en cours ---
+  if (STATE.currentGage) html += gageView(STATE.currentGage, me);
+
+  app.innerHTML = html + footer();
+}
+
+function footer() {
+  return `<div class="card log"><div class="muted pixel" style="font-size:9px">JOURNAL</div>
+    ${(STATE.log||[]).map(l=>`<div>${esc(l.msg)}</div>`).join('')}</div>`;
+}
+
+function controllerView(act) {
+  // QUIZ / BLIND-TEST : QCM (question sur la BORNE, réponse ici)
+  if (act.type === 'quiz' || act.type === 'blindtest') {
+    return quizController(act);
+  }
+  // REACTION RACE : gros buzzer
+  if (act.type === 'reaction_race') {
+    const buzzed = (act.buzzes||[]).find(b=>b.id===STATE.me.id);
+    return `<div class="card center glow-box">
+      <h2 class="neon-cyan">REACTION RACE</h2>
+      <p>Regarde la BORNE puis BUZZE !</p>
+      <button class="btn-buzz" ${buzzed?'disabled':''} onclick="buzz()">${buzzed?'BUZZÉ ✔':'BUZZ'}</button>
+    </div>`;
+  }
+  if (act.type === 'spotlight') {
+    const target = act.data && act.data.targetName;
+    return `<div class="card center glow-box">
+      <h2 class="neon-yellow">SPOTLIGHT</h2>
+      <p>Défi de <b>${esc(target||'?')}</b>. La salle juge !</p>
+      <div class="row">
+        <button class="btn secondary" onclick="vote('ok')">RÉUSSI 👏</button>
+        <button class="btn danger" onclick="vote('ko')">RATÉ 💀</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
+}
+
+function quizController(act) {
+  const letters = ['A','B','C','D','E'];
+  const title = act.type==='blindtest' ? '🎵 BLIND-TEST' : '❓ QUIZ';
+  const reveal = act.sub === 'reveal';
+  const my = act.myAnswer;
+  const choices = (act.choices||[]).map((c,i)=>{
+    let cls = 'btn';
+    if (reveal) {
+      if (i === act.answer) cls = 'btn secondary';        // bonne réponse
+      else if (i === my) cls = 'btn danger';              // mon erreur
+      else cls = 'btn';
+    } else if (i === my) {
+      cls = 'btn warn';                                   // mon choix verrouillé
+    }
+    const dis = (reveal || my!==null) ? 'disabled' : '';
+    return `<button class="${cls}" ${dis} onclick="answer(${i})">${letters[i]}. ${esc(c)}</button>`;
+  }).join('');
+
+  let status = '';
+  if (reveal) {
+    const good = my !== null && my === act.answer;
+    status = my===null ? '<p class="muted">Pas de réponse… 😬</p>'
+      : good ? '<p class="neon-cyan pixel" style="font-size:12px">✔ BONNE RÉPONSE !</p>'
+             : '<p class="pixel" style="font-size:11px;color:var(--danger)">✘ Raté !</p>';
+  } else if (my !== null) {
+    status = '<p class="neon-cyan">Réponse enregistrée. Regarde la BORNE…</p>';
+  } else {
+    status = '<p>Question ' + (act.qIndex+1) + '/' + act.total + ' — réponds vite !</p>';
+  }
+
+  return `<div class="card glow-box">
+    <div class="pill neon-cyan">${title} — Q${act.qIndex+1}/${act.total}</div>
+    <h2 class="neon-pink">${esc(act.prompt)}</h2>
+    ${act.type==='blindtest' && !reveal ? '<p class="muted">🔊 Écoute l’extrait joué sur la BORNE.</p>':''}
+    <div>${choices}</div>
+    <div class="center mt">${status}</div>
+  </div>`;
+}
+
+function voteView() {
+  const others = STATE.players.filter(p=>p.id!==STATE.me.id);
+  return `<div class="card center glow-box">
+    <h2 class="neon-pink">QUI EST LE GLITCH ?</h2>
+    <p>Vote pour démasquer le traître.</p>
+    <div class="grid-players">
+      ${others.map(p=>`<button class="btn warn" onclick="vote('${p.id}')">${esc(p.name)}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function gageView(g, me) {
+  const forMe = g.targetId === me.id;
+  return `<div class="card center" style="border-color:var(--neon3)">
+    <div class="pill neon-yellow">🎲 GAGE</div>
+    <h2 class="neon-yellow">${esc(g.titre)}</h2>
+    <p>${esc(g.desc)}</p>
+    ${g.alt && g.alt!=='—' ? `<p class="muted">Alternative : ${esc(g.alt)}</p>`:''}
+    ${g.targetName ? `<p>Pour : <b>${esc(g.targetName)}</b>${forMe?' (toi !)':''}</p>`:'<p class="muted">Pour la table</p>'}
+  </div>`;
+}
+
+function gmPlayerPanel(me) {
+  const title = me.gameMaster ? '👑 POUVOIRS DU GAME MASTER' : '🎛️ CONTRÔLE HÔTE';
+  const targets = STATE.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  return `<div class="card" style="border-color:var(--neon3);background:#1a1400">
+    <div class="pill neon-yellow">${title}</div>
+    <p class="muted">Distribue un gage à qui tu veux. Longue vie au roi.</p>
+    <select id="gmTarget" style="width:100%;padding:10px;font-family:var(--term);font-size:20px">${targets}</select>
+    <button class="btn warn mt" onclick="gmGage()">🎲 LANCER UN GAGE</button>
+  </div>`;
+}
+
+// --- Actions ---
+function toggleReady(){ api('/api/ready', { ready: !STATE.me.ready }); }
+function buzz(){ api('/api/buzz'); }
+function vote(t){ api('/api/vote', { targetId: t }); }
+function answer(i){ api('/api/answer', { choice: i }); }
+function submitCode(){
+  const v = document.getElementById('codeInput').value;
+  api('/api/code', { code: v }).then(r=>{
+    const m = document.getElementById('codeMsg');
+    if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ DÉBLOQUÉ !</span>'
+                              : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
+  });
+}
+function gmGage(){
+  const t = document.getElementById('gmTarget').value;
+  api('/api/gm/gage', { targetId: t });
+}
+</script>
+</body>
+</html>

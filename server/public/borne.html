@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PIXEL PANIC — BORNE</title>
+<link rel="stylesheet" href="/static/arcade.css" />
+<style>
+  body { font-size: 28px; }
+  .stage { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .big { font-size: 56px; }
+  .huge { font-size: 90px; }
+  .ticker { position: fixed; bottom: 0; left: 0; right: 0; background:#000; border-top:3px solid var(--neon);
+            white-space: nowrap; overflow: hidden; }
+  .ticker span { display: inline-block; padding: 10px 0; font-family: var(--pixel); font-size: 16px;
+            color: var(--neon3); animation: scroll 24s linear infinite; }
+  @keyframes scroll { from { transform: translateX(100%);} to { transform: translateX(-100%);} }
+  .leaderboard div { font-size: 30px; padding: 8px; border-bottom: 1px solid #fff2; }
+  .hpbar { height: 34px; background:#300; border:3px solid #000; border-radius:6px; overflow:hidden; }
+  .hpbar > div { height:100%; background:linear-gradient(90deg,var(--danger),var(--neon3)); transition:width .3s; }
+  .wheel { font-size: 70px; }
+  .qchoice { font-size: 30px; padding: 14px 18px; margin: 10px 0; border:3px solid #fff3;
+             border-radius:10px; box-shadow:0 4px 0 #0008; }
+</style>
+</head>
+<body class="scanlines">
+<div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
+<div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
+
+<script>
+const stage = document.getElementById('stage');
+const tickerEl = document.getElementById('ticker');
+let STATE = null;
+
+const es = new EventSource('/events');
+es.onmessage = (e) => { STATE = JSON.parse(e.data); render(); };
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function render(){
+  if(!STATE) return;
+  const connected = STATE.players.filter(p=>p.connected).length;
+  let html = '';
+
+  if (STATE.phase === 'lobby') {
+    html = `
+      <div class="center">
+        <div class="huge pixel neon-pink blink">INSERT COIN</div>
+        <p class="big">Scanne ton QR pour rejoindre la partie</p>
+        <div class="grid-players mt">
+          ${STATE.players.map(p=>`<div class="pcard ${p.connected?'':'off'}">
+            <div class="emoji">${avatarEmoji(p.avatar)}</div>
+            <div>${esc(p.name)}</div>
+            <div class="pill ${p.ready?'neon-cyan':''}">${p.connected?(p.ready?'PRÊT':'…'):'OFF'}</div>
+          </div>`).join('')}
+        </div>
+        <p class="muted mt">${connected} joueur(s) connecté(s)</p>
+      </div>`;
+  }
+
+  else if (STATE.phase === 'activity' && STATE.activity) {
+    html = activityView(STATE.activity);
+  }
+
+  else if (STATE.phase === 'vote') {
+    html = `<div class="center">
+      <h1 class="big neon-pink">🗳️ DÉMASQUEZ LE GLITCH</h1>
+      <p class="big">Votez sur vos téléphones…</p>
+      <div class="wheel">🐛❓</div>
+    </div>`;
+  }
+
+  else if (STATE.phase === 'win') {
+    html = `<div class="center glow-box">
+      <div class="huge pixel neon-yellow">YOU&nbsp;WIN!</div>
+      <p class="big">La réalité a redémarré. 🎉</p>
+      <div class="mt">${highScore()}</div>
+    </div>`;
+  }
+
+  else if (STATE.world) {
+    const w = STATE.world;
+    html = `<div>
+      ${w.isTwist ? `<div class="center huge pixel neon-yellow glow-box">⚡ PLAYER ONE ⚡</div>`:''}
+      <div class="pill neon-yellow">MONDE ${w.num}/${STATE.worldCount}</div>
+      <h1 class="big neon-pink">${esc(w.titre)}</h1>
+      <p>${esc(w.intro)}</p>
+      ${STATE.currentGage ? gageBanner(STATE.currentGage) : ''}
+      <div class="mt">${scoresStrip()}</div>
+    </div>`;
+  }
+
+  stage.innerHTML = html;
+  tickerEl.textContent = (STATE.log||[]).map(l=>l.msg).join('   ◆   ') || 'PIXEL PANIC';
+}
+
+function activityView(act){
+  if (act.type==='quiz' || act.type==='blindtest'){
+    return quizBorne(act);
+  }
+  if (act.type==='reaction_race'){
+    const board = (act.buzzes||[]).slice().sort((a,b)=>a.t-b.t);
+    const t0 = board.length ? board[0].t : 0;
+    return `<div class="center">
+      <h1 class="huge neon-cyan">⚡ REACTION RACE</h1>
+      <p class="big">BUZZEZ sur vos téléphones !</p>
+      <div class="card leaderboard" style="max-width:600px;margin:auto;text-align:left">
+        ${board.length? board.map((b,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(b.name)} <span class="muted">+${b.t-t0}ms</span></div>`).join('')
+                       : '<div class="muted center">En attente des buzz…</div>'}
+      </div>
+    </div>`;
+  }
+  if (act.type==='spotlight'){
+    return `<div class="center glow-box">
+      <h1 class="huge neon-yellow">🔦 SPOTLIGHT</h1>
+      <div class="big">${esc(act.data?.targetName||'?')}</div>
+      <p class="big">${esc(act.data?.defi||'Relève le défi !')}</p>
+      <div class="huge pixel">${esc(act.data?.timer||'')}</div>
+    </div>`;
+  }
+  if (act.type==='roue_des_gages'){
+    return `<div class="center glow-box">
+      <h1 class="huge neon-pink">🎰 LA ROUE DES GAGES</h1>
+      <div class="wheel">🎡</div>
+      <p class="big">${STATE.currentGage? esc(STATE.currentGage.titre): 'Ça tourne…'}</p>
+    </div>`;
+  }
+  if (act.type==='boss_final'){
+    return `<div class="center">
+      <h1 class="huge neon-pink glow-box">👾 BOSS FINAL</h1>
+      <div class="hpbar" style="max-width:700px;margin:18px auto"><div style="width:${act.data?.hp??100}%"></div></div>
+      <p class="big">Enchaînez les QTE ! Vincent porte le coup final.</p>
+    </div>`;
+  }
+  return `<div class="center"><h1 class="big">ACTIVITÉ</h1></div>`;
+}
+
+function quizBorne(act){
+  const letters=['A','B','C','D','E'];
+  const reveal = act.sub==='reveal';
+  const title = act.type==='blindtest'?'🎵 BLIND-TEST':'❓ QUIZ ARCADE';
+  const choices = (act.choices||[]).map((c,i)=>{
+    let bg = '#1a0b2e', bd='#ffffff33';
+    if (reveal && i===act.answer){ bg='#063d1e'; bd='var(--ok)'; }
+    return `<div class="qchoice" style="background:${bg};border-color:${bd}">
+      <b class="neon-yellow">${letters[i]}</b> ${esc(c)} ${reveal&&i===act.answer?'✔':''}</div>`;
+  }).join('');
+  const audio = (reveal && act.audioUrl) ? `<audio autoplay src="${esc(act.audioUrl)}"></audio>` : '';
+  const progress = `${act.answeredCount}/${act.playerCount} ont répondu`;
+
+  let footer = '';
+  if (reveal && act.leaderboard){
+    footer = `<div class="card leaderboard" style="max-width:600px;margin:14px auto 0;text-align:left">
+      <div class="pixel neon-yellow center" style="font-size:13px">SCORES</div>
+      ${act.leaderboard.length? act.leaderboard.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join('')
+        : '<div class="muted center">Personne n’a trouvé… 😬</div>'}
+    </div>`;
+  } else {
+    footer = `<p class="big muted center mt">${progress}</p>`;
+  }
+
+  return `<div class="center">
+    <div class="pill neon-cyan">${title} — Q${act.qIndex+1}/${act.total}</div>
+    <h1 class="big neon-pink" style="margin:14px 0">${esc(act.prompt)}</h1>
+    ${act.type==='blindtest' && !reveal ? '<p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>':''}
+    <div style="max-width:760px;margin:auto;text-align:left">${choices}</div>
+    ${footer}${audio}
+  </div>`;
+}
+
+function gageBanner(g){
+  return `<div class="card center glow-box" style="border-color:var(--neon3)">
+    <div class="pill neon-yellow">🎲 GAGE</div>
+    <div class="big neon-yellow">${esc(g.titre)}</div>
+    <p>${esc(g.desc)}</p>
+    ${g.targetName?`<p class="big">→ ${esc(g.targetName)}</p>`:''}
+  </div>`;
+}
+
+function scoresStrip(){
+  return `<div class="grid-players">${STATE.players.map(p=>`
+    <div class="pcard ${p.connected?'':'off'}">
+      <div>${avatarEmoji(p.avatar)} ${esc(p.name)}</div>
+      <div>${'❤️'.repeat(p.lives)} <span class="coins">🪙${p.coins}</span></div>
+    </div>`).join('')}</div>`;
+}
+
+function highScore(){
+  const ranked = STATE.players.slice().sort((a,b)=>b.coins-a.coins);
+  return `<div class="card leaderboard" style="max-width:600px;margin:auto;text-align:left">
+    <div class="pixel neon-yellow center" style="font-size:14px">HIGH SCORE</div>
+    ${ranked.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">🪙 ${p.coins}</span></div>`).join('')}
+  </div>`;
+}
+
+const EMOJI = { player_one:'👑', sanique:'🦔', riu:'👊', zilda:'🗡️', super_marino:'🍄', lara_croute:'🏺', glouton:'🟡' };
+function avatarEmoji(a){ return EMOJI[a] || '🎮'; }
+</script>
+</body>
+</html>

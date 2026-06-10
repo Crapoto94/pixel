@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PIXEL PANIC — GM</title>
+<link rel="stylesheet" href="/static/arcade.css" />
+<style>
+  body{font-size:18px}
+  .btn{font-size:11px;padding:10px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  select{width:100%;padding:8px;font-family:var(--term);font-size:18px;background:#03010a;color:var(--ink);border:2px solid var(--neon2);border-radius:6px}
+  code{color:var(--neon3)}
+</style>
+</head>
+<body class="scanlines">
+<div class="wrap" id="app">
+  <div class="card">
+    <h2 class="neon-pink pixel" style="font-size:16px">GAME MASTER</h2>
+    <input id="pwd" type="text" placeholder="MOT DE PASSE GM" />
+    <button class="btn mt" onclick="connect()">ENTRER</button>
+  </div>
+</div>
+
+<script>
+let PWD = null, S = null, timer = null;
+const app = document.getElementById('app');
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function connect(){
+  PWD = document.getElementById('pwd').value;
+  refresh().then(ok=>{ if(ok){ if(timer) clearInterval(timer); timer=setInterval(refresh,1500); } });
+}
+function refresh(){
+  return fetch('/api/gm/state?password='+encodeURIComponent(PWD))
+    .then(r=> r.ok ? r.json() : Promise.reject())
+    .then(s=>{ S=s; render(); return true; })
+    .catch(()=>{ app.innerHTML='<div class="card center"><p class="neon-pink">Mot de passe refusé.</p><button class="btn" onclick="location.reload()">Réessayer</button></div>'; return false; });
+}
+function act(action, payload={}){
+  return fetch('/api/gm/action',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({password:PWD,action,payload})}).then(r=>r.json()).then(r=>{ refresh(); return r; });
+}
+
+function render(){
+  if(!S) return;
+  const w = S.world;
+  const targets = S.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  app.innerHTML = `
+  <div class="card">
+    <div class="row">
+      <div><b>Phase</b><br><code>${S.phase}</code></div>
+      <div><b>Monde</b><br><code>${w?('#'+w.num+' '+esc(w.titre)):'—'}</code></div>
+    </div>
+    <div class="mt"><b>🐛 GLITCH :</b> <code>${esc(S.glitchName||'(non assigné)')}</code>
+      ${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé</span>':''}</div>
+  </div>
+
+  <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">DÉROULÉ</div>
+    <div class="grid mt">
+      <button class="btn secondary" onclick="act('start')">▶ DÉMARRER</button>
+      <button class="btn" onclick="act('assignGlitch')">🎲 Tirer Glitch</button>
+      <button class="btn warn" onclick="act('completeWorld')">✅ Valider monde →</button>
+      <button class="btn danger" onclick="if(confirm('Tout réinitialiser ?'))act('reset')">⟲ RESET</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">ACTIVITÉS BORNE</div>
+    <div class="grid3 mt">
+      <button class="btn secondary" onclick="startAct('reaction_race')">⚡ Réaction</button>
+      <button class="btn secondary" onclick="startAct('quiz',{deck:'videogame'})">❓ Quiz JV</button>
+      <button class="btn secondary" onclick="startAct('blindtest')">🎵 Blind-test</button>
+      <button class="btn secondary" onclick="spotlight()">🔦 Spotlight</button>
+      <button class="btn secondary" onclick="startAct('roue_des_gages')">🎰 Roue</button>
+      <button class="btn secondary" onclick="startAct('boss_final',{hp:100})">👾 Boss</button>
+    </div>
+    <button class="btn danger mt" onclick="act('stopActivity')">⏹ STOP activité</button>
+  </div>
+
+  ${S.quizMaster ? `
+  <div class="card" style="border-color:var(--neon3)">
+    <div class="pixel neon-yellow" style="font-size:11px">🎙️ MJ — QUESTION ${(S.quizMaster.qIndex??0)+1}</div>
+    <div class="mt">${esc(S.quizMaster.prompt)}</div>
+    ${S.quizMaster.play ? `<div class="mt">🔊 À LANCER : <code>${esc(S.quizMaster.play)}</code></div>`:''}
+    <div class="mt">✔ Réponse : <code>${esc(S.quizMaster.bonneReponse)}</code>
+       <span class="pill ${S.quizMaster.sub==='reveal'?'neon-cyan':''}">${esc(S.quizMaster.sub||'')}</span></div>
+    <div class="grid mt">
+      <button class="btn warn" onclick="act('quizReveal')">💡 RÉVÉLER</button>
+      <button class="btn secondary" onclick="act('quizNext')">⏭ SUIVANTE</button>
+    </div>
+  </div>`:''}
+
+  <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">GAGES</div>
+    <div class="row mt">
+      <select id="gagePool">
+        <option value="">(auto)</option>
+        <option value="solo">solo</option><option value="collectif">collectif</option>
+        <option value="duel">duel</option><option value="metal">metal</option>
+        <option value="sport">sport</option><option value="vincent">vincent</option>
+      </select>
+      <select id="gageTarget"><option value="">— table —</option>${targets}</select>
+    </div>
+    <div class="grid mt">
+      <button class="btn warn" onclick="drawGage()">🎲 Lancer gage</button>
+      <button class="btn" onclick="act('clearGage')">Effacer gage</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">VOTE GLITCH</div>
+    <div class="grid mt">
+      <button class="btn" onclick="act('startVote')">🗳️ Ouvrir vote</button>
+      <button class="btn warn" onclick="tally()">📊 Dépouiller</button>
+    </div>
+    <div class="muted mt">Votes: <code>${esc(JSON.stringify(S.votes||{}))}</code></div>
+  </div>
+
+  <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">VIES</div>
+    <div class="grid3 mt">
+      ${S.players.map(p=>`<button class="btn danger" onclick="act('loseLife',{playerId:'${p.id}'})">💔 ${esc(p.name)} (${p.lives})</button>`).join('')}
+    </div>
+  </div>
+
+  <div class="card log">
+    <div class="pixel" style="font-size:9px">JOURNAL</div>
+    ${(S.log||[]).map(l=>`<div>${esc(l.msg)}</div>`).join('')}
+  </div>`;
+}
+
+function startAct(type, opts={}){ act('startActivity',{type,opts}); }
+function spotlight(){
+  const sel = document.getElementById('gageTarget');
+  const name = sel && sel.value ? S.players.find(p=>p.id===sel.value).name : prompt('Qui ?','');
+  const defi = prompt('Défi ?','Headbang 15 s !');
+  act('startActivity',{type:'spotlight',opts:{targetName:name,defi}});
+}
+function drawGage(){
+  act('drawGage',{pool:document.getElementById('gagePool').value||null,
+    targetId:document.getElementById('gageTarget').value||null});
+}
+function tally(){ act('tallyVotes').then(r=>{ if(r.result) alert(r.result.found?'TROUVÉ !':'Raté — le Glitch a survécu.'); }); }
+</script>
+</body>
+</html>

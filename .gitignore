@@ -1,0 +1,13 @@
+# Dépendances
+node_modules/
+
+# État de partie (généré à l'exécution)
+server/save.json
+
+# QR codes générés (régénérés par `npm run qr`)
+server/qr/
+
+# Divers
+*.log
+.DS_Store
+Thumbs.db

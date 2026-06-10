@@ -1,0 +1,15 @@
+{
+  "name": "pixel-panic",
+  "version": "1.0.0",
+  "description": "PIXEL PANIC - jeu d'anniversaire retro-arcade pour Vincent",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "qr": "node tools/generate-qr.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4"
+  }
+}

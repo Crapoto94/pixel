@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PIXEL PANIC — BORNE</title>
 <link rel="stylesheet" href="/static/arcade.css" />
+<script src="/static/sound.js"></script>
 <style>
+  #soundgate { position: fixed; inset: 0; z-index: 99999; background: #0a0118;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; text-align: center; gap: 24px; }
+  #soundgate .big2 { font-size: 64px; }
   body { font-size: 28px; }
   .stage { max-width: 1100px; margin: 0 auto; padding: 24px; }
   .big { font-size: 56px; }
@@ -24,6 +29,12 @@
 </style>
 </head>
 <body class="scanlines">
+<div id="soundgate">
+  <div class="big2 pixel neon-pink blink">PIXEL&nbsp;PANIC</div>
+  <div class="huge">🕹️🔊</div>
+  <div class="big pixel neon-cyan" style="font-size:22px">TOUCHER POUR DÉMARRER</div>
+  <div class="muted">active le son de la borne</div>
+</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
 
@@ -33,8 +44,38 @@ const tickerEl = document.getElementById('ticker');
 let STATE = null;
 
 const es = new EventSource('/events');
-es.onmessage = (e) => { STATE = JSON.parse(e.data); render(); };
+es.onmessage = (e) => { STATE = JSON.parse(e.data); detectSounds(STATE); render(); };
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// --- Activation du son (1er tap, obligatoire sur tablette) ---
+let SOUND_ON = false;
+const gate = document.getElementById('soundgate');
+gate.addEventListener('click', () => {
+  if (window.SFX) { SFX.unlock(); SFX.coin(); }
+  SOUND_ON = true;
+  gate.style.display = 'none';
+});
+
+// --- Déclenche les bruitages sur les transitions d'état ---
+let _p = { phase: null, world: null, gageId: null, act: null, sub: null };
+function detectSounds(s){
+  if (!SOUND_ON || !window.SFX) return;
+  const w = s.world ? s.world.num : null;
+  const act = s.activity ? s.activity.type : null;
+  const sub = s.activity ? s.activity.sub : null;
+  const gageId = s.currentGage ? (s.currentGage.id + '-' + (s.currentGage.at || '')) : null;
+  if (_p.phase === null) { _p = { phase: s.phase, world: w, gageId, act, sub }; return; }
+  try {
+    if (s.phase === 'win' && _p.phase !== 'win') SFX.win();
+    else if (s.phase === 'world' && _p.phase === 'lobby') SFX.start();
+    else if (w && w !== _p.world) { (s.world && s.world.isTwist) ? SFX.twist() : SFX.level(); }
+    if (s.phase === 'vote' && _p.phase !== 'vote') SFX.vote();
+    if (act && act !== _p.act) SFX.start();
+    if ((act === 'quiz' || act === 'blindtest') && sub === 'reveal' && _p.sub !== 'reveal') SFX.correct();
+    if (gageId && gageId !== _p.gageId) SFX.gage();
+  } catch (_) {}
+  _p = { phase: s.phase, world: w, gageId, act, sub };
+}
 
 function render(){
   if(!STATE) return;

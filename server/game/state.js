@@ -32,6 +32,7 @@ export class GameState {
     this.glitchId = null; // id du joueur traître (tiré au sort)
     this.glitchRevealed = false;
     this.heroAwakened = false; // Vincent a-t-il reçu ses pouvoirs ?
+    this.kidsDone = false; // les Pixels (enfants) ont-ils réussi leur défi ?
     this.votes = {}; // { voterId: targetId }
     this.log = []; // journal d'événements (récents en tête)
     this.players = PLAYERS.map((p) => ({
@@ -376,6 +377,17 @@ export class GameState {
     this.touch();
   }
 
+  // Les enfants (Robin & Juliette) ont réussi le « Défi des Pixels »
+  markKidsDone() {
+    this.kidsDone = true;
+    this.addLog('👾 LES PIXELS ont réussi leur défi et réveillent l\'Élu !');
+    if (this.activity && this.activity.type === 'pixel_pad') {
+      this.activity.state = 'done';
+    }
+    this.phase = 'world';
+    this.touch();
+  }
+
   // ---- Vue publique (envoyée aux clients) --------------------------
   publicState(forToken = null) {
     const me = forToken ? this.playerByToken(forToken) : null;
@@ -391,6 +403,7 @@ export class GameState {
       },
       worldCount: WORLDS.length,
       heroAwakened: this.heroAwakened,
+      kidsDone: this.kidsDone,
       glitchRevealed: this.glitchRevealed,
       glitchName: this.glitchRevealed ? this.player(this.glitchId)?.name : null,
       currentGage: this.currentGage,

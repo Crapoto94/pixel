@@ -26,6 +26,13 @@
   .wheel { font-size: 70px; }
   .qchoice { font-size: 30px; padding: 14px 18px; margin: 10px 0; border:3px solid #fff3;
              border-radius:10px; box-shadow:0 4px 0 #0008; }
+  .padgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; max-width:560px;
+             margin:18px auto; }
+  .pad { aspect-ratio:1; border-radius:20px; border:6px solid #000; cursor:pointer;
+         box-shadow:0 8px 0 #0009; transition:filter .1s, transform .05s; filter:brightness(.45); }
+  .pad.lit { filter:brightness(1.6); }
+  .pad:active { transform:translateY(4px); }
+  .pad0{background:#ff2e88} .pad1{background:#2effd5} .pad2{background:#7a5cff} .pad3{background:#ffe600}
 </style>
 </head>
 <body class="scanlines">
@@ -77,8 +84,16 @@ function detectSounds(s){
   _p = { phase: s.phase, world: w, gageId, act, sub };
 }
 
+let kidsKey = null;
 function render(){
   if(!STATE) return;
+  // --- Défi des enfants : prend le contrôle de la borne (insensible au SSE) ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='pixel_pad'){
+    if (kidsKey !== STATE.activity.startedAt){ kidsKey = STATE.activity.startedAt; buildKidsPad(); }
+    tickerEl.textContent = "LES PIXELS À L'HONNEUR — Robin & Juliette !";
+    return;
+  }
+  kidsKey = null;
   const connected = STATE.players.filter(p=>p.connected).length;
   let html = '';
 
@@ -231,6 +246,71 @@ function highScore(){
     <div class="pixel neon-yellow center" style="font-size:14px">HIGH SCORE</div>
     ${ranked.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">🪙 ${p.coins}</span></div>`).join('')}
   </div>`;
+}
+
+// =================== DÉFI DES PIXELS (enfants, sur la borne) ===================
+function buildKidsPad(){
+  const seqLen = (STATE.activity.data && STATE.activity.data.len) || 3;
+  let sequence = Array.from({length:seqLen}, ()=>Math.floor(Math.random()*4));
+  let input = [];
+  let accepting = false;
+
+  stage.innerHTML = `
+    <div class="center">
+      <h1 class="big neon-yellow">👾 LE DÉFI DES PIXELS</h1>
+      <p class="big" id="kidsmsg">Robin & Juliette : regardez bien les couleurs…</p>
+      <div class="padgrid">
+        ${[0,1,2,3].map(i=>`<div class="pad pad${i}" id="pad${i}"></div>`).join('')}
+      </div>
+      <button class="btn warn" style="max-width:320px;margin:0 auto" id="kidsreplay">🔁 REVOIR</button>
+    </div>`;
+
+  const msg = document.getElementById('kidsmsg');
+  const pads = [0,1,2,3].map(i=>document.getElementById('pad'+i));
+
+  function flash(i, dur=450){
+    return new Promise(r=>{
+      pads[i].classList.add('lit');
+      if(window.SFX) SFX.pad(i);
+      setTimeout(()=>{ pads[i].classList.remove('lit'); setTimeout(r, 150); }, dur);
+    });
+  }
+  async function playSequence(){
+    accepting = false; input = [];
+    msg.textContent = 'Regardez bien…';
+    await new Promise(r=>setTimeout(r, 600));
+    for(const i of sequence){ await flash(i); }
+    msg.textContent = 'À VOUS ! Tapez les couleurs dans l\'ordre 👆';
+    accepting = true;
+  }
+  function win(){
+    accepting = false;
+    if(window.SFX) SFX.padOk();
+    stage.innerHTML = `<div class="center glow-box">
+      <h1 class="huge neon-yellow">👾 BRAVO LES PIXELS !</h1>
+      <p class="big">Robin & Juliette ont réveillé l'Élu.</p>
+      <p class="big neon-pink blink">👑 Remettez la CARTE DORÉE à Vincent !</p>
+    </div>`;
+    fetch('/api/kids/done',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  }
+  function tap(i){
+    if(!accepting) return;
+    if(window.SFX) SFX.pad(i);
+    pads[i].classList.add('lit'); setTimeout(()=>pads[i].classList.remove('lit'),180);
+    input.push(i);
+    const idx = input.length-1;
+    if(input[idx]!==sequence[idx]){
+      accepting = false;
+      msg.textContent = 'Presque ! On recommence… 😊';
+      setTimeout(playSequence, 900);
+      return;
+    }
+    if(input.length===sequence.length) win();
+  }
+
+  pads.forEach((p,i)=>p.addEventListener('click', ()=>tap(i)));
+  document.getElementById('kidsreplay').addEventListener('click', playSequence);
+  playSequence();
 }
 
 const EMOJI = { player_one:'👑', sanique:'🦔', riu:'👊', zilda:'🗡️', super_marino:'🍄', lara_croute:'🏺', glouton:'🟡' };

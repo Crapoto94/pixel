@@ -91,7 +91,8 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 - La BORNE « se met à jour » (faux écran de mise à jour rigolo : *« Téléchargement de la bougie… 37 % »*). Moment gâteau + chanson. On en profite pour recharger les verres.
 
 ### ⏱️ 2:50 — MONDE 4 : « LE RÉVEIL DU PLAYER ONE » 👑 *(LE TWIST)*
-- **Cinématique** : la BORNE révèle à tous que **Vincent EST le Game Master**. On lui remet physiquement la **carte dorée / une manette spéciale**. Sa page téléphone change radicalement : il a maintenant un **panneau de contrôle** (donner un gage à X, ressusciter Y, déclencher un événement, voir des indices que les autres n'ont pas).
+- 👾 **LE DÉFI DES PIXELS (le moment des enfants)** : avant la révélation, la BORNE appelle **Robin & Juliette** sous les projecteurs. Sur la tablette s'affiche le **DÉFI DES PIXELS** : une séquence de couleurs/sons (style Simon) qu'ils doivent **reproduire en tapant directement l'écran** (pas besoin de smartphone). Le jeu est bienveillant : en cas d'erreur il rejoue la séquence, **impossible de perdre**. Dès qu'ils réussissent, la BORNE explose de joie : *« BRAVO LES PIXELS ! Vous avez réveillé l'Élu »* → ce sont **eux** qui remettent solennellement la **carte dorée** à Vincent. (Lancé par toi via la page GM : bouton **🧒 Défi Pixels**.)
+- **Cinématique** : la BORNE révèle alors à tous que **Vincent EST le Game Master**. Sa page téléphone change radicalement : il a maintenant un **panneau de contrôle** (donner un gage à X, ressusciter Y, déclencher un événement, voir des indices que les autres n'ont pas).
 - **Énigme** : la première où **Vincent mène** — il doit utiliser ses pouvoirs pour aider le groupe (et peut se venger gentiment des gages subis).
 - 🍺 **BONUS STAGE** : « ROYALTY » — Vincent distribue 3 gages de son choix. Roi de la soirée.
 - 🌀 **Rebondissement** : le Glitch panique (le GM peut maintenant le démasquer) → mission de sabotage **risquée** donnée au Glitch.

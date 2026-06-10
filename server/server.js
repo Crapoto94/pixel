@@ -88,6 +88,12 @@ app.post('/api/answer', (req, res) => {
   res.json({ ok: true });
 });
 
+// Défi des enfants joué directement sur la BORNE (pas de token)
+app.post('/api/kids/done', (req, res) => {
+  game.markKidsDone();
+  res.json({ ok: true });
+});
+
 // --- API Game Master (Vincent éveillé OU Marc l'hôte) ---------------
 app.post('/api/gm/gage', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

@@ -54,6 +54,19 @@ app.get('/api/briefing', (req, res) => {
 });
 app.get('/j/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'joueur.html')));
 
+// Config YouTube exposée publiquement (IDs de playlists, pas de secret)
+app.get('/api/ytconfig', (req, res) => {
+  function extractList(url) {
+    const m = (url || '').match(/[?&]list=([^&]+)/);
+    return m ? m[1] : (url || '');
+  }
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    ambiance: extractList(CONFIG.ambianceYoutube),
+    blindtest: CONFIG.blindtestPlaylist || '',
+  });
+});
+
 // --- État courant (repli en polling si le SSE est bufferisé par un proxy) ---
 app.get('/api/state', (req, res) => {
   const token = req.query.token || null;

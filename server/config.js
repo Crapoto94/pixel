@@ -24,7 +24,11 @@ export const CONFIG = {
   //      'https://youtu.be/XXXXXXXXXXX'
   //      'https://www.youtube.com/playlist?list=PLxxxxxxxx'   (recommandé : un long mix)
   //    Laisse vide ('') pour aucune ambiance.
-  ambianceYoutube: '',
+  ambianceYoutube: 'https://www.youtube.com/watch?v=hUC9VCLH2xA&list=PL7Hq91kaxf0CHdrNHKvXfxCHhw2vhoPWV',
+
+  // 🎸 Playlist blind-test CLASSIC ROCK (jouée sur la BORNE pendant le blind-test, shuffle).
+  //    L'ID de playlist seul suffit (ou laisser vide '').
+  blindtestPlaylist: 'RDCLAK5uy_nZiG9ehz_MQoWQxY5yElsLHCcG0tv9PRg',
 };
 
 // ---------------------------------------------------------------------

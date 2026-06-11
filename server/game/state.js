@@ -12,6 +12,7 @@ import { AVATARS } from '../data/avatars.js';
 import { WORLDS, getWorld, normalize } from '../data/worlds.js';
 import { pickGage } from '../data/gages.js';
 import { QUESTIONS } from '../data/quiz.js';
+import { PacmanGame } from './pacman.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -25,6 +26,8 @@ export class GameState {
 
   // ---- Cycle de vie -------------------------------------------------
   reset(persist = true) {
+    if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
+    this.pacman = null; // partie Pac-Man en cours
     this.phase = 'lobby'; // lobby | world | bonus | activity | finale | win
     this.worldIndex = 0; // index dans WORLDS
     this.activity = null; // activité BORNE en cours (objet)
@@ -76,6 +79,11 @@ export class GameState {
 
   touch() {
     this.save();
+    this.broadcast();
+  }
+
+  // Diffuse aux clients SANS sauvegarder (utilisé par la boucle Pac-Man)
+  broadcast() {
     for (const cb of this.listeners) {
       try { cb(); } catch (_) { /* ignore */ }
     }
@@ -256,6 +264,7 @@ export class GameState {
 
   // ---- Activités BORNE (reaction, buzzer, spotlight, roue...) -------
   startActivity(type, opts = {}) {
+    if (type === 'pacman') return this.startPacman(opts);
     this.activity = {
       type,
       startedAt: Date.now(),
@@ -374,9 +383,44 @@ export class GameState {
   }
 
   stopActivity() {
+    if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
+    this.pacman = null;
     if (this.activity) this.activity.state = 'done';
     this.phase = 'world';
     this.touch();
+  }
+
+  // ---- PAC-MAN multijoueur -----------------------------------------
+  startPacman(opts = {}) {
+    const players = this.players.filter((p) => p.connected);
+    if (players.length < 3) {
+      this.addLog('⚠️ Pac-Man : il faut au moins 3 joueurs connectés (2 Pac + 1 fantôme).');
+      this.touch();
+      return;
+    }
+    this.pacman = new PacmanGame(players, opts);
+    this.activity = { type: 'pacman', startedAt: Date.now(), state: 'running', data: {} };
+    this.phase = 'activity';
+    this.addLog('🟡 PAC-MAN lancé ! Mr & Mrs Pac-Man contre les fantômes.');
+    if (this.pacmanTimer) clearInterval(this.pacmanTimer);
+    this.pacmanTimer = setInterval(() => {
+      if (!this.pacman) return;
+      this.pacman.tick();
+      if (this.pacman.status !== 'playing') {
+        clearInterval(this.pacmanTimer); this.pacmanTimer = null;
+        this.addLog(this.pacman.status === 'pacwin'
+          ? '🟡 PAC-MAN : l\'équipe Pac a tout gobé, VICTOIRE !'
+          : '👻 Les FANTÔMES ont gagné !');
+        this.save();
+      }
+      this.broadcast();
+    }, this.pacman.tickMs);
+    this.touch();
+  }
+
+  pacmanDir(playerId, dir) {
+    if (this.pacman) this.pacman.setDir(playerId, dir);
+    // pas de broadcast ici : le prochain tick rafraîchit (évite le spam réseau)
   }
 
   // Les enfants (Robin & Juliette) ont réussi le « Défi des Pixels »
@@ -410,6 +454,7 @@ export class GameState {
       glitchName: this.glitchRevealed ? this.player(this.glitchId)?.name : null,
       currentGage: this.currentGage,
       activity: this.activityPublic(me ? me.id : null),
+      pacman: this.pacman ? this.pacman.publicState(me ? me.id : null) : null,
       log: this.log.slice(0, 12),
       players: this.players.map((p) => ({
         id: p.id, name: p.name, avatar: p.avatar, connected: p.connected,

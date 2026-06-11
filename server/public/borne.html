@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/arcade.css" />
 <script src="/static/sound.js"></script>
 <script src="/static/fullscreen.js"></script>
+<script src="/static/pacman-render.js"></script>
 <style>
   #soundgate { position: fixed; inset: 0; z-index: 99999; background: #0a0118;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -86,8 +87,14 @@ function detectSounds(s){
 }
 
 let kidsKey = null;
+let pacKey = null;
 function render(){
   if(!STATE) return;
+  // --- PAC-MAN : prend le contrôle de la borne ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='pacman' && STATE.pacman){
+    renderPacmanBorne(); return;
+  }
+  pacKey = null;
   // --- Défi des enfants : prend le contrôle de la borne (insensible au SSE) ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='pixel_pad'){
     if (kidsKey !== STATE.activity.startedAt){ kidsKey = STATE.activity.startedAt; buildKidsPad(); }
@@ -247,6 +254,38 @@ function highScore(){
     <div class="pixel neon-yellow center" style="font-size:14px">HIGH SCORE</div>
     ${ranked.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">🪙 ${p.coins}</span></div>`).join('')}
   </div>`;
+}
+
+// =================== PAC-MAN (affichage borne) ===================
+function renderPacmanBorne(){
+  const pm = STATE.pacman;
+  if (pacKey !== STATE.activity.startedAt){
+    pacKey = STATE.activity.startedAt;
+    stage.innerHTML = `
+      <div class="center">
+        <div id="pachud" class="big" style="margin-bottom:6px"></div>
+        <canvas id="paccanvas" width="760" height="800"
+          style="max-width:94vw;max-height:72vh;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+        <div id="pacroles" class="muted" style="font-size:18px;margin-top:8px"></div>
+      </div>`;
+  }
+  const canvas = document.getElementById('paccanvas');
+  if (canvas) drawPacman(canvas, pm, null);
+  const hud = document.getElementById('pachud');
+  if (hud){
+    if (pm.status==='pacwin') hud.innerHTML = '<span class="neon-yellow pixel">🟡 PAC WINS !</span>';
+    else if (pm.status==='ghostwin') hud.innerHTML = '<span class="neon-pink pixel">👻 GHOSTS WIN !</span>';
+    else hud.innerHTML = `⏱ ${pm.timeLeft}s &nbsp;·&nbsp; 🟡 ${pm.scorePac} pts &nbsp;·&nbsp; ${pm.dotsLeft} gommes ${pm.frightened?'&nbsp;·&nbsp; <span class="neon-cyan blink">FRIGHTENED !</span>':''}`;
+  }
+  const roles = document.getElementById('pacroles');
+  if (roles){
+    roles.innerHTML = pm.entities.map(e=>{
+      const ic = e.role==='mr'?'🟡':e.role==='mrs'?'🌸':'👻';
+      const lv = e.lives!=null ? ' '+'❤'.repeat(Math.max(0,e.lives)) : '';
+      return `${ic} ${esc(e.name)}${lv}`;
+    }).join(' &nbsp; ');
+  }
+  tickerEl.textContent = 'PAC-MAN — gobez toutes les gommes avant la fin !';
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================

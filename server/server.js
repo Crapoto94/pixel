@@ -94,6 +94,13 @@ app.post('/api/kids/done', (req, res) => {
   res.json({ ok: true });
 });
 
+// Pac-Man : le joueur envoie une direction (up/down/left/right)
+app.post('/api/pacman/dir', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.pacmanDir(p.id, req.body.dir);
+  res.json({ ok: true });
+});
+
 // --- API Game Master (Vincent éveillé OU Marc l'hôte) ---------------
 app.post('/api/gm/gage', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

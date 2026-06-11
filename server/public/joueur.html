@@ -6,6 +6,14 @@
 <title>PIXEL PANIC — Joueur</title>
 <link rel="stylesheet" href="/static/arcade.css" />
 <script src="/static/fullscreen.js"></script>
+<script src="/static/pacman-render.js"></script>
+<style>
+  .dpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin:12px auto 0; }
+  .dpad button { font-size:30px; padding:18px 0; border:3px solid #000; border-radius:12px;
+    background:var(--neon4); color:#fff; box-shadow:0 5px 0 #3a2bd0; }
+  .dpad button:active { transform:translateY(4px); box-shadow:0 1px 0 #3a2bd0; }
+  .dpad .empty { visibility:hidden; }
+</style>
 </head>
 <body class="scanlines">
 <div class="wrap" id="app">
@@ -32,10 +40,17 @@ es.onerror = () => { /* l'EventSource se reconnecte tout seul */ };
 function h(strings, ...vals) { return strings.map((s,i)=>s+(vals[i]??'')).join(''); }
 function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
+let pacKey = null;
 function render() {
   if (!STATE) return;
   const me = STATE.me;
   if (!me) { app.innerHTML = `<div class="card center"><h2 class="neon-pink">TOKEN INVALIDE</h2><p>Scanne ton QR code perso.</p></div>`; return; }
+
+  // --- PAC-MAN : contrôleur plein écran ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'pacman' && STATE.pacman) {
+    renderPacmanPlayer(me); return;
+  }
+  pacKey = null;
 
   const av = me.avatarInfo;
   const hearts = '❤️'.repeat(me.lives) + '🖤'.repeat(Math.max(0,3-me.lives));
@@ -161,6 +176,46 @@ function controllerView(act) {
   }
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
 }
+
+function renderPacmanPlayer(me) {
+  const pm = STATE.pacman;
+  if (pacKey !== STATE.activity.startedAt) {
+    pacKey = STATE.activity.startedAt;
+    const cw = Math.min(window.innerWidth - 16, 460);
+    const ch = Math.round(cw * pm.h / pm.w);
+    app.innerHTML = `
+      <div class="center">
+        <div id="pacmsg" class="pixel" style="font-size:13px;margin:6px 0"></div>
+        <canvas id="pcv" width="${pm.w*30}" height="${pm.h*30}"
+          style="width:${cw}px;height:${ch}px;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+        <div class="dpad">
+          <div class="empty"></div><button data-d="up">▲</button><div class="empty"></div>
+          <button data-d="left">◄</button><div class="empty"></div><button data-d="right">►</button>
+          <div class="empty"></div><button data-d="down">▼</button><div class="empty"></div>
+        </div>
+      </div>`;
+    app.querySelectorAll('.dpad button').forEach(b=>{
+      const send = (ev)=>{ ev.preventDefault(); pacDir(b.dataset.d); };
+      b.addEventListener('touchstart', send, {passive:false});
+      b.addEventListener('mousedown', send);
+    });
+  }
+  const cv = document.getElementById('pcv');
+  if (cv) drawPacman(cv, pm, me.id);
+  const msg = document.getElementById('pacmsg');
+  if (msg) {
+    const ent = pm.entities.find(e=>e.id===me.id);
+    const role = !ent ? 'SPECTATEUR'
+      : ent.role==='mr' ? '🟡 TU ES Mr PAC-MAN'
+      : ent.role==='mrs' ? '🌸 TU ES Mrs PAC-MAN'
+      : '👻 TU ES UN FANTÔME';
+    const extra = pm.status==='pacwin' ? ' — 🟡 PAC GAGNE !'
+      : pm.status==='ghostwin' ? ' — 👻 FANTÔMES GAGNENT !'
+      : (ent && ent.lives!=null ? ' '+'❤'.repeat(Math.max(0,ent.lives)) : '');
+    msg.innerHTML = `<span class="neon-cyan">${role}</span>${esc(extra)}`;
+  }
+}
+function pacDir(d){ if(window.SFX) {} api('/api/pacman/dir', { dir: d }); }
 
 function quizController(act) {
   const letters = ['A','B','C','D','E'];

@@ -24,6 +24,7 @@ export class GameState {
   constructor() {
     this.listeners = new Set(); // callbacks SSE
     this.playlistTracks = []; // titres collectés depuis ytBt — survit au game reset()
+    this._autoAdvanceTimer = null; // timer interne non persisté
     this.reset(false);
     this.load();
   }
@@ -31,6 +32,7 @@ export class GameState {
   // ---- Cycle de vie -------------------------------------------------
   reset(persist = true) {
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
+    if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.pacRotation = []; // historique des rôles Pac (rotation entre manches)
     this.phase = 'lobby'; // lobby | world | bonus | activity | finale | win
@@ -74,9 +76,9 @@ export class GameState {
   save() {
     // On exclut ce qui n'est pas sérialisable / éphémère :
     //  - listeners (Set de callbacks SSE)
-    //  - pacmanTimer (objet Timer -> structure circulaire)
+    //  - pacmanTimer / _autoAdvanceTimer (objets Timer)
     //  - pacman (partie en cours, recréée à chaque manche)
-    const { listeners, pacmanTimer, pacman, ...data } = this;
+    const { listeners, pacmanTimer, pacman, _autoAdvanceTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -231,28 +233,34 @@ export class GameState {
     }
   }
 
-  generateBlindTestQuestion(videoTitle, videoId) {
-    const a = this.activity;
-    if (!a || a.type !== 'blindtest') return;
-    const others = this.playlistTracks.filter(t => t.id !== videoId);
-    if (others.length < 3) return; // pas assez de titres pour faire un QCM honnête
-    const lures = [...others].sort(() => Math.random() - 0.5).slice(0, 3).map(t => t.title);
-    const choices = [...lures, videoTitle].sort(() => Math.random() - 0.5);
-    const answer = choices.indexOf(videoTitle);
-    a.generatedQuestion = { prompt: '🎵 Quel est le titre de cette chanson ?', choices, answer, points: 100 };
-    a.dynamicBlindtest = true;
-    a.pendingTrack = false;
-    a.sub = 'question';
-    a.answers = {};
-    this.addLog(`🎵 Blind-test : « ${videoTitle} » — QCM généré.`);
-    this.touch();
-  }
-
+  // Pioche un titre AU HASARD dans la playlist collectée, ordonne à la borne
+  // de jouer cette vidéo précise, et génère le QCM (bon titre + 3 leurres).
   blindtestAsk() {
     const a = this.activity;
     if (!a || a.type !== 'blindtest') return;
-    a.pendingTrack = true;
-    a.generatedQuestion = null;
+    const pool = [...this.playlistTracks];
+    if (pool.length < 4) {
+      this.addLog('🎵 Blind-test : pas encore assez de titres détectés — patientez quelques secondes…');
+      this.touch();
+      return;
+    }
+    // Bonne réponse + 3 leurres, tous tirés de la playlist
+    const correct = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    const lures = pool.sort(() => Math.random() - 0.5).slice(0, 3).map(t => t.title);
+    const choices = [...lures, correct.title].sort(() => Math.random() - 0.5);
+    if (a.generatedQuestion) a.qIndex = (a.qIndex || 0) + 1; // incrémente après la 1ère
+    a.generatedQuestion = {
+      prompt: '🎵 Quel est le titre de cette chanson ?',
+      choices,
+      answer: choices.indexOf(correct.title),
+      points: 100,
+    };
+    a.playVideoId = correct.id;       // la borne charge CETTE vidéo
+    a.playRequestedAt = Date.now();   // force le rechargement même si même id
+    a.firstCorrectName = null;
+    a.sub = 'question';
+    a.answers = {};
+    this.addLog('🎵 Blind-test : nouvelle chanson lancée sur la BORNE !');
     this.touch();
   }
 
@@ -428,11 +436,14 @@ export class GameState {
       this.activity.sub = 'question'; // question | reveal
       this.activity.answers = {}; // { playerId: { choice, t } }
     }
-    // Blind-test : mode dynamique si assez de titres déjà collectés
+    // Blind-test : toujours dynamique (titres tirés de la playlist YouTube).
+    // La 1ère chanson est lancée quand le GM appuie sur « ❓ ».
     if (type === 'blindtest') {
-      this.activity.dynamicBlindtest = this.playlistTracks.length >= 4;
-      this.activity.pendingTrack = false;
+      this.activity.dynamicBlindtest = true;
       this.activity.generatedQuestion = null;
+      this.activity.playVideoId = null;
+      this.activity.playRequestedAt = 0;
+      this.activity.firstCorrectName = null;
     }
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
@@ -443,7 +454,7 @@ export class GameState {
   quizQuestion() {
     const a = this.activity;
     if (!a || (a.type !== 'quiz' && a.type !== 'blindtest')) return null;
-    if (a.dynamicBlindtest) return a.generatedQuestion || null; // null = attente (pendingTrack ou avant 1ère question)
+    if (a.dynamicBlindtest) return a.generatedQuestion || null; // null = avant la 1ère chanson
     const list = QUESTIONS[a.deck] || [];
     return list[a.qIndex] || null;
   }
@@ -453,7 +464,13 @@ export class GameState {
     if (!a || a.sub !== 'question') return;
     if (a.answers[playerId]) return; // déjà répondu, on garde la 1ʳᵉ
     a.answers[playerId] = { choice: Number(choice), t: Date.now() };
-    this.touch();
+    // Auto-révéler quand tous les joueurs connectés ont répondu
+    const connected = this.players.filter(p => p.connected).length;
+    if (Object.keys(a.answers).length >= connected) {
+      this.quizReveal();
+    } else {
+      this.touch();
+    }
   }
 
   quizReveal() {
@@ -465,28 +482,37 @@ export class GameState {
     const corrects = Object.entries(a.answers)
       .filter(([, ans]) => ans.choice === q.answer)
       .sort((x, y) => x[1].t - y[1].t);
-    corrects.forEach(([pid, ans], i) => {
-      const bonus = i === 0 ? 50 : 0; // premier bon répondeur : bonus speed
+    corrects.forEach(([pid], i) => {
+      const bonus = i === 0 ? 50 : 0;
       const gain = q.points + bonus;
       a.scores[pid] = (a.scores[pid] || 0) + gain;
       const p = this.player(pid);
-      if (p) p.coins += Math.round(gain / 50); // converti en PIÈCES
+      if (p) p.coins += Math.round(gain / 50);
     });
-    this.addLog(`💡 Réponse révélée : « ${q.choices[q.answer]} » (${corrects.length} bonne(s) réponse(s)).`);
+    // Le premier à avoir trouvé est mis à l'honneur
+    if (corrects.length) {
+      const first = this.player(corrects[0][0]);
+      a.firstCorrectName = first?.name || null;
+      if (first) this.addLog(`🥇 ${first.name} a trouvé en PREMIER — bravo !`);
+    } else {
+      a.firstCorrectName = null;
+    }
+    this.addLog(`💡 Réponse : « ${q.choices[q.answer]} » (${corrects.length} bonne(s) réponse(s)).`);
     this.touch();
+    // Auto-passage : chanson/question suivante après 9 secondes
+    if (this._autoAdvanceTimer) clearTimeout(this._autoAdvanceTimer);
+    this._autoAdvanceTimer = setTimeout(() => {
+      this._autoAdvanceTimer = null;
+      this.quizNext();
+    }, 9000);
   }
 
   quizNext() {
     const a = this.activity;
     if (!a) return;
+    if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (a.dynamicBlindtest) {
-      a.generatedQuestion = null;
-      a.pendingTrack = false;
-      a.sub = 'question';
-      a.answers = {};
-      a.qIndex += 1;
-      this.addLog('⏭ Blind-test : GM, appuyez sur "❓" quand vous êtes prêts.');
-      this.touch();
+      this.blindtestAsk(); // pioche une autre chanson au hasard dans la playlist
       return;
     }
     const list = QUESTIONS[a.deck] || [];
@@ -531,16 +557,23 @@ export class GameState {
       leaderboard: reveal ? this.quizLeaderboard() : null,
       myAnswer: forPlayerId && a.answers[forPlayerId] ? a.answers[forPlayerId].choice : null,
       // Blind-test dynamique
-      pendingTrack: a.pendingTrack || false,
       dynamicBlindtest: a.dynamicBlindtest || false,
+      playVideoId: a.playVideoId || null,
+      playRequestedAt: a.playRequestedAt || 0,
+      firstCorrectName: reveal ? (a.firstCorrectName || null) : null,
     };
   }
 
   quizLeaderboard() {
     const a = this.activity;
-    return Object.entries(a.scores || {})
-      .map(([pid, pts]) => ({ id: pid, name: this.player(pid)?.name, pts }))
-      .sort((x, y) => y.pts - x.pts);
+    const q = this.quizQuestion();
+    // Tous les joueurs connectés, qu'ils aient répondu ou non
+    const connected = this.players.filter(p => p.connected);
+    return connected.map(p => {
+      const ans = a.answers?.[p.id];
+      const correct = ans != null && q != null && ans.choice === q.answer;
+      return { id: p.id, name: p.name, pts: a.scores?.[p.id] || 0, correct, answered: !!ans };
+    }).sort((x, y) => y.pts - x.pts || (y.correct ? 1 : 0) - (x.correct ? 1 : 0));
   }
 
   buzz(playerId) {
@@ -548,11 +581,24 @@ export class GameState {
     if (this.activity.buzzes.find((b) => b.id === playerId)) return;
     const p = this.player(playerId);
     this.activity.buzzes.push({ id: playerId, name: p?.name, t: Date.now() });
+    // Reaction Race : quand tous les joueurs connectés ont buzzé, le dernier perd une vie
+    if (this.activity.type === 'reaction_race') {
+      const connected = this.players.filter(pl => pl.connected);
+      if (this.activity.buzzes.length >= connected.length) {
+        const last = [...this.activity.buzzes].sort((a, b) => b.t - a.t)[0];
+        const loser = this.player(last.id);
+        if (loser && loser.lives > 0) {
+          loser.lives -= 1;
+          this.addLog(`💔 ${loser.name} a buzzé EN DERNIER — vie perdue (${loser.lives} restante(s)) !`);
+        }
+      }
+    }
     this.touch();
   }
 
   stopActivity() {
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
+    if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     this.pacman = null;
     if (this.activity) this.activity.state = 'done';
     this.phase = 'world';

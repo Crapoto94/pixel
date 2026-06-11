@@ -240,22 +240,13 @@ function quizBorne(act){
   const reveal = act.sub===’reveal’;
   const title = act.type===’blindtest’?’🎵 BLIND-TEST’:’❓ QUIZ ARCADE’;
 
-  // Blind-test dynamique : la borne lit le titre en cours et attend la génération du QCM
-  if (act.pendingTrack) {
-    return `<div class="center">
-      <div class="pill neon-cyan">${title}</div>
-      <p class="huge blink">🎵</p>
-      <p class="big neon-yellow">Identifiez le titre…</p>
-      <p class="muted">Question en cours de génération.</p>
-    </div>`;
-  }
-
-  // Blind-test dynamique : avant la 1ère question (pas encore de QCM)
+  // Blind-test dynamique : avant la 1ère chanson (le GM doit appuyer sur ❓)
   if (act.dynamicBlindtest && !(act.choices && act.choices.length)) {
     return `<div class="center">
       <div class="pill neon-cyan">${title}</div>
       <p class="huge">🎵</p>
-      <p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>
+      <p class="big neon-yellow blink">Préparez vos oreilles…</p>
+      <p class="muted">Le maître du jeu lance la première chanson.</p>
     </div>`;
   }
 
@@ -270,10 +261,12 @@ function quizBorne(act){
 
   let footer = ‘’;
   if (reveal && act.leaderboard){
-    footer = `<div class="card leaderboard" style="max-width:600px;margin:14px auto 0;text-align:left">
-      <div class="pixel neon-yellow center" style="font-size:13px">SCORES</div>
-      ${act.leaderboard.length? act.leaderboard.map((p,i)=>`<div>${[‘🥇’,’🥈’,’🥉’][i]||(i+1+’.’)} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join(‘’)
-        : ‘<div class="muted center">Personne n\’a trouvé… 😬</div>’}
+    const champ = act.firstCorrectName
+      ? `<p class="big neon-yellow" style="margin:6px 0">🥇 ${esc(act.firstCorrectName)} a trouvé en premier — BRAVO !</p>`
+      : `<p class="big muted" style="margin:6px 0">Personne n’a trouvé… 😬</p>`;
+    footer = `${champ}<div class="card leaderboard" style="max-width:600px;margin:14px auto 0;text-align:left">
+      <div class="pixel neon-yellow center" style="font-size:13px">RÉSULTATS</div>
+      ${act.leaderboard.map(p=>`<div>${p.correct?’✅’:’❌’} ${esc(p.name)}${p.pts?` <span class="coins">+${p.pts} pts</span>`:’’}</div>`).join(‘’)||’<div class="muted center">Aucun joueur connecté.</div>’}
     </div>`;
   } else {
     footer = `<p class="big muted center mt">${progress}</p>`;
@@ -541,26 +534,38 @@ function renderPhotoBorne() {
   tickerEl.textContent = 'VOTE PHOTO — ouvrez votre téléphone et votez !';
 }
 
-// =================== BLIND-TEST DYNAMIQUE : settrack quand GM demande une question ===================
-let _pendingTrackSent = false;
+// Moissonne rapidement les titres de la playlist rock (lecteur muet) pour
+// constituer le pool de réponses possibles, sans déranger l'ambiance.
+let _harvested = false;
+function harvestTracks(player){
+  if (_harvested) return;
+  _harvested = true;
+  let n = 0;
+  const MAX = 18; // ~18 titres suffisent largement pour des QCM variés
+  const tick = () => {
+    // On ne moissonne pas pendant un blind-test (la borne joue une vidéo précise)
+    const inBT = STATE && STATE.activity && STATE.activity.type === 'blindtest';
+    if (inBT) return; // arrêt définitif : on a basculé en mode jeu
+    try { player.nextVideo(); } catch(_){}
+    if (++n < MAX) setTimeout(tick, 1800);
+  };
+  setTimeout(tick, 2600); // laisse la 1ère vidéo démarrer (et s'enregistrer)
+}
+
+// =================== BLIND-TEST DYNAMIQUE ===================
+// Le serveur a pioché une vidéo au hasard (a.playVideoId) : la borne la charge
+// et la joue. playRequestedAt change à chaque nouvelle chanson (même id rejouable).
+let _lastPlayReq = 0;
 function syncBlindtest(s) {
   const a = s.activity;
-  if (!a || a.type !== 'blindtest') { _pendingTrackSent = false; return; }
-  if (a.pendingTrack && !_pendingTrackSent) {
-    _pendingTrackSent = true;
+  if (!a || a.type !== 'blindtest') { _lastPlayReq = 0; return; }
+  if (a.playVideoId && a.playRequestedAt && a.playRequestedAt !== _lastPlayReq && a.sub === 'question') {
+    _lastPlayReq = a.playRequestedAt;
     try {
-      const d = ytBt ? ytBt.getVideoData() : null;
-      if (d && d.video_id && d.title) {
-        fetch('/api/blindtest/settrack', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ videoId: d.video_id, videoTitle: d.title }),
-        }).catch(() => { _pendingTrackSent = false; });
-      } else {
-        _pendingTrackSent = false; // ytBt pas encore prêt, retry au prochain applyState
-      }
-    } catch(_) { _pendingTrackSent = false; }
+      if (ytBt) { ytBt.loadVideoById(a.playVideoId); ytBt.unMute(); ytBt.playVideo(); }
+      if (ytAmb) ytAmb.pauseVideo();
+    } catch(_) {}
   }
-  if (!a.pendingTrack) _pendingTrackSent = false;
 }
 
 // =================== YOUTUBE (ambiance gaming + blind-test rock) ===================
@@ -578,7 +583,7 @@ function initYT(){
         playerVars:{ listType:'playlist', list:cfg.ambiance, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
           onReady(e){ e.target.setShuffle(true); e.target.playVideo(); }, // muet jusqu'au 1er clic
-          onStateChange(e){ if(e.data===YT.PlayerState.ENDED) e.target.playVideo(); }
+          onStateChange(e){ if(e.data===YT.PlayerState.ENDED) e.target.nextVideo(); }
         }
       });
     }
@@ -587,7 +592,7 @@ function initYT(){
         height:'1', width:'1',
         playerVars:{ listType:'playlist', list:cfg.blindtest, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
-          onReady(e){ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); }, // muet, prêt à unmuter
+          onReady(e){ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); harvestTracks(e.target); }, // muet : on moissonne les titres
           onStateChange(e){
             // Collecter le titre pour le blind-test dynamique
             if (e.data === YT.PlayerState.PLAYING) {
@@ -601,7 +606,7 @@ function initYT(){
                 }
               } catch(_) {}
             }
-            if (e.data === YT.PlayerState.ENDED) e.target.playVideo();
+            if (e.data === YT.PlayerState.ENDED) e.target.nextVideo();
           }
         }
       });
@@ -610,14 +615,16 @@ function initYT(){
 }
 
 function syncYT(s){
-  const isBT = s.activity && s.activity.type === 'blindtest';
-  const isReveal = isBT && s.activity.sub === 'reveal';
+  const a = s.activity;
+  const isBT = a && a.type === 'blindtest';
+  // Une chanson est posée uniquement quand le QCM est affiché (sub === 'question'
+  // ET un playVideoId existe). Sinon (avant 1ère chanson, ou révélation) : silence
+  // côté rock, l'ambiance gaming reprend en fond.
+  const songOn = isBT && a.sub === 'question' && !!a.playVideoId;
   try {
-    if (isBT && !isReveal) {
+    if (songOn) {
       if (ytBt) { ytBt.unMute(); ytBt.playVideo(); }
       if (ytAmb) ytAmb.pauseVideo();
-    } else if (isBT && isReveal) {
-      if (ytBt) ytBt.mute();
     } else {
       if (ytBt) ytBt.mute();
       if (ytAmb) ytAmb.playVideo();

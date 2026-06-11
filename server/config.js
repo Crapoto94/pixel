@@ -47,7 +47,7 @@ export const PLAYERS = [
   {
     id: 'willy',
     name: 'Willy',
-    avatar: 'sanique',
+    avatar: 'wilsonik',
     token: 'PXL-WLLY-2310',
     glitchEligible: true,
   },
@@ -68,7 +68,7 @@ export const PLAYERS = [
   {
     id: 'marie-anne',
     name: 'Marie-Anne',
-    avatar: 'super_marino',
+    avatar: 'super_mariano',
     token: 'PXL-MRNN-1985',
     glitchEligible: true,
   },

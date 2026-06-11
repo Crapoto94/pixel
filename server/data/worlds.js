@@ -30,10 +30,10 @@ export const WORLDS = [
     code: 'HAUT HAUT BAS BAS GAUCHE DROITE GAUCHE DROITE B A',
     codeNormalise: 'HAUTHAUTBASBASGAUCHEDROITEGAUCHEDROITEBA',
     indices: {
-      sanique: ['HAUT', 'HAUT'],
+      wilsonik: ['HAUT', 'HAUT'],
       riu: ['BAS', 'BAS'],
       zilda: ['GAUCHE', 'DROITE'],
-      super_marino: ['GAUCHE', 'DROITE'],
+      super_mariano: ['GAUCHE', 'DROITE'],
       lara_croute: ['B', 'A'],
       glouton: ['(rien — tu observes)', ''],
     },
@@ -58,7 +58,7 @@ export const WORLDS = [
     codeNormalise: 'GLOUTON',
     indices: {
       lara_croute: ['Le chemin commence en bas à droite, sous la cerise.'],
-      super_marino: ['Compte les champignons : ils numérotent les cases.'],
+      super_mariano: ['Compte les champignons : ils numérotent les cases.'],
     },
     activite: 'blindtest',
     gagePool: 'solo',

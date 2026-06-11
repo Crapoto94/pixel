@@ -28,10 +28,10 @@ Les 6 invités sont des **avatars rétro** réveillés par le glitch. Ils doiven
 | Personne | Avatar (parodie, libre de droits) | Inspiration | Thème perso & gimmick |
 |----------|-----------------------------------|-------------|-----------------------|
 | **Vincent** | 👑 **PLAYER ONE** | *l'Élu* | Héros à sauver → découvre ses pouvoirs de **Game Master** au Monde 4 |
-| **Willy** | 🦔 **SANIQUE** | Sonic | **Endurance / marathon** → « Speed » : bonus de rapidité, défis de résistance |
+| **Willy** | 🦔 **WILSONIK** | Sonic | **Endurance / marathon** → « Speed » : bonus de rapidité, défis de résistance |
 | **Stéphane** | 👊 **RIU** | Street Fighter | **Rock** → « Hadoken » : lance des duels ; gages air-guitar, blind-test classic rock |
 | **Jessica** | 🗡️ **ZILDA** | Zelda/Link | **Badminton** → « Triforce » : précision/réflexes ; annule 1 gage sur soi /soirée |
-| **Marie-Anne** | 🍄 **SUPER MARINO** | Mario | **Jardinage** → champignons & plantes ; « Saut » : double une récompense 1×/monde |
+| **Marie-Anne** | 🍄 **SUPER MARIANO** | Mario | **Jardinage** → champignons & plantes ; « Saut » : double une récompense 1×/monde |
 | **Marc (toi)** | 🏺 **LARA CROÛTE** | Lara Croft | **Hôte** → « Exploratrice » : reçoit les indices cachés (pratique pour piloter) |
 | *Parent éventuel* | 🟡 **GLOUTON** | Pac-Man | Slot optionnel (papa/maman de Vincent) → finit les verres orphelins |
 

@@ -37,10 +37,10 @@
 ## Mémo : qui détient quoi
 | Avatar | Joueur | Reçoit en priorité |
 |--------|--------|--------------------|
-| 🦔 SANIQUE | Willy | touches de la séquence (M1), défis vitesse |
+| 🦔 WILSONIK | Willy | touches de la séquence (M1), défis vitesse |
 | 👊 RIU | Stéphane | duels, blind-test metal |
 | 🗡️ ZILDA | Jessica | défis précision / réflexes |
-| 🍄 SUPER MARINO | Marie-Anne | indices « nature » (M2) |
+| 🍄 SUPER MARIANO | Marie-Anne | indices « nature » (M2) |
 | 🏺 LARA CROÛTE | **Marc (toi)** | indices cachés (UV), tu pilotes |
 | 👑 PLAYER ONE | Vincent | la carte dorée au Monde 4 |
 | 🟡 GLOUTON | parent (option) | verres orphelins |

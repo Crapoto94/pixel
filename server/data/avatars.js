@@ -11,8 +11,8 @@ export const AVATARS = {
     tagline: "L'Élu. Celui qui a buggé la réalité.",
     power: 'Pouvoir DORMANT… (se révèle au Monde 4)',
   },
-  sanique: {
-    name: 'SANIQUE',
+  wilsonik: {
+    name: 'WILSONIK',
     emoji: '🦔',
     color: '#0066FF',
     tagline: 'Gotta go fast. Marathonien du pixel.',
@@ -32,8 +32,8 @@ export const AVATARS = {
     tagline: 'Précision légendaire. Smash parfait.',
     power: 'TRIFORCE — annule 1 gage sur toi (1×/soirée).',
   },
-  super_marino: {
-    name: 'SUPER MARINO',
+  super_mariano: {
+    name: 'SUPER MARIANO',
     emoji: '🍄',
     color: '#E52521',
     tagline: 'Plombier-jardinier. Cultive les champignons.',

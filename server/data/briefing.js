@@ -16,10 +16,10 @@ export const SCENARIO_SLIDES = [
 // Ce qu'on attend de chaque avatar (affiché pendant le briefing)
 export const AVATAR_BRIEF = {
   player_one:   "Tu es le héros. Laisse-toi guider… un grand pouvoir t'attend au Monde 4.",
-  sanique:      "Mise sur la vitesse : sur les défis de rapidité, c'est toi qu'on attend devant.",
+  wilsonik:     "Mise sur la vitesse : sur les défis de rapidité, c'est toi qu'on attend devant.",
   riu:          "Mets l'ambiance rock et lance des duels à qui tu veux.",
   zilda:        "Vise juste — précision et réflexes — et garde ton joker anti-gage.",
-  super_marino: "Cultive les indices « nature » et fais grimper le score de l'équipe.",
+  super_mariano: "Cultive les indices « nature » et fais grimper le score de l'équipe.",
   lara_croute:  "Explore : tu reçois les indices cachés que les autres ne voient pas.",
   glouton:      "Ne laisse aucun verre orphelin et gobe les énigmes.",
 };

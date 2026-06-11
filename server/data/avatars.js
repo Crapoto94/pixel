@@ -22,7 +22,7 @@ export const AVATARS = {
     name: 'RIU',
     emoji: '👊',
     color: '#E63329',
-    tagline: 'Maître du combat. 666 % metal.',
+    tagline: 'Maître du combat. Pur esprit rock’n’roll.',
     power: 'HADOKEN — tu peux défier un autre joueur en duel.',
   },
   zilda: {

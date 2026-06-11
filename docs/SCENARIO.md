@@ -29,7 +29,7 @@ Les 6 invités sont des **avatars rétro** réveillés par le glitch. Ils doiven
 |----------|-----------------------------------|-------------|-----------------------|
 | **Vincent** | 👑 **PLAYER ONE** | *l'Élu* | Héros à sauver → découvre ses pouvoirs de **Game Master** au Monde 4 |
 | **Willy** | 🦔 **SANIQUE** | Sonic | **Endurance / marathon** → « Speed » : bonus de rapidité, défis de résistance |
-| **Stéphane** | 👊 **RIU** | Street Fighter | **Métal / Hellfest** → « Hadoken » : lance des duels ; gages headbang, air-guitar, blind-test metal |
+| **Stéphane** | 👊 **RIU** | Street Fighter | **Rock** → « Hadoken » : lance des duels ; gages air-guitar, blind-test classic rock |
 | **Jessica** | 🗡️ **ZILDA** | Zelda/Link | **Badminton** → « Triforce » : précision/réflexes ; annule 1 gage sur soi /soirée |
 | **Marie-Anne** | 🍄 **SUPER MARINO** | Mario | **Jardinage** → champignons & plantes ; « Saut » : double une récompense 1×/monde |
 | **Marc (toi)** | 🏺 **LARA CROÛTE** | Lara Croft | **Hôte** → « Exploratrice » : reçoit les indices cachés (pratique pour piloter) |
@@ -106,7 +106,7 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 ### ⏱️ 4:15 — MONDE 6 : « BOSS FINAL — REBOOT REALITY »
 - **Affrontement final** collectif contre la BORNE (le « boss » est l'écran lui-même : barre de vie, attaques, QTE à scanner vite). Tous les pouvoirs/objets accumulés servent ici.
 - **Vincent porte le coup final** (il scanne la carte dorée sur la BORNE) → **la réalité redémarre** : écran « YOU WIN », feu d'artifice 8-bit, déverrouillage du **vrai cadeau / coffre final** de Vincent.
-- 🎉 **BONUS STAGE FINAL** : « HIGH SCORE » — classement final affiché sur la BORNE (MVP, meilleur Glitch, roi du headbang, etc.) + trinque légère de victoire.
+- 🎉 **BONUS STAGE FINAL** : « HIGH SCORE » — classement final affiché sur la BORNE (MVP, meilleur Glitch, roi de l'air-guitar, etc.) + trinque légère de victoire.
 
 ### ⏱️ 4:35 — GÉNÉRIQUE DE FIN
 - La BORNE déroule un **générique** façon jeu vidéo avec les vrais prénoms + des récompenses fun pour chacun. Photos. Fin.
@@ -119,8 +119,8 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 
 - **Continue ?** : 10 s pour répondre à la BORNE, sinon grimace tenue 30 s (ou gorgée).
 - **Lag** : tu parles au ralenti jusqu'au prochain monde ; si tu craques, 5 pompes (ou gorgée).
-- **Boss music** : chante l'intro d'un jeu culte / hurle un riff metal, ou mime le boss 20 s.
-- **Headbang (Hellfest)** : air-guitar + headbang 15 s, la salle juge.
+- **Boss music** : chante l'intro d'un jeu culte / un riff rock connu, ou mime le boss 20 s.
+- **Air guitar** : solo d'air-guitar de 15 s sur un riff rock culte, la salle juge.
 - **Marathon** : 15 squats ou pompes — endurance !
 - **Pixel perfect** : défi d'adresse (empiler, viser) ; raté = tu offres la tournée (soft ou non).
 - **Photosynthèse** : tu deviens une plante immobile jusqu'au prochain indice.
@@ -141,7 +141,7 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 - **REACTION RACE** — la BORNE affiche « TAPE ! » à un instant aléatoire ; le plus rapide à toucher son écran marque ; classement live affiché.
 - **PIXEL MEMORY (Simon)** — une séquence couleurs/sons s'affiche sur la BORNE ; chacun la rejoue sur son tél ; élimination progressive.
 - **QUIZ ARCADE** (culture jeu vidéo) — la **question + les 4 choix s'affichent sur la BORNE**, chacun répond en **QCM sur son smartphone**. La bonne réponse reste cachée jusqu'à la révélation (anti-triche), puis scores affichés (bonus de rapidité au 1ᵉʳ bon répondeur). 14 questions prêtes, éditable dans `server/data/quiz.js`.
-- **BLIND-TEST** — la BORNE affiche « 🎵 Écoutez… » + les 4 choix ; **Marc (page GM) voit quel extrait lancer** et la bonne réponse ; chacun répond sur son téléphone. Mix **thèmes de jeux + metal/Hellfest** (clin d'œil à Stéphane). 10 extraits prêts. *(Option : déposer des fichiers audio dans `public/static/audio/` pour que la BORNE les joue toute seule.)*
+- **BLIND-TEST** — la BORNE affiche « 🎵 Écoutez… » + les 4 choix ; **Marc (page GM) voit quel extrait lancer** et la bonne réponse ; chacun répond sur son téléphone. **CLASSIC ROCK** pour plaire à tous (Queen, AC/DC, Eagles, Stones, Toto…). 10 extraits prêts. *(Option : déposer des fichiers audio dans `public/static/audio/` pour que la BORNE les joue toute seule.)*
 
 **🟡 Défis INDIVIDUELS (un joueur sous les projecteurs, la salle juge depuis son tél)**
 - La BORNE met un joueur en **SPOTLIGHT** : ex. « AU TOUR DE STÉPHANE → HEADBANG 15 s », **timer géant + applaudimètre**, et la salle vote « réussi / raté » depuis les phones.

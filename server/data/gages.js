@@ -11,9 +11,9 @@
 export const GAGES = [
   { id: 'continue', titre: 'CONTINUE ?', desc: 'Tu as 10 s pour répondre à la BORNE.', alt: 'Sinon : une grimace tenue 30 s OU une gorgée.', intensity: 1, pool: ['solo'] },
   { id: 'lag', titre: 'LAG', desc: 'Tu parles au RALENTI jusqu’au prochain monde.', alt: 'Si tu craques : 5 pompes OU une gorgée.', intensity: 1, pool: ['solo'] },
-  { id: 'boss-music', titre: 'BOSS MUSIC', desc: 'Chante l’intro d’un jeu vidéo culte (ou hurle un riff metal).', alt: 'Refus : tu mimes le boss final pendant 20 s.', intensity: 1, pool: ['solo', 'metal'] },
+  { id: 'boss-music', titre: 'BOSS MUSIC', desc: 'Chante l’intro d’un jeu vidéo culte (ou un riff rock connu).', alt: 'Refus : tu mimes le boss final pendant 20 s.', intensity: 1, pool: ['solo', 'rock'] },
   { id: 'pixel-perfect', titre: 'PIXEL PERFECT', desc: 'Défi d’adresse : empile 3 objets / vise un gobelet.', alt: 'Raté : tu offres la prochaine tournée (soft ou non).', intensity: 1, pool: ['solo', 'defi'] },
-  { id: 'headbang', titre: 'HEADBANG (Hellfest)', desc: 'Air-guitar + headbang 15 s pendant que la BORNE crache du metal. La salle juge.', alt: 'Raté : tu fais le pogo tout seul 10 s.', intensity: 2, pool: ['solo', 'metal'] },
+  { id: 'air-guitar', titre: 'AIR GUITAR', desc: 'Solo d’air-guitar de 15 s sur un riff rock culte. La salle juge.', alt: 'Raté : tu chantes le refrain a cappella.', intensity: 2, pool: ['solo', 'rock'] },
   { id: 'marathon', titre: 'MARATHON', desc: '15 squats ou pompes (au choix). Endurance, l’ami.', alt: 'Refus : course sur place 30 s OU une gorgée.', intensity: 2, pool: ['solo', 'sport'] },
   { id: 'smash', titre: 'SMASH', desc: 'Duel de réflexes : premier à attraper l’objet lancé.', alt: 'Le perdant fait le service de badminton imaginaire 5×.', intensity: 1, pool: ['duel', 'sport'] },
   { id: 'jardin', titre: 'PHOTOSYNTHÈSE', desc: 'Tu deviens une plante : bras en l’air, immobile, jusqu’au prochain indice.', alt: 'Tu bouges : tu arroses (sers) quelqu’un OU gorgée.', intensity: 1, pool: ['solo'] },

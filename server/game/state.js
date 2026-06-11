@@ -132,7 +132,7 @@ export class GameState {
 
   // ---- Démarrage de partie -----------------------------------------
   startGame() {
-    if (!this.glitchId) this.assignGlitch();
+    // Le Glitch n'est PAS désigné ici : il s'infiltre à la fin du Monde 1.
     this.phase = 'world';
     this.worldIndex = 0;
     this.addLog('🕹️ INSERT COIN — la partie commence !');
@@ -166,6 +166,8 @@ export class GameState {
     // Récompense : tous les joueurs connectés gagnent une pièce
     this.players.forEach((p) => { if (p.connected) p.coins += 1; });
 
+    // Le Glitch s'infiltre à la fin du Monde 1 (désignation différée et secrète)
+    if (world.id === 'w1' && !this.glitchId) this.assignGlitch();
     // Twist du monde
     if (world.id === 'w4') this.awakenHero();
     if (world.twist) this.addLog(`🌀 ${world.twist}`);

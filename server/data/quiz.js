@@ -45,29 +45,32 @@ export const QUESTIONS = {
       choices: ['Électricien', 'Plombier', 'Charpentier', 'Jardinier'], answer: 1, points: 50, media: null },
   ],
 
-  // ---- BLIND-TEST (le MJ lance l'extrait, réponses sur smartphone) --
-  // Mélange thèmes de jeux vidéo + metal/rock (clin d'œil Hellfest).
+  // ---- BLIND-TEST — CLASSIC ROCK (pour plaire à tout le monde) -------
+  //  yt    : lien/ID YouTube de l'extrait (Marc colle ses liens — voir
+  //          docs/MUSIQUE-YOUTUBE.md). Laissé '' => mode manuel (MJ lance).
+  //  start : seconde de départ de l'extrait (le "moment qui tue").
+  //  La BORNE joue le son seul (vidéo masquée). `play` = aide-mémoire MJ.
   blindtest: [
-    { prompt: '🎵 EXTRAIT #1 — Quel jeu ?', play: 'Thème principal de SUPER MARIO BROS.',
-      choices: ['Sonic', 'Super Mario Bros.', 'Donkey Kong', 'Kirby'], answer: 1, points: 100, media: 'audio' },
-    { prompt: '🎵 EXTRAIT #2 — Quel jeu ?', play: 'Thème de TETRIS (Korobeiniki)',
-      choices: ['Tetris', 'Pac-Man', 'Snake', 'Bomberman'], answer: 0, points: 100, media: 'audio' },
-    { prompt: '🎵 EXTRAIT #3 — Quel jeu ?', play: 'Thème principal de ZELDA',
-      choices: ['Final Fantasy', 'Zelda', 'Dragon Quest', 'Chrono Trigger'], answer: 1, points: 100, media: 'audio' },
-    { prompt: '🎸 EXTRAIT #4 — Quel groupe ?', play: 'METALLICA — Enter Sandman (riff intro)',
-      choices: ['Iron Maiden', 'Metallica', 'Megadeth', 'Slayer'], answer: 1, points: 100, media: 'audio' },
-    { prompt: '🎸 EXTRAIT #5 — Quel groupe ?', play: 'AC/DC — Thunderstruck (intro)',
-      choices: ['Guns N’ Roses', 'AC/DC', 'Aerosmith', 'Kiss'], answer: 1, points: 100, media: 'audio' },
-    { prompt: '🎸 EXTRAIT #6 — Quel groupe ?', play: 'RAMMSTEIN — Du Hast',
-      choices: ['Rammstein', 'Nightwish', 'Sabaton', 'Gojira'], answer: 0, points: 150, media: 'audio' },
-    { prompt: '🎵 EXTRAIT #7 — Quel jeu ?', play: 'Jingle de victoire de FINAL FANTASY',
-      choices: ['Zelda', 'Final Fantasy', 'Pokémon', 'Mario Kart'], answer: 1, points: 150, media: 'audio' },
-    { prompt: '🎸 EXTRAIT #8 — Quel groupe ?', play: 'IRON MAIDEN — The Trooper (riff)',
-      choices: ['Judas Priest', 'Motörhead', 'Iron Maiden', 'Black Sabbath'], answer: 2, points: 150, media: 'audio' },
-    { prompt: '🎵 EXTRAIT #9 — Quel jeu ?', play: 'Green Hill Zone — SONIC',
-      choices: ['Sonic', 'Rayman', 'Crash Bandicoot', 'Mega Man'], answer: 0, points: 100, media: 'audio' },
-    { prompt: '🎸 EXTRAIT #10 — Quel groupe ?', play: 'SYSTEM OF A DOWN — Chop Suey!',
-      choices: ['Korn', 'Linkin Park', 'System of a Down', 'Limp Bizkit'], answer: 2, points: 150, media: 'audio' },
+    { prompt: '🎸 EXTRAIT #1 — Quel groupe ?', play: 'AC/DC — Highway to Hell',
+      choices: ['AC/DC', 'Led Zeppelin', 'Deep Purple', 'The Who'], answer: 0, points: 100, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #2 — Quel titre ?', play: 'Queen — Bohemian Rhapsody',
+      choices: ['We Will Rock You', 'Bohemian Rhapsody', 'Don’t Stop Me Now', 'Somebody to Love'], answer: 1, points: 100, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #3 — Quel titre ?', play: 'Survivor — Eye of the Tiger',
+      choices: ['Eye of the Tiger', 'The Final Countdown', 'Jump', 'Livin’ on a Prayer'], answer: 0, points: 100, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #4 — Quel groupe ?', play: 'Deep Purple — Smoke on the Water (riff)',
+      choices: ['Black Sabbath', 'Deep Purple', 'Cream', 'Rainbow'], answer: 1, points: 100, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #5 — Quel groupe ?', play: 'The Beatles — Hey Jude',
+      choices: ['The Rolling Stones', 'The Beatles', 'The Kinks', 'The Beach Boys'], answer: 1, points: 100, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #6 — Quel titre ?', play: 'Eagles — Hotel California',
+      choices: ['Hotel California', 'Sweet Home Alabama', 'Free Bird', 'More Than a Feeling'], answer: 0, points: 150, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #7 — Quel groupe ?', play: 'The Rolling Stones — (I Can’t Get No) Satisfaction',
+      choices: ['The Doors', 'The Rolling Stones', 'The Animals', 'Creedence'], answer: 1, points: 100, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #8 — Quel titre ?', play: 'Bon Jovi — Livin’ on a Prayer',
+      choices: ['You Give Love a Bad Name', 'Livin’ on a Prayer', 'It’s My Life', 'Always'], answer: 1, points: 150, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #9 — Quel titre ?', play: 'Toto — Africa',
+      choices: ['Africa', 'Rosanna', 'Hold the Line', 'Carrie'], answer: 0, points: 100, media: 'audio', yt: '', start: 0 },
+    { prompt: '🎸 EXTRAIT #10 — Quel groupe ?', play: 'Dire Straits — Sultans of Swing',
+      choices: ['Dire Straits', 'Fleetwood Mac', 'Supertramp', 'Pink Floyd'], answer: 0, points: 150, media: 'audio', yt: '', start: 0 },
   ],
 };
 

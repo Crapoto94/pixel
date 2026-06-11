@@ -15,6 +15,15 @@ export const CONFIG = {
 
   // Heure « limite » fictive affichée sur la borne (compte à rebours narratif)
   deadlineLabel: 'MINUIT',
+
+  // 🎵 Musique d'ambiance de la BORNE (lecture auto en boucle, son seul).
+  //    Colle ici un lien YouTube : une vidéo OU une playlist "video game music".
+  //    Exemples acceptés :
+  //      'https://www.youtube.com/watch?v=XXXXXXXXXXX'
+  //      'https://youtu.be/XXXXXXXXXXX'
+  //      'https://www.youtube.com/playlist?list=PLxxxxxxxx'   (recommandé : un long mix)
+  //    Laisse vide ('') pour aucune ambiance.
+  ambianceYoutube: '',
 };
 
 // ---------------------------------------------------------------------

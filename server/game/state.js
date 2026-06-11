@@ -18,6 +18,7 @@ import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
+import { ENQUETE } from '../data/enquete.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -272,9 +273,11 @@ export class GameState {
 
   // Pioche un titre AU HASARD dans la playlist collectée, ordonne à la borne
   // de jouer cette vidéo précise, et génère le QCM (bon titre + 3 leurres).
+  // La manche fait a.total morceaux ; au-delà → décompte final.
   blindtestAsk() {
     const a = this.activity;
     if (!a || a.type !== 'blindtest') return;
+    if ((a.asked || 0) >= (a.total || 15)) { this.blindtestFinish(); return; }
     const pool = [...this.playlistTracks];
     if (pool.length < 4) {
       this.addLog('🎵 Blind-test : pas encore assez de titres détectés — patientez quelques secondes…');
@@ -285,7 +288,8 @@ export class GameState {
     const correct = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
     const lures = pool.sort(() => Math.random() - 0.5).slice(0, 3).map(t => t.title);
     const choices = [...lures, correct.title].sort(() => Math.random() - 0.5);
-    if (a.generatedQuestion) a.qIndex = (a.qIndex || 0) + 1; // incrémente après la 1ère
+    a.asked = (a.asked || 0) + 1;
+    a.qIndex = a.asked - 1;
     a.generatedQuestion = {
       prompt: '🎵 Quel est le titre de cette chanson ?',
       choices,
@@ -297,7 +301,35 @@ export class GameState {
     a.firstCorrectName = null;
     a.sub = 'question';
     a.answers = {};
-    this.addLog('🎵 Blind-test : nouvelle chanson lancée sur la BORNE !');
+    this.addLog(`🎵 Blind-test ${a.asked}/${a.total} — nouvelle chanson !`);
+    this.touch();
+  }
+
+  // Fin de manche : le dernier au classement (score le plus bas) perd une vie.
+  blindtestFinish() {
+    const a = this.activity;
+    if (!a) return;
+    if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
+    const connected = this.players.filter((p) => p.connected);
+    const board = connected
+      .map((p) => ({ id: p.id, name: p.name, pts: (a.scores && a.scores[p.id]) || 0 }))
+      .sort((x, y) => y.pts - x.pts);
+    a.sub = 'final';
+    a.finalBoard = board;
+    a.loserNames = [];
+    if (board.length) {
+      const min = Math.min(...board.map((b) => b.pts));
+      const max = Math.max(...board.map((b) => b.pts));
+      if (max !== min) { // il y a un vrai dernier (sinon égalité parfaite : on épargne)
+        board.filter((b) => b.pts === min).forEach((b) => {
+          const p = this.player(b.id);
+          if (p && p.lives > 0) { p.lives -= 1; a.loserNames.push(p.name); }
+        });
+      }
+    }
+    this.addLog(a.loserNames.length
+      ? `🏁 Blind-test terminé ! Dernier(s) : ${a.loserNames.join(', ')} — −1 vie 💔`
+      : '🏁 Blind-test terminé ! Égalité — personne ne perd de vie.');
     this.touch();
   }
 
@@ -495,6 +527,18 @@ export class GameState {
       this.activity.playVideoId = null;
       this.activity.playRequestedAt = 0;
       this.activity.firstCorrectName = null;
+      this.activity.total = 15; // 15 morceaux par séance
+      this.activity.asked = 0;  // morceaux déjà joués
+    }
+    // Enquête collaborative (escape) : 5 actes, indices sur la borne, codes par téléphone
+    if (type === 'enquete') {
+      this.activity.actIndex = 0;
+      this.activity.hints = {};   // { actIndex: nbIndicesRévélés }
+      this.activity.frag = {};    // { playerId: [pièces à conviction de l'acte courant] }
+      this.activity.attempts = 0;
+      this.activity.lastWrong = 0;
+      this.activity.done = false;
+      this._enqueteDistribute();
     }
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
@@ -584,6 +628,7 @@ export class GameState {
     if (!a) return null;
     if (a.type === 'music_seq') return this.musicPublic(forPlayerId);
     if (a.type === 'mosaic') return this.mosaicPublic(forPlayerId);
+    if (a.type === 'enquete') return this.enquetePublic(forPlayerId);
     if (a.type !== 'quiz' && a.type !== 'blindtest') return a;
     const q = this.quizQuestion();
     const list = a.dynamicBlindtest ? [] : (QUESTIONS[a.deck] || []);
@@ -594,7 +639,8 @@ export class GameState {
       deck: a.deck,
       sub: a.sub,
       qIndex: a.qIndex,
-      total: a.dynamicBlindtest ? null : list.length,
+      total: a.dynamicBlindtest ? (a.total || 15) : list.length,
+      asked: a.asked || 0,
       prompt: q ? q.prompt : '',
       choices: q ? q.choices : [],
       media: q ? (q.media || null) : null,
@@ -612,6 +658,8 @@ export class GameState {
       playVideoId: a.playVideoId || null,
       playRequestedAt: a.playRequestedAt || 0,
       firstCorrectName: reveal ? (a.firstCorrectName || null) : null,
+      finalBoard: a.sub === 'final' ? (a.finalBoard || []) : null,
+      loserNames: a.sub === 'final' ? (a.loserNames || []) : null,
     };
   }
 
@@ -683,6 +731,129 @@ export class GameState {
       this.addLog(`👏 ${a.data.targetName} a relevé le défi avec brio ! (${ok}👏/${ko}💀)`);
     }
     this.touch();
+  }
+
+  // ---- Enquête collaborative (Cold Case Saint-Maur) ----------------
+  // Répartit les pièces à conviction de l'acte courant entre les joueurs
+  // connectés (round-robin). Recalculé à chaque changement d'acte.
+  _enqueteDistribute() {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete') return;
+    const act = ENQUETE.acts[a.actIndex];
+    a.frag = {};
+    if (!act) return;
+    const players = this.players.filter((p) => p.connected);
+    if (!players.length) return;
+    (act.fragments || []).forEach((f, i) => {
+      const owner = players[i % players.length];
+      (a.frag[owner.id] = a.frag[owner.id] || []).push(f);
+    });
+  }
+
+  // Un joueur propose un code pour l'acte courant.
+  submitEnqueteCode(playerId, code) {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete' || a.done) return { ok: false, reason: 'Pas d\'enquête en cours.' };
+    const act = ENQUETE.acts[a.actIndex];
+    if (!act) return { ok: false, reason: 'Aucun acte actif.' };
+    if (normalize(code) === normalize(act.answer)) {
+      const p = this.player(playerId);
+      this.addLog(`🕵️ ACTE ${act.num} résolu : « ${act.title} » par ${p ? p.name : '?'} !`);
+      a.actIndex += 1;
+      a.lastWrong = 0;
+      if (a.actIndex >= ENQUETE.acts.length) {
+        a.done = true;
+        a.frag = {};
+        this.addLog('🔓 ENQUÊTE RÉSOLUE — l\'affaire des parapheurs perdus est élucidée !');
+      } else {
+        this._enqueteDistribute();
+      }
+      this.touch();
+      return { ok: true, solved: true, done: a.done };
+    }
+    a.lastWrong = Date.now();
+    a.attempts = (a.attempts || 0) + 1;
+    this.addLog(`🔒 Code refusé (Acte ${act.num}).`);
+    this.touch();
+    return { ok: false, reason: 'Code incorrect.' };
+  }
+
+  // Le GM révèle un indice de plus sur l'acte courant.
+  enqueteHint() {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete') return;
+    const act = ENQUETE.acts[a.actIndex];
+    if (!act) return;
+    a.hints = a.hints || {};
+    const cur = a.hints[a.actIndex] || 0;
+    if (cur < (act.hints || []).length) {
+      a.hints[a.actIndex] = cur + 1;
+      this.addLog(`💡 Indice ${cur + 1} révélé (Acte ${act.num}).`);
+      this.touch();
+    }
+  }
+
+  // Le GM force le passage à l'acte suivant (déblocage manuel).
+  enqueteSkip() {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete' || a.done) return;
+    const act = ENQUETE.acts[a.actIndex];
+    a.actIndex += 1;
+    a.lastWrong = 0;
+    if (a.actIndex >= ENQUETE.acts.length) {
+      a.done = true; a.frag = {};
+      this.addLog('🔓 ENQUÊTE débloquée jusqu\'au bout par le GM.');
+    } else {
+      this._enqueteDistribute();
+      this.addLog(`⏭ GM : passage forcé à l'acte ${act ? act.num + 1 : '?'}.`);
+    }
+    this.touch();
+  }
+
+  // Vue publique de l'enquête (NE FUITE PAS la réponse de l'acte courant).
+  enquetePublic(forPlayerId = null) {
+    const a = this.activity;
+    const acts = ENQUETE.acts;
+    const idx = a.actIndex;
+    const act = acts[idx] || null;
+    const nHints = act ? (a.hints?.[idx] || 0) : 0;
+    return {
+      type: 'enquete',
+      title: ENQUETE.title,
+      pitch: ENQUETE.pitch,
+      total: acts.length,
+      actIndex: idx,
+      solvedCount: idx,
+      done: !!a.done,
+      act: act && {
+        num: act.num, title: act.title, place: act.place,
+        article: act.article, scene: act.scene, riddle: act.riddle,
+      },
+      hintList: act ? (act.hints || []).slice(0, nHints) : [],
+      // Le « mur d'enquête » : révélations des actes déjà résolus
+      wall: acts.slice(0, idx).map((x) => ({ num: x.num, title: x.title, reveal: x.reveal })),
+      lastWrong: a.lastWrong || 0,
+      myFragments: forPlayerId ? (a.frag?.[forPlayerId] || []) : [],
+      finale: a.done ? ENQUETE.finale : null,
+    };
+  }
+
+  // Bloc réservé GM : la solution de l'acte courant.
+  enqueteMaster() {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete') return null;
+    const act = ENQUETE.acts[a.actIndex];
+    return {
+      done: !!a.done,
+      actIndex: a.actIndex,
+      total: ENQUETE.acts.length,
+      num: act ? act.num : null,
+      title: act ? act.title : null,
+      answer: act ? act.answer : null,
+      hintsShown: a.hints?.[a.actIndex] || 0,
+      hintsTotal: act ? (act.hints || []).length : 0,
+      attempts: a.attempts || 0,
+    };
   }
 
   stopActivity() {

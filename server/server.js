@@ -236,6 +236,12 @@ app.post('/api/pacman/dir', (req, res) => {
   res.json({ ok: true });
 });
 
+// Enquête collaborative : un joueur propose un code pour l'acte courant
+app.post('/api/enquete/code', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  res.json(game.submitEnqueteCode(p.id, req.body.code || ''));
+});
+
 // Séquence musicale : le joueur joue une de ses notes
 app.post('/api/music/press', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
@@ -276,6 +282,7 @@ app.get('/api/gm/state', (req, res) => {
     glitchName: game.player(game.glitchId)?.name || null,
     votes: game.votes,
     quizMaster,
+    enqueteMaster: game.enqueteMaster(),
     playlistTrackCount: game.playlistTracks.length,
   });
 });
@@ -303,6 +310,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'blindtestAsk': game.blindtestAsk(); break;
     case 'spotlightOpenVote': game.spotlightOpenVote(); break;
     case 'spotlightTally': game.spotlightTally(); break;
+    case 'enqueteHint': game.enqueteHint(); break;
+    case 'enqueteSkip': game.enqueteSkip(); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });

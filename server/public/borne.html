@@ -115,6 +115,10 @@ function render(){
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
   }
+  // --- Enquête collaborative (Cold Case Saint-Maur) ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='enquete'){
+    renderEnqueteBorne(STATE.activity); return;
+  }
   // --- Mosaïque de téléphones ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='mosaic'){
     const a = STATE.activity;
@@ -264,6 +268,26 @@ function quizBorne(act){
   const reveal = act.sub==='reveal';
   const title = act.type==='blindtest'?'🎵 BLIND-TEST':'❓ QUIZ ARCADE';
 
+  // Fin de manche blind-test : classement + perdant
+  if (act.sub==='final'){
+    const board = act.finalBoard||[];
+    const losers = act.loserNames||[];
+    const min = board.length ? Math.min(...board.map(b=>b.pts)) : 0;
+    const max = board.length ? Math.max(...board.map(b=>b.pts)) : 0;
+    return `<div class="center">
+      <h1 class="huge neon-yellow pixel">🏁 BLIND-TEST TERMINÉ</h1>
+      <div class="card leaderboard" style="max-width:620px;margin:14px auto;text-align:left">
+        ${board.map((p,i)=>{
+          const last = max!==min && p.pts===min;
+          return `<div${last?' style="color:var(--danger)"':''}>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.pts} pts</span> ${last?'💔':''}</div>`;
+        }).join('')||'<div class="muted center">Pas de score.</div>'}
+      </div>
+      ${losers.length
+        ? `<p class="big neon-pink blink">💔 ${losers.map(esc).join(', ')} perd une vie !</p>`
+        : `<p class="big muted">Égalité — personne ne perd de vie.</p>`}
+    </div>`;
+  }
+
   // Blind-test dynamique : avant la 1ère chanson (le GM doit appuyer sur ❓)
   if (act.dynamicBlindtest && !(act.choices && act.choices.length)) {
     return `<div class="center">
@@ -379,6 +403,66 @@ function renderMusicBorne(a){
     <p class="muted mt">${a.step}/${a.len} ${a.wrongAt&&!win?'· <span class="neon-pink blink">raté, on reprend !</span>':''}</p>
   </div>`;
   tickerEl.textContent = 'SÉQUENCE MUSICALE — coordonnez-vous !';
+}
+
+// =================== ENQUÊTE (affichage borne) ===================
+function renderEnqueteBorne(a){
+  // Affiche le "mur d'enquête" : pitch, acte courant (article + énigme + indices),
+  // et les révélations des actes déjà résolus.
+  if (a.done && a.finale){
+    const f = a.finale;
+    stage.innerHTML = `<div class="center glow-box">
+      <h1 class="huge neon-yellow pixel">🔓 ${esc(f.title)}</h1>
+      <p class="big neon-pink">Le meurtrier : <b class="neon-yellow">${esc(f.culprit)}</b></p>
+      <p class="big">${esc(f.role)}</p>
+      <div class="card" style="max-width:900px;margin:18px auto;text-align:left;border-color:var(--neon3)">
+        <div class="pill neon-cyan">MOBILE</div>
+        <p>${esc(f.mobile)}</p>
+      </div>
+      <p class="muted" style="font-size:16px">${esc(f.disclaimer)}</p>
+    </div>`;
+    tickerEl.textContent = 'AFFAIRE RÉSOLUE — Guillaume, la vengeance des parapheurs perdus.';
+    return;
+  }
+
+  const act = a.act || {};
+  const art = act.article || {};
+  const hints = (a.hintList||[]).map(h=>`<li>${esc(h)}</li>`).join('');
+  const wall = (a.wall||[]).map(w=>`
+    <div class="card" style="text-align:left;border-color:var(--ok);background:#02140a;margin:8px 0">
+      <div class="pill" style="color:var(--ok)">✔ ACTE ${w.num} — ${esc(w.title)}</div>
+      <p style="font-size:20px">${esc(w.reveal)}</p>
+    </div>`).join('');
+  const dots = Array.from({length:a.total},(_,i)=>
+    `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:0 4px;background:${i<a.actIndex?'var(--ok)':(i===a.actIndex?'var(--neon)':'#ffffff33')}"></span>`).join('');
+
+  stage.innerHTML = `<div style="max-width:1000px;margin:0 auto">
+    <div class="center">
+      <div class="pill neon-pink">🕵️ DOSSIER 94100 · ACTE ${act.num}/${a.total}</div>
+      <h1 class="big neon-cyan" style="margin:10px 0">${esc(act.title||'')}</h1>
+      <div class="muted" style="font-size:18px">📍 ${esc(act.place||'')}</div>
+      <div class="mt">${dots}</div>
+    </div>
+
+    <div class="card glow-box" style="text-align:left;border-color:var(--neon3);margin-top:14px">
+      <div class="pill neon-yellow">📰 ${esc(art.source||'')}${art.date?(' — '+esc(art.date)):''}</div>
+      <p style="font-size:22px;line-height:1.45">${esc(art.body||'')}</p>
+    </div>
+
+    <div class="card" style="text-align:left;margin-top:12px">
+      <p style="font-size:21px">${esc(act.scene||'')}</p>
+      <div class="card center glow-box" style="border-color:var(--neon);margin-top:12px">
+        <div class="pill neon-pink">🔑 ÉNIGME</div>
+        <p class="big">${esc(act.riddle||'')}</p>
+        <p class="neon-yellow blink" style="font-size:22px">Recoupez vos pièces et tapez le code sur un téléphone.</p>
+      </div>
+      ${hints?`<div class="card" style="border-color:var(--neon4);background:#0a0820;margin-top:10px">
+        <div class="pill neon-cyan">💡 INDICES DU GM</div><ul style="font-size:20px">${hints}</ul></div>`:''}
+    </div>
+
+    ${wall?`<div style="margin-top:14px"><div class="pixel neon-yellow center" style="font-size:13px">🧩 MUR D'ENQUÊTE</div>${wall}</div>`:''}
+  </div>`;
+  tickerEl.textContent = `ENQUÊTE — ${a.title} · Acte ${act.num}/${a.total} : ${act.title||''}`;
 }
 
 // Détection sonore de la séquence musicale (démo, note jouée, erreur, victoire)

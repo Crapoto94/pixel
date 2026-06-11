@@ -228,6 +228,10 @@ function controllerView(act) {
   if (act.type === 'quiz' || act.type === 'blindtest') {
     return quizController(act);
   }
+  // ENQUÊTE : pièces à conviction perso + saisie de code
+  if (act.type === 'enquete') {
+    return enqueteController(act);
+  }
   // REACTION RACE : gros buzzer
   if (act.type === 'reaction_race') {
     const buzzed = (act.buzzes||[]).find(b=>b.id===STATE.me.id);
@@ -396,9 +400,67 @@ function musicController(act) {
 }
 function musicPress(index, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/music/press', { index }); }
 
+function enqueteController(act) {
+  if (act.done) {
+    const f = act.finale || {};
+    return `<div class="card center glow-box" style="border-color:var(--neon3)">
+      <div class="pill neon-yellow">🔓 AFFAIRE RÉSOLUE</div>
+      <h2 class="neon-pink">${esc(f.culprit||'')}</h2>
+      <p>${esc(f.mobile||'')}</p>
+      <p class="muted">Regarde la BORNE 📺</p>
+    </div>`;
+  }
+  const a = act.act || {};
+  const frags = (act.myFragments||[]).map(f=>`
+    <div style="border:2px solid var(--neon3);border-radius:10px;padding:10px;margin:8px 0;background:#1a1400">
+      <div class="pill neon-yellow" style="font-size:11px">${esc(f.label||'PIÈCE')}</div>
+      <div style="font-size:15px;margin-top:4px">${esc(f.text||'')}</div>
+    </div>`).join('');
+  const wrong = act.lastWrong && (Date.now()-act.lastWrong < 3000)
+    ? '<p class="pixel" style="font-size:11px;color:var(--danger)">✘ Code refusé — recoupez encore !</p>' : '';
+  return `<div class="card glow-box">
+    <div class="pill neon-pink">🕵️ ENQUÊTE — ACTE ${a.num}/${act.total}</div>
+    <h2 class="neon-cyan">${esc(a.title||'')}</h2>
+    <p class="muted" style="font-size:13px">📍 ${esc(a.place||'')}</p>
+    <p style="font-size:15px"><b class="neon-pink">Énigme :</b> ${esc(a.riddle||'')}</p>
+    ${frags ? `<div class="pill neon-cyan mt">🔍 TES PIÈCES À CONVICTION</div>${frags}
+      <p class="muted" style="font-size:12px">Partage-les à voix haute avec la table : seule l'addition de toutes les pièces donne le code.</p>`
+      : `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`}
+    <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase" />
+    <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>
+    <div id="enqMsg" class="center mt">${wrong}</div>
+  </div>`;
+}
+function enqueteCode(){
+  const el = document.getElementById('enqCode');
+  const v = el ? el.value : '';
+  api('/api/enquete/code', { code: v }).then(r=>{
+    const m = document.getElementById('enqMsg');
+    if (m) m.innerHTML = r.ok
+      ? '<span class="neon-cyan pixel" style="font-size:11px">✔ ACTE DÉBLOQUÉ !</span>'
+      : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
+    poll();
+  });
+}
+
 function quizController(act) {
   const letters = ['A','B','C','D','E'];
   const title = act.type==='blindtest' ? '🎵 BLIND-TEST' : '❓ QUIZ';
+  // Fin de manche blind-test : classement + perdant
+  if (act.sub === 'final') {
+    const board = act.finalBoard || [];
+    const losers = act.loserNames || [];
+    const iLost = losers.length && board.some(b=>b.id===STATE.me.id && losers.includes(b.name));
+    return `<div class="card glow-box">
+      <div class="pill neon-yellow">🏁 BLIND-TEST TERMINÉ</div>
+      <div class="leaderboard mt">
+        ${board.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join('')}
+      </div>
+      ${losers.length
+        ? `<p class="center mt ${iLost?'neon-pink':''}">💔 ${losers.map(esc).join(', ')} perd une vie${iLost?' (toi !)':''}</p>`
+        : `<p class="center muted mt">Égalité — personne ne perd de vie.</p>`}
+    </div>`;
+  }
   const reveal = act.sub === 'reveal';
   const my = act.myAnswer;
   const choices = (act.choices||[]).map((c,i)=>{

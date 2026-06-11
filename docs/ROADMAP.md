@@ -8,8 +8,8 @@ Suivi des demandes et de leur état. (✅ fait · 🔧 en cours · ⏳ à faire)
 - ⏳ **Niveau d'énigmes supérieur (style Unlock!)** : de vraies énigmes, pas des codes triviaux.
 
 ## Énigmes collaboratives temps réel
-- ⏳ **Mosaïque de téléphones** : poser les téléphones côte à côte pour reconstituer une image (chaque tel = un fragment).
-- ⏳ **Séquence musicale collaborative** : cliquer dans le bon ordre (chacun = une note) pour rejouer un thème de jeu vidéo.
+- ✅ **Mosaïque de téléphones** : chaque tél affiche un fragment d'un mot géant (ordre mélangé) ; alignés, ils révèlent le code. Bandeau de couleur continu pour aider à l'ordre. *(GM : 🧩 Mosaïque, mot au choix.)*
+- ✅ **Séquence musicale collaborative** : chacun détient des notes, il faut les jouer dans le bon ordre pour reproduire la mélodie ; démo + indices pilotables par la GM. *(GM : 🎵 Séquence.)*
 - ✅ **PAC-MAN multijoueur** : Mr/Mrs Pac-Man + fantômes (tous humains), borne = plateau commun temps réel, manette sur chaque téléphone. Super-gommes/mode effrayé, vies, scores, victoire Pac/Fantômes. *(GM : bouton 🟡 Pac-Man.)*
 
 ## Contenu / ambiance

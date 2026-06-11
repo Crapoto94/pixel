@@ -80,6 +80,7 @@ function render(){
       <button class="btn warn" onclick="startAct('pixel_pad',{len:3})">🧒 Défi Pixels</button>
       <button class="btn warn" onclick="startAct('pacman',{seconds:120})">🟡 Pac-Man</button>
       <button class="btn warn" onclick="startAct('music_seq')">🎵 Séquence</button>
+      <button class="btn warn" onclick="mosaic()">🧩 Mosaïque</button>
     </div>
     <button class="btn danger mt" onclick="act('stopActivity')">⏹ STOP activité</button>
   </div>
@@ -147,6 +148,7 @@ function render(){
 }
 
 function startAct(type, opts={}){ act('startActivity',{type,opts}); }
+function mosaic(){ const w = prompt('Mot à reconstituer (le code) :','KONAMI'); if(w) act('startActivity',{type:'mosaic',opts:{word:w}}); }
 function spotlight(){
   const sel = document.getElementById('gageTarget');
   const name = sel && sel.value ? S.players.find(p=>p.id===sel.value).name : prompt('Qui ?','');

@@ -13,7 +13,7 @@ import { WORLDS, getWorld, normalize } from '../data/worlds.js';
 import { pickGage } from '../data/gages.js';
 import { QUESTIONS } from '../data/quiz.js';
 import { PacmanGame } from './pacman.js';
-import { NOTE_PALETTE, MELODY } from '../data/collab.js';
+import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD } from '../data/collab.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -274,6 +274,17 @@ export class GameState {
       buzzes: [], // [{id, name, t}]
       scores: {},
     };
+    // Mosaïque de téléphones : chaque joueur reçoit un fragment (ordre mélangé)
+    if (type === 'mosaic') {
+      const players = this.players.filter((p) => p.connected);
+      const n = Math.max(1, players.length);
+      const idxs = [...Array(n).keys()].sort(() => Math.random() - 0.5);
+      const slices = {};
+      players.forEach((p, i) => { slices[p.id] = idxs[i]; });
+      this.activity.word = (opts.word || MOSAIC_DEFAULT_WORD).toUpperCase();
+      this.activity.n = n;
+      this.activity.slices = slices;
+    }
     // Séquence musicale collaborative : attribution des notes aux joueurs
     if (type === 'music_seq') {
       const players = this.players.filter((p) => p.connected);
@@ -361,6 +372,7 @@ export class GameState {
     const a = this.activity;
     if (!a) return null;
     if (a.type === 'music_seq') return this.musicPublic(forPlayerId);
+    if (a.type === 'mosaic') return this.mosaicPublic(forPlayerId);
     if (a.type !== 'quiz' && a.type !== 'blindtest') return a;
     const q = this.quizQuestion();
     const list = QUESTIONS[a.deck] || [];
@@ -477,6 +489,16 @@ export class GameState {
     a.revealed = Math.min(MELODY.length, (a.revealed || 0) + 1);
     this.addLog(`💡 Indice musical : ${a.revealed} note(s) révélée(s).`);
     this.touch();
+  }
+
+  // La mosaïque : chaque joueur ne reçoit QUE son fragment (son index + le mot
+  // pour le rendu local). La borne ne reçoit pas le mot (ce serait la solution).
+  mosaicPublic(forPlayerId) {
+    const a = this.activity;
+    const mine = (forPlayerId && a.slices[forPlayerId] != null)
+      ? { slice: a.slices[forPlayerId], n: a.n, word: a.word }
+      : null;
+    return { type: 'mosaic', n: a.n, assigned: Object.keys(a.slices).length, mine };
   }
 
   musicPublic(forPlayerId) {

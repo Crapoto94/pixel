@@ -41,6 +41,7 @@ function h(strings, ...vals) { return strings.map((s,i)=>s+(vals[i]??'')).join('
 function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
 let pacKey = null;
+let mosKey = null;
 function render() {
   if (!STATE) return;
   const me = STATE.me;
@@ -51,6 +52,11 @@ function render() {
     renderPacmanPlayer(me); return;
   }
   pacKey = null;
+  // --- MOSAÏQUE : fragment plein écran ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'mosaic') {
+    renderMosaicPlayer(me); return;
+  }
+  mosKey = null;
 
   const av = me.avatarInfo;
   const hearts = '❤️'.repeat(me.lives) + '🖤'.repeat(Math.max(0,3-me.lives));
@@ -179,6 +185,61 @@ function controllerView(act) {
     </div>`;
   }
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
+}
+
+function renderMosaicPlayer(me) {
+  const mine = STATE.activity.mine;
+  const key = STATE.activity.startedAt + '-' + (mine ? mine.slice : 'x');
+  if (mosKey === key) return; // statique : on ne redessine pas à chaque SSE
+  mosKey = key;
+  if (!mine) { app.innerHTML = `<div class="card center"><h2 class="neon-cyan">🧩 MOSAÏQUE</h2><p>En attente…</p></div>`; return; }
+  const w = Math.min(window.innerWidth - 8, 520);
+  const h = Math.round(w * 0.62);
+  app.innerHTML = `
+    <div class="center">
+      <div class="pixel neon-cyan" style="font-size:12px;margin:6px">🧩 ALIGNE TON ÉCRAN</div>
+      <canvas id="moscv" width="${w}" height="${h}" style="width:${w}px;height:${h}px;border-radius:8px;background:#000"></canvas>
+      <p class="muted" style="font-size:15px">Place-toi au bon endroit dans la rangée pour reconstituer le mot.</p>
+    </div>`;
+  drawMosaicSlice(document.getElementById('moscv'), mine.word, mine.n, mine.slice);
+}
+
+function drawMosaicSlice(cv, word, n, slice) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const virtualW = n * W;
+  const barH = Math.max(10, H * 0.12);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+
+  // bandeau de couleur continu en bas (aide à retrouver l'ordre)
+  ctx.save();
+  ctx.translate(-slice * W, 0);
+  for (let x = slice * W; x < (slice + 1) * W; x += 4) {
+    const hue = (x / virtualW) * 300;
+    ctx.fillStyle = `hsl(${hue},90%,55%)`;
+    ctx.fillRect(x, H - barH, 4, barH);
+  }
+  ctx.restore();
+
+  // le mot ÉTIRÉ pour remplir toute la largeur virtuelle (chaque tél a un bout)
+  ctx.save();
+  ctx.translate(-slice * W, 0);
+  const fs = Math.floor((H - barH) * 0.8);
+  ctx.font = `900 ${fs}px "Arial Black", Arial, sans-serif`;
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const tw = ctx.measureText(word).width || 1;
+  const margin = virtualW * 0.03;
+  const scaleX = (virtualW - 2 * margin) / tw;
+  ctx.translate(margin, (H - barH) / 2 + 2);
+  ctx.scale(scaleX, 1);
+  ctx.fillStyle = '#ffe600';
+  ctx.shadowColor = '#ff2e88'; ctx.shadowBlur = 10;
+  ctx.fillText(word, 0, 0);
+  ctx.restore();
+
+  // bords latéraux pour matérialiser la tranche
+  ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, W - 2, H - 2);
 }
 
 function renderPacmanPlayer(me) {

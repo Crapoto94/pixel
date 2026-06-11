@@ -99,6 +99,19 @@ function render(){
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
   }
+  // --- Mosaïque de téléphones ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='mosaic'){
+    const a = STATE.activity;
+    stage.innerHTML = `<div class="center">
+      <h1 class="big neon-cyan">🧩 MOSAÏQUE</h1>
+      <p class="big">Posez vos <b>${a.n}</b> téléphones côte à côte,<br>dans le BON ORDRE, pour reconstituer le mot secret.</p>
+      <div class="huge">📱📱📱</div>
+      <p class="muted">Indice : le bandeau de couleur en bas des écrans doit former un dégradé continu.</p>
+      <p class="big neon-yellow">Puis tapez le mot ci-dessous 👇 (ou sur un téléphone).</p>
+    </div>`;
+    tickerEl.textContent = 'MOSAÏQUE — alignez vos téléphones !';
+    return;
+  }
   // --- Défi des enfants : prend le contrôle de la borne (insensible au SSE) ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='pixel_pad'){
     if (kidsKey !== STATE.activity.startedAt){ kidsKey = STATE.activity.startedAt; buildKidsPad(); }

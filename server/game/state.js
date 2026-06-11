@@ -23,6 +23,7 @@ const SAVE_FILE = path.join(__dirname, '..', 'save.json');
 export class GameState {
   constructor() {
     this.listeners = new Set(); // callbacks SSE
+    this.playlistTracks = []; // titres collectés depuis ytBt — survit au game reset()
     this.reset(false);
     this.load();
   }
@@ -222,6 +223,39 @@ export class GameState {
     return { belle, rigolote };
   }
 
+  // ---- Blind-test dynamique (titres collectés via IFrame API) ----------
+  addPlaylistTrack(videoId, videoTitle) {
+    if (!videoId || !videoTitle) return;
+    if (!this.playlistTracks.find(t => t.id === videoId)) {
+      this.playlistTracks.push({ id: videoId, title: videoTitle });
+    }
+  }
+
+  generateBlindTestQuestion(videoTitle, videoId) {
+    const a = this.activity;
+    if (!a || a.type !== 'blindtest') return;
+    const others = this.playlistTracks.filter(t => t.id !== videoId);
+    if (others.length < 3) return; // pas assez de titres pour faire un QCM honnête
+    const lures = [...others].sort(() => Math.random() - 0.5).slice(0, 3).map(t => t.title);
+    const choices = [...lures, videoTitle].sort(() => Math.random() - 0.5);
+    const answer = choices.indexOf(videoTitle);
+    a.generatedQuestion = { prompt: '🎵 Quel est le titre de cette chanson ?', choices, answer, points: 100 };
+    a.dynamicBlindtest = true;
+    a.pendingTrack = false;
+    a.sub = 'question';
+    a.answers = {};
+    this.addLog(`🎵 Blind-test : « ${videoTitle} » — QCM généré.`);
+    this.touch();
+  }
+
+  blindtestAsk() {
+    const a = this.activity;
+    if (!a || a.type !== 'blindtest') return;
+    a.pendingTrack = true;
+    a.generatedQuestion = null;
+    this.touch();
+  }
+
   // ---- Démarrage de partie -----------------------------------------
   startGame() {
     // Le Glitch n'est PAS désigné ici : il s'infiltre à la fin du Monde 1.
@@ -394,6 +428,12 @@ export class GameState {
       this.activity.sub = 'question'; // question | reveal
       this.activity.answers = {}; // { playerId: { choice, t } }
     }
+    // Blind-test : mode dynamique si assez de titres déjà collectés
+    if (type === 'blindtest') {
+      this.activity.dynamicBlindtest = this.playlistTracks.length >= 4;
+      this.activity.pendingTrack = false;
+      this.activity.generatedQuestion = null;
+    }
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
     this.touch();
@@ -403,6 +443,7 @@ export class GameState {
   quizQuestion() {
     const a = this.activity;
     if (!a || (a.type !== 'quiz' && a.type !== 'blindtest')) return null;
+    if (a.dynamicBlindtest) return a.generatedQuestion || null; // null = attente (pendingTrack ou avant 1ère question)
     const list = QUESTIONS[a.deck] || [];
     return list[a.qIndex] || null;
   }
@@ -438,6 +479,16 @@ export class GameState {
   quizNext() {
     const a = this.activity;
     if (!a) return;
+    if (a.dynamicBlindtest) {
+      a.generatedQuestion = null;
+      a.pendingTrack = false;
+      a.sub = 'question';
+      a.answers = {};
+      a.qIndex += 1;
+      this.addLog('⏭ Blind-test : GM, appuyez sur "❓" quand vous êtes prêts.');
+      this.touch();
+      return;
+    }
     const list = QUESTIONS[a.deck] || [];
     if (a.qIndex < list.length - 1) {
       a.qIndex += 1;
@@ -458,7 +509,7 @@ export class GameState {
     if (a.type === 'mosaic') return this.mosaicPublic(forPlayerId);
     if (a.type !== 'quiz' && a.type !== 'blindtest') return a;
     const q = this.quizQuestion();
-    const list = QUESTIONS[a.deck] || [];
+    const list = a.dynamicBlindtest ? [] : (QUESTIONS[a.deck] || []);
     const reveal = a.sub === 'reveal';
     return {
       type: a.type,
@@ -466,11 +517,11 @@ export class GameState {
       deck: a.deck,
       sub: a.sub,
       qIndex: a.qIndex,
-      total: list.length,
+      total: a.dynamicBlindtest ? null : list.length,
       prompt: q ? q.prompt : '',
       choices: q ? q.choices : [],
-      media: q ? q.media : null,
-      audioUrl: q && reveal ? q.audioUrl || null : (q ? q.audioUrl || null : null),
+      media: q ? (q.media || null) : null,
+      audioUrl: q && reveal ? (q.audioUrl || null) : null,
       answeredCount: Object.keys(a.answers).length,
       playerCount: this.players.filter((p) => p.connected).length,
       // Seulement à la révélation :
@@ -479,6 +530,9 @@ export class GameState {
       scores: reveal ? a.scores : null,
       leaderboard: reveal ? this.quizLeaderboard() : null,
       myAnswer: forPlayerId && a.answers[forPlayerId] ? a.answers[forPlayerId].choice : null,
+      // Blind-test dynamique
+      pendingTrack: a.pendingTrack || false,
+      dynamicBlindtest: a.dynamicBlindtest || false,
     };
   }
 

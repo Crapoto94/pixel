@@ -195,6 +195,23 @@ app.post('/api/photo/vote', (req, res) => {
   res.json({ ok });
 });
 
+// --- Blind-test dynamique : collecte de titres via IFrame API ---------
+// La BORNE poste chaque titre détecté (onStateChange PLAYING)
+app.post('/api/blindtest/addtrack', (req, res) => {
+  const { videoId, videoTitle } = req.body || {};
+  game.addPlaylistTrack(videoId, videoTitle);
+  res.json({ ok: true, total: game.playlistTracks.length });
+});
+
+// La BORNE poste le titre du morceau en cours quand le GM demande une question
+app.post('/api/blindtest/settrack', (req, res) => {
+  const { videoId, videoTitle } = req.body || {};
+  if (!videoId || !videoTitle) return res.status(400).json({ error: 'videoId et videoTitle requis.' });
+  game.addPlaylistTrack(videoId, videoTitle); // enregistrer au passage
+  game.generateBlindTestQuestion(videoTitle, videoId);
+  res.json({ ok: true });
+});
+
 // Défi des enfants joué directement sur la BORNE (pas de token)
 app.post('/api/kids/done', (req, res) => {
   game.markKidsDone();
@@ -248,6 +265,7 @@ app.get('/api/gm/state', (req, res) => {
     glitchName: game.player(game.glitchId)?.name || null,
     votes: game.votes,
     quizMaster,
+    playlistTrackCount: game.playlistTracks.length,
   });
 });
 
@@ -271,6 +289,7 @@ app.post('/api/gm/action', (req, res) => {
     case 'loseLife': game.loseLife(payload.playerId); break;
     case 'reset': game.reset(); break;
     case 'setPhotoPhase': game.setPhotoPhase(payload.phase ?? null); break;
+    case 'blindtestAsk': game.blindtestAsk(); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });

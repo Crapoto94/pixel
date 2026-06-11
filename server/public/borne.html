@@ -50,7 +50,7 @@ const tickerEl = document.getElementById('ticker');
 let STATE = null;
 
 let lastSse = 0;
-function applyState(s){ STATE = s; detectSounds(STATE); detectMusic(STATE); syncYT(STATE); render(); }
+function applyState(s){ STATE = s; detectSounds(STATE); detectMusic(STATE); syncYT(STATE); syncBlindtest(STATE); render(); }
 const es = new EventSource('/events');
 es.onmessage = (e) => { lastSse = Date.now(); applyState(JSON.parse(e.data)); };
 function pollBorne(){ fetch('/api/state').then(r=>r.json()).then(applyState).catch(()=>{}); }
@@ -236,33 +236,54 @@ function activityView(act){
 }
 
 function quizBorne(act){
-  const letters=['A','B','C','D','E'];
-  const reveal = act.sub==='reveal';
-  const title = act.type==='blindtest'?'🎵 BLIND-TEST':'❓ QUIZ ARCADE';
+  const letters=[‘A’,’B’,’C’,’D’,’E’];
+  const reveal = act.sub===’reveal’;
+  const title = act.type===’blindtest’?’🎵 BLIND-TEST’:’❓ QUIZ ARCADE’;
+
+  // Blind-test dynamique : la borne lit le titre en cours et attend la génération du QCM
+  if (act.pendingTrack) {
+    return `<div class="center">
+      <div class="pill neon-cyan">${title}</div>
+      <p class="huge blink">🎵</p>
+      <p class="big neon-yellow">Identifiez le titre…</p>
+      <p class="muted">Question en cours de génération.</p>
+    </div>`;
+  }
+
+  // Blind-test dynamique : avant la 1ère question (pas encore de QCM)
+  if (act.dynamicBlindtest && !(act.choices && act.choices.length)) {
+    return `<div class="center">
+      <div class="pill neon-cyan">${title}</div>
+      <p class="huge">🎵</p>
+      <p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>
+    </div>`;
+  }
+
   const choices = (act.choices||[]).map((c,i)=>{
-    let bg = '#1a0b2e', bd='#ffffff33';
-    if (reveal && i===act.answer){ bg='#063d1e'; bd='var(--ok)'; }
+    let bg = ‘#1a0b2e’, bd=’#ffffff33’;
+    if (reveal && i===act.answer){ bg=’#063d1e’; bd=’var(--ok)’; }
     return `<div class="qchoice" style="background:${bg};border-color:${bd}">
-      <b class="neon-yellow">${letters[i]}</b> ${esc(c)} ${reveal&&i===act.answer?'✔':''}</div>`;
-  }).join('');
-  const audio = (reveal && act.audioUrl) ? `<audio autoplay src="${esc(act.audioUrl)}"></audio>` : '';
+      <b class="neon-yellow">${letters[i]}</b> ${esc(c)} ${reveal&&i===act.answer?’✔’:’’}</div>`;
+  }).join(‘’);
+  const audio = (reveal && act.audioUrl) ? `<audio autoplay src="${esc(act.audioUrl)}"></audio>` : ‘’;
   const progress = `${act.answeredCount}/${act.playerCount} ont répondu`;
 
-  let footer = '';
+  let footer = ‘’;
   if (reveal && act.leaderboard){
     footer = `<div class="card leaderboard" style="max-width:600px;margin:14px auto 0;text-align:left">
       <div class="pixel neon-yellow center" style="font-size:13px">SCORES</div>
-      ${act.leaderboard.length? act.leaderboard.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join('')
-        : '<div class="muted center">Personne n’a trouvé… 😬</div>'}
+      ${act.leaderboard.length? act.leaderboard.map((p,i)=>`<div>${[‘🥇’,’🥈’,’🥉’][i]||(i+1+’.’)} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join(‘’)
+        : ‘<div class="muted center">Personne n\’a trouvé… 😬</div>’}
     </div>`;
   } else {
     footer = `<p class="big muted center mt">${progress}</p>`;
   }
 
+  const qnum = `Q${act.qIndex+1}${act.total!=null?’/’+act.total:’’}`;
   return `<div class="center">
-    <div class="pill neon-cyan">${title} — Q${act.qIndex+1}/${act.total}</div>
+    <div class="pill neon-cyan">${title} — ${qnum}</div>
     <h1 class="big neon-pink" style="margin:14px 0">${esc(act.prompt)}</h1>
-    ${act.type==='blindtest' && !reveal ? '<p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>':''}
+    ${act.type===’blindtest’ && !reveal ? ‘<p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>’:’’}
     <div style="max-width:760px;margin:auto;text-align:left">${choices}</div>
     ${footer}${audio}
   </div>`;
@@ -520,6 +541,28 @@ function renderPhotoBorne() {
   tickerEl.textContent = 'VOTE PHOTO — ouvrez votre téléphone et votez !';
 }
 
+// =================== BLIND-TEST DYNAMIQUE : settrack quand GM demande une question ===================
+let _pendingTrackSent = false;
+function syncBlindtest(s) {
+  const a = s.activity;
+  if (!a || a.type !== 'blindtest') { _pendingTrackSent = false; return; }
+  if (a.pendingTrack && !_pendingTrackSent) {
+    _pendingTrackSent = true;
+    try {
+      const d = ytBt ? ytBt.getVideoData() : null;
+      if (d && d.video_id && d.title) {
+        fetch('/api/blindtest/settrack', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ videoId: d.video_id, videoTitle: d.title }),
+        }).catch(() => { _pendingTrackSent = false; });
+      } else {
+        _pendingTrackSent = false; // ytBt pas encore prêt, retry au prochain applyState
+      }
+    } catch(_) { _pendingTrackSent = false; }
+  }
+  if (!a.pendingTrack) _pendingTrackSent = false;
+}
+
 // =================== YOUTUBE (ambiance gaming + blind-test rock) ===================
 let ytAmb = null, ytBt = null, ytApiReady = false, ytInited = false;
 
@@ -545,7 +588,21 @@ function initYT(){
         playerVars:{ listType:'playlist', list:cfg.blindtest, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
           onReady(e){ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); }, // muet, prêt à unmuter
-          onStateChange(e){ if(e.data===YT.PlayerState.ENDED) e.target.playVideo(); }
+          onStateChange(e){
+            // Collecter le titre pour le blind-test dynamique
+            if (e.data === YT.PlayerState.PLAYING) {
+              try {
+                const d = e.target.getVideoData();
+                if (d && d.video_id && d.title) {
+                  fetch('/api/blindtest/addtrack', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ videoId: d.video_id, videoTitle: d.title }),
+                  }).catch(()=>{});
+                }
+              } catch(_) {}
+            }
+            if (e.data === YT.PlayerState.ENDED) e.target.playVideo();
+          }
         }
       });
     }

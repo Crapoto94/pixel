@@ -114,6 +114,15 @@ function render(){
     </div>
   </div>`:''}
 
+  ${S.activity && S.activity.type === 'blindtest' && S.activity.dynamicBlindtest && !S.quizMaster ? `
+  <div class="card" style="border-color:var(--neon3)">
+    <div class="pixel neon-yellow" style="font-size:11px">🎵 BLIND-TEST DYNAMIQUE · ${S.playlistTrackCount||0} titre(s) collecté(s)</div>
+    ${S.activity.pendingTrack
+      ? `<div class="mt muted">⏳ La BORNE lit le titre en cours…</div>`
+      : `<button class="btn warn mt" onclick="act('blindtestAsk')">❓ Poser la question (titre actuel)</button>`
+    }
+  </div>` : ''}
+
   ${S.quizMaster ? `
   <div class="card" style="border-color:var(--neon3)">
     <div class="pixel neon-yellow" style="font-size:11px">🎙️ MJ — QUESTION ${(S.quizMaster.qIndex??0)+1}</div>

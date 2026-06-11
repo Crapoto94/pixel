@@ -323,7 +323,7 @@ function renderPacmanBorne(){
       </div>`;
   }
   const canvas = document.getElementById('paccanvas');
-  if (canvas) drawPacman(canvas, pm, null);
+  if (canvas) drawPacman(canvas, pm, null, { names: true });
   // sons sur les événements (capture / fantôme mangé)
   if (SOUND_ON && window.SFX && pm.events && pm.events.length){
     let maxAt = pacEventSeen;

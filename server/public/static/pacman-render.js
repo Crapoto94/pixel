@@ -2,7 +2,18 @@
 //  Rendu Pac-Man sur <canvas> — partagé par la BORNE et les téléphones.
 //  drawPacman(canvas, pm, meId)  où pm = STATE.pacman.
 // =====================================================================
-window.drawPacman = function (canvas, pm, meId) {
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+window.drawPacman = function (canvas, pm, meId, opts) {
+  opts = opts || {};
   const ctx = canvas.getContext('2d');
   const W = pm.w, H = pm.h;
   const cell = Math.floor(Math.min(canvas.width / W, canvas.height / H));
@@ -56,6 +67,25 @@ window.drawPacman = function (canvas, pm, meId) {
       ctx.beginPath();
       ctx.arc(cx, cy, rad + 4, 0, 7);
       ctx.stroke();
+    }
+    // pastille avec le prénom du joueur (sur la borne)
+    if (opts.names && e.name) {
+      ctx.shadowBlur = 0;
+      const fs = Math.max(9, Math.floor(cell * 0.4));
+      ctx.font = `bold ${fs}px Arial`;
+      const tw = ctx.measureText(e.name).width;
+      const padX = 5, ph = fs + 6, pw = tw + padX * 2;
+      let px = cx - pw / 2;
+      let py = cy - rad - ph - 2;
+      if (py < 2) py = cy + rad + 2;                       // sinon en dessous
+      px = Math.max(2, Math.min(canvas.width - pw - 2, px)); // garde dans le cadre
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      roundRect(ctx, px, py, pw, ph, 5); ctx.fill();
+      ctx.strokeStyle = e.role === 'ghost' ? (e.color || '#fff') : (e.role === 'mr' ? '#ffe600' : '#ff6db0');
+      ctx.lineWidth = 1.5; roundRect(ctx, px, py, pw, ph, 5); ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(e.name, px + pw / 2, py + ph / 2 + 1);
     }
   }
 

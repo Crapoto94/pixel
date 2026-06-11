@@ -276,7 +276,7 @@ function renderPacmanPlayer(me) {
       : '👻 TU ES UN FANTÔME';
     const extra = pm.status==='pacwin' ? ' — 🟡 PAC GAGNE !'
       : pm.status==='ghostwin' ? ' — 👻 FANTÔMES GAGNENT !'
-      : (ent && ent.lives!=null ? ' '+'❤'.repeat(Math.max(0,ent.lives)) : '');
+      : ` — ÉQUIPE ${'❤'.repeat(Math.max(0,pm.teamLives))||'💀'}`;
     msg.innerHTML = `<span class="neon-cyan">${role}</span>${esc(extra)}`;
   }
 }

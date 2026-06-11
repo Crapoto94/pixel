@@ -29,6 +29,7 @@ export class GameState {
   reset(persist = true) {
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
+    this.pacRotation = []; // historique des rôles Pac (rotation entre manches)
     this.phase = 'lobby'; // lobby | world | bonus | activity | finale | win
     this.worldIndex = 0; // index dans WORLDS
     this.activity = null; // activité BORNE en cours (objet)
@@ -64,7 +65,11 @@ export class GameState {
   }
 
   save() {
-    const { listeners, ...data } = this;
+    // On exclut ce qui n'est pas sérialisable / éphémère :
+    //  - listeners (Set de callbacks SSE)
+    //  - pacmanTimer (objet Timer -> structure circulaire)
+    //  - pacman (partie en cours, recréée à chaque manche)
+    const { listeners, pacmanTimer, pacman, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -430,7 +435,19 @@ export class GameState {
       this.touch();
       return;
     }
-    this.pacman = new PacmanGame(players, opts);
+    // --- Rotation des rôles : priorité à ceux qui n'ont pas encore été Pac ---
+    if (!this.pacRotation) this.pacRotation = [];
+    let pool = players.filter((p) => !this.pacRotation.includes(p.id));
+    if (pool.length < 2) { this.pacRotation = []; pool = players.slice(); } // nouveau cycle
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const mrId = opts.mrId || shuffled[0].id;
+    let mrsId = opts.mrsId || (shuffled.find((p) => p.id !== mrId) || {}).id;
+    if (!mrsId) { mrsId = (players.find((p) => p.id !== mrId) || {}).id; }
+    this.pacRotation.push(mrId, mrsId);
+    const mr = this.player(mrId), mrs = this.player(mrsId);
+
+    this.pacman = new PacmanGame(players, { ...opts, mrId, mrsId });
+    if (mr && mrs) this.addLog(`🟡 Pac-Man : ${mr.name} (Mr) & ${mrs.name} (Mrs) cette manche.`);
     this.activity = { type: 'pacman', startedAt: Date.now(), state: 'running', data: {} };
     this.phase = 'activity';
     this.addLog('🟡 PAC-MAN lancé ! Mr & Mrs Pac-Man contre les fantômes.');

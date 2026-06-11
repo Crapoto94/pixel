@@ -58,6 +58,34 @@ window.drawPacman = function (canvas, pm, meId) {
       ctx.stroke();
     }
   }
+
+  // --- effets : capture d'un Pac (rouge) / fantôme mangé (cyan + "200") ---
+  if (pm.events) {
+    for (const ev of pm.events) {
+      const cx = ox + ev.c * cell + cell / 2;
+      const cy = oy + ev.r * cell + cell / 2;
+      const t = Math.min(1, ev.age / 600);
+      const rr = cell * (0.3 + t * 1.4);
+      ctx.globalAlpha = 1 - t;
+      ctx.strokeStyle = ev.type === 'ghost_eaten' ? '#2effd5' : '#ff3b3b';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 7); ctx.stroke();
+      ctx.beginPath();
+      for (let k = 0; k < 8; k++) {
+        const a = k * Math.PI / 4;
+        ctx.moveTo(cx + Math.cos(a) * rr * 0.4, cy + Math.sin(a) * rr * 0.4);
+        ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      if (ev.type === 'ghost_eaten') {
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.floor(cell * 0.9)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText('200', cx, cy - rr - 2);
+      }
+    }
+  }
 };
 
 function drawPac(ctx, cx, cy, rad, e, pm) {

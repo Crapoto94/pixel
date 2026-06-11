@@ -4,8 +4,8 @@ Suivi des demandes et de leur état. (✅ fait · 🔧 en cours · ⏳ à faire)
 
 ## Ajustements de gameplay
 - 🔧 **Le Glitch n'est PLUS désigné au démarrage** — il est tiré au sort plus tard (à la fin du Monde 1, quand la BORNE annonce l'infiltration). Plus de réveil instantané.
-- ⏳ **Missions joueurs affinées** + **réseau d'indices social** : chaque joueur sait *quelque chose* sur un autre (un indice fourni). Sert l'enquête et les interactions.
-- ⏳ **Niveau d'énigmes supérieur (style Unlock!)** : de vraies énigmes, pas des codes triviaux.
+- ✅ **Missions joueurs affinées** + **réseau d'indices social** : chaque joueur reçoit une mission perso + un **indice secret sur un autre** (mélange enquête : réduction « X ou Y », disculpations vraies, diversion pour le Glitch, et indices sociaux). Carnet secret sur le téléphone. Source : `data/clues.js`.
+- ⏳ **Niveau d'énigmes supérieur (style Unlock!)** : de vraies énigmes, pas des codes triviaux. *(prochaine étape)*
 
 ## Énigmes collaboratives temps réel
 - ✅ **Mosaïque de téléphones** : chaque tél affiche un fragment d'un mot géant (ordre mélangé) ; alignés, ils révèlent le code. Bandeau de couleur continu pour aider à l'ordre. *(GM : 🧩 Mosaïque, mot au choix.)*

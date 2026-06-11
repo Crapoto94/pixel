@@ -14,6 +14,7 @@ import { pickGage } from '../data/gages.js';
 import { QUESTIONS } from '../data/quiz.js';
 import { PacmanGame } from './pacman.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD } from '../data/collab.js';
+import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -39,6 +40,7 @@ export class GameState {
     this.heroAwakened = false; // Vincent a-t-il reçu ses pouvoirs ?
     this.kidsDone = false; // les Pixels (enfants) ont-ils réussi leur défi ?
     this.votes = {}; // { voterId: targetId }
+    this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
     this.log = []; // journal d'événements (récents en tête)
     this.players = PLAYERS.map((p) => ({
       ...p,
@@ -140,8 +142,46 @@ export class GameState {
     if (pool.length === 0) return;
     const chosen = pool[Math.floor(rng() * pool.length)];
     this.glitchId = chosen.id;
+    this.generateClues(rng);
     this.addLog('🐛 Le GLITCH a été désigné secrètement par le serveur.');
     this.touch();
+  }
+
+  // Réseau d'indices : chaque joueur reçoit une mission + un indice secret.
+  generateClues(rng = Math.random) {
+    const shuffle = (arr) => [...arr].sort(() => rng() - 0.5);
+    const players = this.players;
+    const glitch = this.glitchId;
+    // Le pool réel de suspects = les joueurs éligibles (pas le héros ni l'hôte)
+    const suspects = players.filter((p) => p.glitchEligible);
+    const suspectInno = shuffle(suspects.filter((p) => p.id !== glitch)); // suspects innocents
+    const recipients = shuffle(players.filter((p) => p.id !== glitch));   // qui reçoit un indice d'enquête
+    this.clues = {};
+    players.forEach((p) => {
+      this.clues[p.id] = { mission: AVATAR_MISSION[p.avatar] || 'Amuse-toi et marque des points.', clue: null };
+    });
+
+    // 1) Indice « réduction » : le Glitch est X ou Y (Y = un VRAI suspect)
+    const decoy = suspectInno[0];
+    if (recipients[0] && decoy) {
+      const pair = shuffle([this.player(glitch).name, decoy.name]);
+      this.clues[recipients[0].id].clue = `🕵️ Le GLITCH est soit ${pair[0]}, soit ${pair[1]}. À toi de trancher.`;
+    }
+    // 2) Indices « disculpation » : nomme un suspect innocent (toujours vrai, fait avancer l'enquête)
+    [recipients[1], recipients[2]].forEach((recip, i) => {
+      const cleared = suspectInno[(i + 1) % suspectInno.length] || suspectInno[0];
+      if (recip && cleared) this.clues[recip.id].clue = `✅ Tu en es témoin : ${cleared.name} n'est PAS le Glitch.`;
+    });
+    // 3) Le Glitch reçoit une consigne de diversion
+    this.clues[glitch].clue = `😈 Tu es le GLITCH. Sème le doute : oriente discrètement les soupçons vers quelqu'un d'autre.`;
+    // 4) Les autres reçoivent un indice social (chacun sait un truc sur un autre)
+    players.forEach((p, i) => {
+      if (this.clues[p.id].clue) return;
+      const others = players.filter((q) => q.id !== p.id);
+      const target = others[Math.floor(rng() * others.length)];
+      const fact = SOCIAL_FACTS[Math.floor(rng() * SOCIAL_FACTS.length)];
+      this.clues[p.id].clue = `🔎 Tu sais un truc sur ${target.name} : il/elle ${fact}. Va lui en parler.`;
+    });
   }
 
   // ---- Démarrage de partie -----------------------------------------
@@ -616,6 +656,9 @@ export class GameState {
       indices: world && world.indices ? (world.indices[me.avatar] || null) : null,
       // Missions du Glitch (visibles uniquement par lui)
       glitchMission: isGlitch ? this.glitchMissionFor(world) : null,
+      // Carnet secret : mission perso + indice sur un autre joueur
+      mission: this.clues[me.id] ? this.clues[me.id].mission : null,
+      secretClue: this.clues[me.id] ? this.clues[me.id].clue : null,
     };
   }
 

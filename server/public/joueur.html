@@ -144,6 +144,16 @@ function render() {
     </div>`;
   }
 
+  // --- Carnet secret : mission perso + indice sur un autre joueur ---
+  if (me.mission || me.secretClue) {
+    html += `<div class="card" style="border-color:var(--neon2);background:#021a16">
+      <div class="pill neon-cyan">🤫 TON CARNET SECRET</div>
+      ${me.mission ? `<p><b class="neon-cyan">Ta mission :</b> ${esc(me.mission)}</p>` : ''}
+      ${me.secretClue ? `<p><b class="neon-cyan">Ton indice :</b> ${esc(me.secretClue)}</p>` : ''}
+      <p class="muted">Pour toi seul·e. Sers-t'en au bon moment 😉</p>
+    </div>`;
+  }
+
   // --- Panneau Game Master (Vincent éveillé) ou hôte (Marc) ---
   if (me.gameMaster || me.isHost) {
     html += gmPlayerPanel(me);

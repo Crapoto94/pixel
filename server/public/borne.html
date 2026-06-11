@@ -427,6 +427,23 @@ function renderEnqueteBorne(a){
 
   const act = a.act || {};
   const art = act.article || {};
+  // Revue de presse (vrais articles) : cartes avec source, date, résumé et URL
+  const pressBlock = (act.sources && act.sources.length) ? `
+    <div class="card" style="text-align:left;border-color:var(--neon3);margin-top:14px;background:#05030f">
+      <div class="pill neon-yellow">📰 REVUE DE PRESSE — faits réels (sources citées)</div>
+      ${act.sources.map(s=>`<div style="border-top:1px solid #ffffff22;padding:12px 0">
+        <div class="neon-cyan" style="font-size:21px;font-weight:bold">${esc(s.title)}</div>
+        <div class="muted" style="font-size:16px">${esc(s.source)}${s.date?(' · '+esc(s.date)):''} — <span style="color:var(--neon4)">${esc(s.url)}</span></div>
+        <p style="font-size:19px;line-height:1.4;margin:6px 0 0">${esc(s.summary)}</p>
+      </div>`).join('')}
+    </div>` : '';
+  const artBlock = (!act.sources && (art.body)) ? `
+    <div class="card glow-box" style="text-align:left;border-color:var(--neon3);margin-top:14px">
+      <div class="pill neon-yellow">📄 ${esc(art.source||'')}${art.date?(' — '+esc(art.date)):''}</div>
+      <p style="font-size:22px;line-height:1.45">${esc(art.body||'')}</p>
+    </div>` : '';
+  const mapBlock = act.map ? enqueteMapSvg(act.map) : '';
+  const cipherBlock = act.cipher ? enqueteCipherStrip(act.cipher) : '';
   const hints = (a.hintList||[]).map(h=>`<li>${esc(h)}</li>`).join('');
   const wall = (a.wall||[]).map(w=>`
     <div class="card" style="text-align:left;border-color:var(--ok);background:#02140a;margin:8px 0">
@@ -444,10 +461,7 @@ function renderEnqueteBorne(a){
       <div class="mt">${dots}</div>
     </div>
 
-    <div class="card glow-box" style="text-align:left;border-color:var(--neon3);margin-top:14px">
-      <div class="pill neon-yellow">📰 ${esc(art.source||'')}${art.date?(' — '+esc(art.date)):''}</div>
-      <p style="font-size:22px;line-height:1.45">${esc(art.body||'')}</p>
-    </div>
+    ${pressBlock}${artBlock}${mapBlock}${cipherBlock}
 
     <div class="card" style="text-align:left;margin-top:12px">
       <p style="font-size:21px">${esc(act.scene||'')}</p>
@@ -463,6 +477,55 @@ function renderEnqueteBorne(a){
     ${wall?`<div style="margin-top:14px"><div class="pixel neon-yellow center" style="font-size:13px">🧩 MUR D'ENQUÊTE</div>${wall}</div>`:''}
   </div>`;
   tickerEl.textContent = `ENQUÊTE — ${a.title} · Acte ${act.num}/${a.total} : ${act.title||''}`;
+}
+
+// Plan stylisé de Saint-Maur : la Marne + les sites publics remarquables.
+// On NE trace PAS le parcours (c'est aux joueurs de relier les points dans
+// l'ordre de leurs indices pour faire apparaître la lettre).
+function enqueteMapSvg(map){
+  const L = map.landmarks || [];
+  const river = map.river ? `
+    <path d="M2,40 C18,8 50,6 70,16 C92,28 100,55 88,78 C74,98 34,98 20,82 C8,68 2,55 2,40 Z"
+      fill="none" stroke="#1b6fb8" stroke-width="2.4" opacity="0.55"/>
+    <path d="M2,40 C18,8 50,6 70,16 C92,28 100,55 88,78 C74,98 34,98 20,82 C8,68 2,55 2,40 Z"
+      fill="#0a2a44" opacity="0.18"/>` : '';
+  const dots = L.map((m)=>`
+    <circle cx="${m.x}" cy="${m.y}" r="2.4" fill="#ffe600" stroke="#ff2e88" stroke-width="0.9"/>
+    <circle cx="${m.x}" cy="${m.y}" r="4.2" fill="none" stroke="#ffe600" stroke-width="0.4" opacity="0.5"/>
+  `).join('');
+  // étiquettes : côté explicite par site (lbl) pour éviter les chevauchements
+  const labels = L.map((m)=>{
+    const side = m.lbl || (m.x > 55 ? 'l' : 'r');
+    let tx = m.x, ty = m.y + 1.1, anchor = 'middle';
+    if (side === 'r') { tx = m.x + 5; anchor = 'start'; }
+    else if (side === 'l') { tx = m.x - 5; anchor = 'end'; }
+    else if (side === 't') { ty = m.y - 5; anchor = 'middle'; }
+    else if (side === 'b') { ty = m.y + 6.5; anchor = 'middle'; }
+    return `<text x="${tx}" y="${ty}" font-size="2.7" fill="#dffaff"
+      text-anchor="${anchor}" style="font-family:var(--term)">${esc(m.short||m.name)}</text>`;
+  }).join('');
+  return `<div class="card" style="text-align:center;border-color:var(--neon4);margin-top:14px;background:#03020c">
+    <div class="pill neon-cyan">🗺️ PLAN DE SAINT-MAUR — sites publics remarquables</div>
+    <p class="muted" style="font-size:17px">${esc(map.instruction||'')}</p>
+    <svg viewBox="0 0 100 100" style="width:100%;max-width:760px;height:auto;background:#03020c;border:2px solid #ffffff22;border-radius:10px">
+      ${river}${dots}${labels}
+    </svg>
+    <p class="neon-yellow" style="font-size:18px">Reliez les 7 sites dans l'ordre de vos indices : le tracé dessine une lettre.</p>
+  </div>`;
+}
+
+// Bandeau de déchiffrement César : alphabet numéroté + cryptogramme.
+function enqueteCipherStrip(c){
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const alpha = A.map((ch,i)=>`<span style="display:inline-block;width:30px;text-align:center;border:1px solid #ffffff22;padding:3px 0">
+    <div class="neon-cyan" style="font-size:18px">${ch}</div><div class="muted" style="font-size:11px">${i+1}</div></span>`).join('');
+  const crypto = (c.ciphertext||'').split('').map(ch=>`<span style="display:inline-block;width:42px;height:52px;line-height:52px;text-align:center;margin:3px;border:3px solid var(--neon);border-radius:8px;background:#1a0b2e" class="neon-yellow">${esc(ch)}</span>`).join('');
+  return `<div class="card glow-box" style="text-align:center;border-color:var(--neon);margin-top:14px">
+    <div class="pill neon-pink">🔐 MESSAGE CODÉ — clé : « ${esc(c.keyLetter||'?')} »</div>
+    <div style="margin:10px 0">${crypto}</div>
+    <p class="muted" style="font-size:17px">${esc(c.help||'')}</p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:8px">${alpha}</div>
+  </div>`;
 }
 
 // Détection sonore de la séquence musicale (démo, note jouée, erreur, victoire)

@@ -826,8 +826,14 @@ export class GameState {
       solvedCount: idx,
       done: !!a.done,
       act: act && {
-        num: act.num, title: act.title, place: act.place,
-        article: act.article, scene: act.scene, riddle: act.riddle,
+        num: act.num, title: act.title, place: act.place, kind: act.kind || 'text',
+        article: act.article || null, sources: act.sources || null,
+        map: act.map || null, cipher: act.cipher ? {
+          // on n'envoie JAMAIS la solution en clair (plain) aux clients
+          ciphertext: act.cipher.ciphertext, keyLetter: act.cipher.keyLetter,
+          shift: act.cipher.shift, help: act.cipher.help,
+        } : null,
+        scene: act.scene, riddle: act.riddle,
       },
       hintList: act ? (act.hints || []).slice(0, nHints) : [],
       // Le « mur d'enquête » : révélations des actes déjà résolus

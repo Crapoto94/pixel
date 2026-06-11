@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DOSSIER 94100 — Matériel d'enquête à imprimer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Special+Elite&family=Nunito:wght@400;700;900&display=swap');
+  * { box-sizing: border-box; }
+  body { font-family: 'Nunito', system-ui, sans-serif; margin: 0; background: #ece8f5; color: #1a1030; }
+  .bar { position: sticky; top: 0; background: #160a2e; color: #fff; padding: 12px 18px; display: flex;
+    gap: 14px; align-items: center; z-index: 10; flex-wrap: wrap; }
+  .bar h1 { font-family: 'Press Start 2P'; font-size: 13px; margin: 0; color: #ff2e88; }
+  .bar button { font-family: 'Press Start 2P'; font-size: 11px; padding: 10px 14px; border: 0; border-radius: 8px;
+    background: #2effd5; color: #00231c; cursor: pointer; }
+  .bar .muted { opacity: .75; font-size: 13px; }
+  .sheet { padding: 16px; max-width: 1100px; margin: 0 auto; }
+  .sheet h2 { font-family: 'Press Start 2P'; font-size: 13px; color: #7a5cff; margin: 22px 6px 10px; }
+  .intro { background:#fff; border:2px solid #160a2e; border-radius:10px; padding:14px 18px; font-size:15px; }
+  .intro b { color:#7a5cff; }
+
+  .cards { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* Pièce à conviction (format ~ carte à jouer, look dossier) */
+  .clue { width: 86mm; min-height: 54mm; border-radius: 8px; padding: 6mm; position: relative;
+    background: #fffdf5; border: 2px solid #1a1030; box-shadow: 0 2px 0 #1a1030;
+    font-family: 'Special Elite', 'Courier New', monospace; display: flex; flex-direction: column; }
+  .clue .tag { font-family: 'Press Start 2P'; font-size: 7px; background: #1a1030; color: #ffe07a;
+    padding: 4px 6px; border-radius: 5px; align-self: flex-start; }
+  .clue .act { position:absolute; top:5mm; right:5mm; font-family:'Press Start 2P'; font-size:7px; color:#b00; }
+  .clue .label { font-weight: bold; font-size: 13px; margin: 6mm 0 2mm; color:#7a1d1d; }
+  .clue .txt { font-size: 15px; line-height: 1.35; }
+  .clue .foot { margin-top:auto; font-size:10px; color:#999; padding-top:4mm; }
+  .clue.giveaway { background:#fff0f0; }
+
+  /* Fiche MJ */
+  .gm { background:#160a2e; color:#fff; border-radius:10px; padding:14px 18px; }
+  .gm table { width:100%; border-collapse:collapse; font-size:14px; }
+  .gm th, .gm td { text-align:left; padding:7px 8px; border-bottom:1px solid #ffffff22; vertical-align:top; }
+  .gm th { color:#2effd5; font-family:'Press Start 2P'; font-size:9px; }
+  .gm code { color:#ffe07a; font-size:16px; font-weight:bold; letter-spacing:1px; }
+  .gm .rev { color:#c9c2e6; font-size:13px; }
+
+  /* Plan */
+  .mapwrap { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+  .mapcard { background:#fff; border:2px solid #1a1030; border-radius:10px; padding:10px; }
+  .mapcard svg { display:block; width:150mm; max-width:100%; height:auto; background:#fbfaff; border-radius:6px; }
+  .mapkey svg { width:70mm; }
+  .mapcard h3 { font-family:'Press Start 2P'; font-size:9px; margin:2px 4px 8px; }
+
+  /* Cryptogramme */
+  .cipher { background:#fff; border:2px solid #1a1030; border-radius:10px; padding:14px 18px; }
+  .cipher .crypto span { display:inline-block; width:34px; height:44px; line-height:44px; text-align:center;
+    margin:3px; border:2px solid #7a5cff; border-radius:6px; font-family:'Press Start 2P'; font-size:13px; }
+  .cipher .alpha span { display:inline-block; width:30px; text-align:center; border:1px solid #ccc; padding:2px 0; font-size:13px; }
+  .cipher .alpha small { color:#999; font-size:10px; }
+
+  @media print {
+    body { background: #fff; }
+    .bar { display: none; }
+    .sheet { padding: 0; max-width:none; }
+    .clue, .mapcard, .cipher, .gm, .intro { page-break-inside: avoid; }
+    h2 { page-break-before: always; }
+    .sheet h2:first-of-type { page-break-before: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>DOSSIER 94100</h1>
+  <button onclick="window.print()">🖨️ IMPRIMER</button>
+  <span class="muted">Imprime en couleur, active « Graphiques d'arrière-plan ». Découpe les pièces à conviction et distribue-les. La FICHE MJ reste secrète (organisateur).</span>
+</div>
+<div id="app" class="sheet"><p style="padding:20px">Chargement du dossier…</p></div>
+
+<script>
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+fetch('/api/enquete/full').then(r=>r.json()).then(d=>render(d.enquete)).catch(e=>{
+  document.getElementById('app').innerHTML = '<p style="padding:20px;color:#c00">Erreur de chargement : '+esc(String(e))+'</p>';
+});
+
+// Plan SVG : version joueur (sans tracé) ou clé MJ (avec le chemin + la lettre).
+function mapSvg(map, withPath){
+  const L = map.landmarks || [];
+  const river = map.river ? `<path d="M2,40 C18,8 50,6 70,16 C92,28 100,55 88,78 C74,98 34,98 20,82 C8,68 2,55 2,40 Z" fill="#dbeefb" stroke="#7fb3da" stroke-width="1.6"/>` : '';
+  const path = withPath ? `<polyline points="${L.map(m=>m.x+','+m.y).join(' ')}" fill="none" stroke="#e0167a" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>` : '';
+  const dots = L.map((m,i)=>`<circle cx="${m.x}" cy="${m.y}" r="2.3" fill="#ffcf33" stroke="#1a1030" stroke-width="0.7"/>${withPath?`<text x="${m.x}" y="${m.y-3}" font-size="3" fill="#e0167a" text-anchor="middle" font-family="Arial" font-weight="bold">${i+1}</text>`:''}`).join('');
+  const labels = withPath ? '' : L.map((m)=>{
+    const side = m.lbl || (m.x>55?'l':'r');
+    let tx=m.x, ty=m.y+1, anchor='middle';
+    if(side==='r'){tx=m.x+4;anchor='start';}
+    else if(side==='l'){tx=m.x-4;anchor='end';}
+    else if(side==='t'){ty=m.y-4;}
+    else if(side==='b'){ty=m.y+5.5;}
+    return `<text x="${tx}" y="${ty}" font-size="2.6" fill="#1a1030" text-anchor="${anchor}" font-family="Arial">${esc(m.short||m.name)}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 100 100">${river}${path}${dots}${labels}</svg>`;
+}
+
+function render(E){
+  const acts = E.acts || [];
+  const mapAct = acts.find(a=>a.kind==='map');
+  const cipherAct = acts.find(a=>a.kind==='cipher');
+
+  // ① Fiche MJ — solution
+  const gmRows = acts.map(a=>`<tr>
+    <td><b>${a.num}</b></td>
+    <td>${esc(a.title)}</td>
+    <td><code>${esc(a.answer)}</code></td>
+    <td class="rev">${esc(a.reveal)}</td>
+  </tr>`).join('');
+  const gm = `<div class="gm">
+    <table>
+      <tr><th>#</th><th>Acte</th><th>Code</th><th>Ce que ça révèle</th></tr>
+      ${gmRows}
+    </table>
+    <p class="rev" style="margin-top:12px">🗺️ Le plan (acte ${mapAct?mapAct.num:'3'}) dessine la lettre <code>${mapAct?mapAct.map.letter:'G'}</code>, qui sert de clé au cryptogramme (acte ${cipherAct?cipherAct.num:'6'}).</p>
+  </div>`;
+
+  // ② Pièces à conviction (cartes à découper), regroupées par acte
+  const clueSheets = acts.map(a=>{
+    const cards = (a.fragments||[]).map(f=>{
+      const give = /leurre|fausse piste/i.test(f.text) ? ' giveaway' : '';
+      return `<div class="clue${give}">
+        <div class="tag">PIÈCE À CONVICTION</div>
+        <div class="act">ACTE ${a.num}</div>
+        <div class="label">${esc(f.label)}</div>
+        <div class="txt">${esc(f.text)}</div>
+        <div class="foot">Dossier 94100 · ${esc(a.title)}</div>
+      </div>`;
+    }).join('');
+    return `<h2>Pièces — Acte ${a.num} : ${esc(a.title)}</h2><div class="cards">${cards}</div>`;
+  }).join('');
+
+  // ③ Plan
+  const mapBlock = mapAct ? `
+    <h2>Plan de la ville — à poser sur la table</h2>
+    <div class="mapwrap">
+      <div class="mapcard"><h3>POUR LES JOUEURS (à relier)</h3>${mapSvg(mapAct.map,false)}
+        <p style="font-size:13px;margin:8px 4px 0">${esc(mapAct.map.instruction||'')}</p></div>
+      <div class="mapcard mapkey"><h3>🔒 CLÉ MJ</h3>${mapSvg(mapAct.map,true)}
+        <p style="font-size:13px;margin:8px 4px 0">Le tracé 1→7 dessine un <b>${esc(mapAct.map.letter)}</b>.</p></div>
+    </div>` : '';
+
+  // ④ Cryptogramme
+  const cipherBlock = cipherAct ? (()=>{
+    const c = cipherAct.cipher;
+    const crypto = (c.ciphertext||'').split('').map(ch=>`<span>${esc(ch)}</span>`).join('');
+    const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((ch,i)=>`<span>${ch}<br><small>${i+1}</small></span>`).join('');
+    return `<h2>Cryptogramme — Acte ${cipherAct.num}</h2>
+      <div class="cipher">
+        <div class="crypto">${crypto}</div>
+        <p style="font-size:14px">${esc(c.help||'')}</p>
+        <div class="alpha">${alpha}</div>
+        <p style="font-size:12px;color:#999">🔒 MJ : se décode en « ${esc(c.plain)} » avec la clé ${esc(c.keyLetter)}.</p>
+      </div>`;
+  })() : '';
+
+  document.getElementById('app').innerHTML = `
+    <div class="intro">
+      <b>${esc(E.title)}</b><br>${esc(E.pitch)}
+      <p style="margin:10px 0 0;font-size:13px;color:#777">${esc((E.finale&&E.finale.disclaimer)||'')}</p>
+    </div>
+
+    <h2>① FICHE MJ — solution (à NE PAS distribuer)</h2>
+    ${gm}
+
+    ${mapBlock}
+
+    ${cipherBlock}
+
+    ${clueSheets}`;
+}
+</script>
+</body>
+</html>

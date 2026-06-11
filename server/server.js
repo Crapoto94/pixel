@@ -14,6 +14,7 @@ import { AVATARS } from './data/avatars.js';
 import { SCENARIO_SLIDES, AVATAR_BRIEF } from './data/briefing.js';
 import { PHOTO_MISSIONS } from './data/photos.js';
 import { SPOTLIGHT_DEFIS } from './data/spotlight.js';
+import { ENQUETE } from './data/enquete.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -45,6 +46,14 @@ app.get('/', (req, res) => res.redirect('/borne'));
 app.get('/borne', (req, res) => res.sendFile(path.join(__dirname, 'public', 'borne.html')));
 app.get('/gm', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gm.html')));
 app.get('/print', (req, res) => res.sendFile(path.join(__dirname, 'public', 'print.html')));
+app.get('/print-enquete', (req, res) => res.sendFile(path.join(__dirname, 'public', 'print-enquete.html')));
+
+// Données complètes de l'enquête pour la page d'impression du MJ (cartes +
+// fiche solution). Réservé à l'organisateur — contient les réponses.
+app.get('/api/enquete/full', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ enquete: ENQUETE });
+});
 
 // Données pour la page d'impression (cartes-avatars + QR + colis)
 app.get('/api/print', async (req, res) => {

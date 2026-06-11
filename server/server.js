@@ -204,6 +204,13 @@ app.post('/api/blindtest/addtrack', (req, res) => {
   res.json({ ok: true, total: game.playlistTracks.length });
 });
 
+// La BORNE poste TOUS les IDs de la playlist (getPlaylist) → titrage via oEmbed
+app.post('/api/blindtest/playlist', async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  const added = await game.ingestPlaylist(ids);
+  res.json({ ok: true, total: game.playlistTracks.length, added });
+});
+
 // --- Spotlight : vote de la salle (réussi / raté) --------------------
 app.post('/api/spotlight/vote', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

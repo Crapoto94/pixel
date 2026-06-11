@@ -6,6 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import https from 'https';
 import { fileURLToPath } from 'url';
 import { PLAYERS, NPCS, CONFIG } from '../config.js';
 import { AVATARS } from '../data/avatars.js';
@@ -232,6 +233,41 @@ export class GameState {
     if (!this.playlistTracks.find(t => t.id === videoId)) {
       this.playlistTracks.push({ id: videoId, title: videoTitle });
     }
+  }
+
+  // Petit GET JSON sans dépendance (oEmbed YouTube — endpoint public, pas de clé)
+  _getJson(url) {
+    return new Promise((resolve) => {
+      const req = https.get(url, (res) => {
+        if (res.statusCode !== 200) { res.resume(); return resolve(null); }
+        let data = '';
+        res.on('data', (c) => { data += c; });
+        res.on('end', () => { try { resolve(JSON.parse(data)); } catch { resolve(null); } });
+      });
+      req.on('error', () => resolve(null));
+      req.setTimeout(6000, () => { req.destroy(); resolve(null); });
+    });
+  }
+
+  // Reçoit la liste COMPLÈTE des IDs de la playlist (depuis getPlaylist() côté
+  // borne) et récupère chaque titre via l'oEmbed YouTube, par petits lots.
+  async ingestPlaylist(ids) {
+    const todo = (ids || []).filter((id) => id && !this.playlistTracks.find((t) => t.id === id));
+    let added = 0;
+    const fetchTitle = async (id) => {
+      const url = 'https://www.youtube.com/oembed?format=json&url='
+        + encodeURIComponent('https://www.youtube.com/watch?v=' + id);
+      const d = await this._getJson(url);
+      if (d && d.title) { this.addPlaylistTrack(id, d.title); added++; }
+    };
+    for (let i = 0; i < todo.length; i += 6) {
+      await Promise.all(todo.slice(i, i + 6).map(fetchTitle));
+    }
+    if (added) {
+      this.addLog(`🎵 Blind-test : ${this.playlistTracks.length} titres en mémoire (playlist complète).`);
+      this.touch();
+    }
+    return added;
   }
 
   // Pioche un titre AU HASARD dans la playlist collectée, ordonne à la borne

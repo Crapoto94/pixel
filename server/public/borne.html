@@ -558,22 +558,26 @@ function renderPhotoBorne() {
   tickerEl.textContent = 'VOTE PHOTO — ouvrez votre téléphone et votez !';
 }
 
-// Moissonne rapidement les titres de la playlist rock (lecteur muet) pour
-// constituer le pool de réponses possibles, sans déranger l'ambiance.
-let _harvested = false;
+// Récupère TOUTE la playlist rock d'un coup : getPlaylist() renvoie la liste
+// complète des IDs chargés ; le serveur en tire les titres via oEmbed. Aucun
+// défilement, aucune gêne pour la lecture. On retente car la liste met parfois
+// 1-2 s à se peupler, et on rafraîchit (les mix radio s'allongent en jouant).
+let _harvestTimer = null;
 function harvestTracks(player){
-  if (_harvested) return;
-  _harvested = true;
-  let n = 0;
-  const MAX = 18; // ~18 titres suffisent largement pour des QCM variés
-  const tick = () => {
-    // On ne moissonne pas pendant un blind-test (la borne joue une vidéo précise)
-    const inBT = STATE && STATE.activity && STATE.activity.type === 'blindtest';
-    if (inBT) return; // arrêt définitif : on a basculé en mode jeu
-    try { player.nextVideo(); } catch(_){}
-    if (++n < MAX) setTimeout(tick, 1800);
+  if (_harvestTimer) return;
+  const grab = () => {
+    let ids = [];
+    try { ids = player.getPlaylist() || []; } catch(_){}
+    if (ids && ids.length) {
+      fetch('/api/blindtest/playlist', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ ids })
+      }).catch(()=>{});
+    }
   };
-  setTimeout(tick, 2600); // laisse la 1ère vidéo démarrer (et s'enregistrer)
+  setTimeout(grab, 800);
+  let n = 0;
+  _harvestTimer = setInterval(() => { grab(); if (++n >= 12) { clearInterval(_harvestTimer); } }, 2500);
 }
 
 // =================== BLIND-TEST DYNAMIQUE ===================

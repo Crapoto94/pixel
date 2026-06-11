@@ -15,6 +15,7 @@ import { QUESTIONS } from '../data/quiz.js';
 import { PacmanGame } from './pacman.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
+import { PHOTO_MISSIONS } from '../data/photos.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -41,6 +42,9 @@ export class GameState {
     this.kidsDone = false; // les Pixels (enfants) ont-ils réussi leur défi ?
     this.votes = {}; // { voterId: targetId }
     this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
+    this.photos = []; // [{id, playerId, playerName, avatar, missionIdx, missionLabel, url, uploadedAt}]
+    this.photoVotes = {}; // { voterId: { belle: photoId|null, rigolote: photoId|null } }
+    this.photoPhase = null; // null | 'vote' | 'results'
     this.log = []; // journal d'événements (récents en tête)
     this.players = PLAYERS.map((p) => ({
       ...p,
@@ -182,6 +186,40 @@ export class GameState {
       const fact = SOCIAL_FACTS[Math.floor(rng() * SOCIAL_FACTS.length)];
       this.clues[p.id].clue = `🔎 Tu sais un truc sur ${target.name} : il/elle ${fact}. Va lui en parler.`;
     });
+  }
+
+  // ---- Défis photo -------------------------------------------------
+  addPhoto(photo) {
+    const idx = this.photos.findIndex(p => p.playerId === photo.playerId && p.missionIdx === photo.missionIdx);
+    if (idx >= 0) this.photos.splice(idx, 1, photo); else this.photos.push(photo);
+    this.addLog(`📸 ${photo.playerName} — défi photo #${photo.missionIdx + 1} soumis.`);
+    this.touch();
+  }
+
+  castPhotoVote(voterId, photoId, category) {
+    const photo = this.photos.find(p => p.id === photoId);
+    if (!photo || photo.playerId === voterId) return false;
+    if (category !== 'belle' && category !== 'rigolote') return false;
+    if (!this.photoVotes[voterId]) this.photoVotes[voterId] = {};
+    this.photoVotes[voterId][category] = photoId;
+    this.touch();
+    return true;
+  }
+
+  setPhotoPhase(phase) {
+    this.photoPhase = phase || null;
+    if (phase === 'vote') this.addLog('📸 VOTE PHOTO ouvert ! Votez sur vos téléphones.');
+    else if (phase === 'results') this.addLog('🏆 PALMARÈS PHOTO — résultats affichés sur la BORNE.');
+    this.touch();
+  }
+
+  photoResults() {
+    const belle = {}, rigolote = {};
+    for (const votes of Object.values(this.photoVotes)) {
+      if (votes.belle) belle[votes.belle] = (belle[votes.belle] || 0) + 1;
+      if (votes.rigolote) rigolote[votes.rigolote] = (rigolote[votes.rigolote] || 0) + 1;
+    }
+    return { belle, rigolote };
   }
 
   // ---- Démarrage de partie -----------------------------------------
@@ -626,6 +664,9 @@ export class GameState {
       currentGage: this.currentGage,
       activity: this.activityPublic(me ? me.id : null),
       pacman: this.pacman ? this.pacman.publicState(me ? me.id : null) : null,
+      photoPhase: this.photoPhase,
+      photos: this.photoPhase ? this.photos : [],
+      photoResults: this.photoPhase === 'results' ? this.photoResults() : null,
       log: this.log.slice(0, 12),
       players: this.players.map((p) => ({
         id: p.id, name: p.name, avatar: p.avatar, connected: p.connected,
@@ -659,6 +700,10 @@ export class GameState {
       // Carnet secret : mission perso + indice sur un autre joueur
       mission: this.clues[me.id] ? this.clues[me.id].mission : null,
       secretClue: this.clues[me.id] ? this.clues[me.id].clue : null,
+      // Défis photo
+      photoMissions: PHOTO_MISSIONS[me.avatar] || [],
+      myPhotos: this.photos.filter(p => p.playerId === me.id).map(p => ({ missionIdx: p.missionIdx, url: p.url })),
+      myPhotoVotes: this.photoVotes[me.id] || {},
     };
   }
 

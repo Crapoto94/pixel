@@ -134,6 +134,10 @@ function render(){
     return;
   }
   kidsKey = null;
+
+  // --- Galerie photo (vote ou résultats) ---
+  if (STATE.photoPhase) { renderPhotoBorne(); return; }
+
   const connected = STATE.players.filter(p=>p.connected).length;
   let html = '';
 
@@ -454,6 +458,65 @@ function buildKidsPad(){
   pads.forEach((p,i)=>p.addEventListener('click', ()=>tap(i)));
   document.getElementById('kidsreplay').addEventListener('click', playSequence);
   playSequence();
+}
+
+// =================== GALERIE PHOTO ===================
+function renderPhotoBorne() {
+  const photos = STATE.photos || [];
+  const results = STATE.photoResults;
+
+  if (STATE.photoPhase === 'results' && results) {
+    const topOf = (obj) => Object.entries(obj||{}).sort((a,b)=>b[1]-a[1])[0];
+    const [belleId, belleVotes] = topOf(results.belle) || [];
+    const [rigoloteId, rigoloteVotes] = topOf(results.rigolote) || [];
+    const belle = photos.find(p=>p.id===belleId);
+    const rigolote = photos.find(p=>p.id===rigoloteId);
+    const allPhotos = photos.map(p=>{
+      const bv = results.belle?.[p.id]||0, rv = results.rigolote?.[p.id]||0;
+      const isBelle = p.id===belleId, isRig = p.id===rigoloteId;
+      return `<div style="text-align:center;padding:8px">
+        <img src="${esc(p.url)}" style="width:190px;height:140px;object-fit:cover;border-radius:8px;
+          border:4px solid ${isBelle?'#FFD700':isRig?'#ff2e88':'#ffffff22'}">
+        <div style="font-size:14px;margin-top:4px">${esc(p.playerName)}</div>
+        <div style="font-size:11px;color:#aaa">${esc(p.missionLabel)}</div>
+        <div style="font-size:13px;margin-top:2px">${bv?`<span style="color:gold">🏆${bv}</span> `:''}${rv?`<span style="color:#ff2e88">😂${rv}</span>`:''}</div>
+      </div>`;
+    }).join('');
+    stage.innerHTML = `<div class="center">
+      <h1 class="huge neon-yellow pixel">🏆 PALMARÈS PHOTO</h1>
+      <div class="row" style="gap:24px;justify-content:center;flex-wrap:wrap;margin:20px 0">
+        ${belle?`<div class="card glow-box" style="max-width:380px;border-color:#FFD700;text-align:center">
+          <div class="pill" style="color:#FFD700">🏆 PLUS BELLE — ${belleVotes} vote(s)</div>
+          <div class="big">${esc(belle.playerName)}</div>
+          <img src="${esc(belle.url)}" style="width:100%;max-height:280px;object-fit:cover;border-radius:8px;margin-top:8px">
+        </div>`:''}
+        ${rigolote?`<div class="card glow-box" style="max-width:380px;border-color:#ff2e88;text-align:center">
+          <div class="pill" style="color:#ff2e88">😂 PLUS RIGOLOTE — ${rigoloteVotes} vote(s)</div>
+          <div class="big">${esc(rigolote.playerName)}</div>
+          <img src="${esc(rigolote.url)}" style="width:100%;max-height:280px;object-fit:cover;border-radius:8px;margin-top:8px">
+        </div>`:''}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:1200px;margin:0 auto">${allPhotos}</div>
+    </div>`;
+    tickerEl.textContent = 'PALMARÈS PHOTO — les gagnants sont…';
+    return;
+  }
+
+  // Phase vote
+  const grid = photos.length
+    ? photos.map(p=>`<div style="text-align:center;padding:8px">
+        <img src="${esc(p.url)}" style="width:200px;height:150px;object-fit:cover;border-radius:8px;border:3px solid #ffffff22">
+        <div style="font-size:14px;margin-top:4px">${esc(p.playerName)}</div>
+        <div style="font-size:12px;color:#aaa">${esc(p.missionLabel)}</div>
+      </div>`).join('')
+    : '<p class="big muted">Aucune photo soumise pour l\'instant…</p>';
+  stage.innerHTML = `<div class="center">
+    <h1 class="big neon-pink">📸 VOTE PHOTO</h1>
+    <p class="big">🏆 La plus belle &nbsp;&nbsp; 😂 La plus rigolote</p>
+    <p class="muted">Votez sur vos téléphones — vous ne pouvez pas voter pour vos propres photos.</p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:1100px;margin:16px auto">${grid}</div>
+  </div>`;
+  tickerEl.textContent = 'VOTE PHOTO — ouvrez votre téléphone et votez !';
 }
 
 // =================== YOUTUBE (ambiance gaming + blind-test rock) ===================

@@ -6,18 +6,38 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { mkdirSync } from 'fs';
+import multer from 'multer';
 import QRCode from 'qrcode';
 import { CONFIG, PLAYERS, NPCS } from './config.js';
 import { AVATARS } from './data/avatars.js';
 import { SCENARIO_SLIDES, AVATAR_BRIEF } from './data/briefing.js';
+import { PHOTO_MISSIONS } from './data/photos.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Dossier uploads (photos joueurs)
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+mkdirSync(UPLOADS_DIR, { recursive: true });
+const photoUpload = multer({
+  storage: multer.diskStorage({
+    destination: UPLOADS_DIR,
+    filename(req, file, cb) {
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      cb(null, `ph_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
+  fileFilter(req, file, cb) { cb(null, /^image\//.test(file.mimetype)); },
+});
+
 const app = express();
 const game = new GameState();
 
 app.use(express.json());
 app.use('/static', express.static(path.join(__dirname, 'public', 'static')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // --- Pages -----------------------------------------------------------
 app.get('/', (req, res) => res.redirect('/borne'));
@@ -144,6 +164,37 @@ app.post('/api/answer', (req, res) => {
   res.json({ ok: true });
 });
 
+// --- Photos joueurs --------------------------------------------------
+app.post('/api/photo/upload', photoUpload.single('photo'), (req, res) => {
+  const token = req.body?.token;
+  const p = token && game.playerByToken(token);
+  if (!p) return res.status(403).json({ error: 'Token invalide.' });
+  if (!req.file) return res.status(400).json({ error: 'Aucune image reçue.' });
+  const missionIdx = parseInt(req.body.missionIdx || '0', 10);
+  const missions = PHOTO_MISSIONS[p.avatar] || [];
+  const mission = missions[missionIdx] || null;
+  const photo = {
+    id: `ph_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    playerId: p.id,
+    playerName: p.name,
+    avatar: p.avatar,
+    missionIdx,
+    missionLabel: mission?.label || `Défi #${missionIdx + 1}`,
+    filename: req.file.filename,
+    url: `/uploads/${req.file.filename}`,
+    uploadedAt: Date.now(),
+  };
+  game.addPhoto(photo);
+  res.json({ ok: true, photo });
+});
+
+app.post('/api/photo/vote', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  const { photoId, category } = req.body;
+  const ok = game.castPhotoVote(p.id, photoId, category);
+  res.json({ ok });
+});
+
 // Défi des enfants joué directement sur la BORNE (pas de token)
 app.post('/api/kids/done', (req, res) => {
   game.markKidsDone();
@@ -219,6 +270,7 @@ app.post('/api/gm/action', (req, res) => {
     case 'tallyVotes': return res.json({ ok: true, result: game.tallyVotes() });
     case 'loseLife': game.loseLife(payload.playerId); break;
     case 'reset': game.reset(); break;
+    case 'setPhotoPhase': game.setPhotoPhase(payload.phase ?? null); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });

@@ -47,6 +47,31 @@ function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>
 
 let pacKey = null;
 let mosKey = null;
+
+// --- Upload photo (input caché, réutilisé) ---
+let _photoMissionIdx = 0;
+const _photoInput = (() => {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.style.display = 'none';
+  document.body.appendChild(inp);
+  inp.addEventListener('change', async () => {
+    const file = inp.files[0]; if (!file) return;
+    const btn = document.getElementById('photo-btn-' + _photoMissionIdx);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
+    const fd = new FormData();
+    fd.append('photo', file);
+    fd.append('token', TOKEN);
+    fd.append('missionIdx', String(_photoMissionIdx));
+    try {
+      const r = await fetch('/api/photo/upload', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (d.ok) poll();
+    } catch (_) {}
+    inp.value = '';
+  });
+  return inp;
+})();
+function uploadPhoto(idx) { _photoMissionIdx = idx; _photoInput.click(); }
 function render() {
   if (!STATE) return;
   const me = STATE.me;
@@ -92,6 +117,19 @@ function render() {
   // --- Vote du Glitch ---
   if (STATE.phase === 'vote') {
     html += voteView();
+    app.innerHTML = html + footer();
+    return;
+  }
+
+  // --- Vote / résultats photo ---
+  if (STATE.photoPhase === 'vote') {
+    html += photoVoteView(me);
+    app.innerHTML = html + footer();
+    return;
+  }
+  if (STATE.photoPhase === 'results') {
+    html += `<div class="card center glow-box"><div class="pill neon-yellow">🏆 PALMARÈS PHOTO</div><p class="big">Regarde la BORNE ! 📺</p></div>`;
+    html += photoSection(me);
     app.innerHTML = html + footer();
     return;
   }
@@ -161,6 +199,9 @@ function render() {
 
   // --- Gage en cours ---
   if (STATE.currentGage) html += gageView(STATE.currentGage, me);
+
+  // --- Défis photo (toujours visibles hors activité) ---
+  html += photoSection(me);
 
   app.innerHTML = html + footer();
 }
@@ -395,6 +436,57 @@ function gmPlayerPanel(me) {
     <select id="gmTarget" style="width:100%;padding:10px;font-family:var(--term);font-size:20px">${targets}</select>
     <button class="btn warn mt" onclick="gmGage()">🎲 LANCER UN GAGE</button>
   </div>`;
+}
+
+// --- Défis photo ---
+function photoSection(me) {
+  const missions = me.photoMissions || [];
+  const done = me.myPhotos || [];
+  const items = missions.map((m, i) => {
+    const up = done.find(p => p.missionIdx === i);
+    return `<div style="border:2px solid ${up ? 'var(--ok)' : '#ffffff22'};border-radius:10px;padding:10px;margin:8px 0;background:#021018">
+      ${up ? `<img src="${esc(up.url)}" style="width:100%;max-height:110px;object-fit:cover;border-radius:6px;margin-bottom:6px">` : ''}
+      <div style="font-size:13px;color:${up ? 'var(--ok)' : 'var(--neon2)'}"><b>${esc(m.label)}</b>${up ? ' ✓' : ''}</div>
+      <div class="muted" style="font-size:12px;margin:4px 0 8px">${esc(m.desc)}</div>
+      <button id="photo-btn-${i}" class="btn ${up ? '' : 'warn'}" style="font-size:11px;width:100%" onclick="uploadPhoto(${i})">
+        ${up ? '🔄 Remplacer' : '📸 Prendre / choisir'}
+      </button>
+    </div>`;
+  }).join('');
+  return `<div class="card" style="border-color:var(--neon2)">
+    <div class="pill neon-cyan">📸 DÉFIS PHOTO</div>
+    <p class="muted" style="font-size:13px">Prends des photos au fil de la soirée — elles seront votées à la fin !</p>
+    ${items}
+  </div>`;
+}
+
+function photoVoteView(me) {
+  const photos = (STATE.photos || []).filter(p => p.playerId !== me.id);
+  const myVotes = me.myPhotoVotes || {};
+  if (!photos.length) return `<div class="card center"><div class="pill neon-yellow">📸 VOTE PHOTO</div><p>Pas encore de photos à voter…</p></div>`;
+  const items = photos.map(p => {
+    const bv = myVotes.belle === p.id, rv = myVotes.rigolote === p.id;
+    return `<div style="border:2px solid #ffffff22;border-radius:10px;padding:10px;margin:8px 0;background:#020a18">
+      <img src="${esc(p.url)}" style="width:100%;max-height:160px;object-fit:cover;border-radius:6px;margin-bottom:6px">
+      <div style="font-size:13px"><b>${esc(p.playerName)}</b> — <span class="muted">${esc(p.missionLabel)}</span></div>
+      <div class="row mt" style="gap:8px">
+        <button class="btn ${bv ? 'secondary' : ''}" style="flex:1;font-size:12px" onclick="photoVote('${p.id}','belle')">
+          ${bv ? '🏆 ✓' : '🏆 Belle'}
+        </button>
+        <button class="btn ${rv ? 'secondary' : ''}" style="flex:1;font-size:12px" onclick="photoVote('${p.id}','rigolote')">
+          ${rv ? '😂 ✓' : '😂 Rigolote'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="card" style="border-color:var(--neon)">
+    <div class="pill neon-yellow">📸 VOTE PHOTO</div>
+    <p class="muted" style="font-size:13px">Pas de vote pour tes propres photos !</p>
+    ${items}
+  </div>`;
+}
+function photoVote(photoId, category) {
+  api('/api/photo/vote', { photoId, category }).then(poll);
 }
 
 // --- Actions ---

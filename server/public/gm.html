@@ -93,6 +93,17 @@ function render(){
     <button class="btn danger mt" onclick="act('stopActivity')">⏹ STOP activité</button>
   </div>
 
+  <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">📸 DÉFIS PHOTO</div>
+    <div class="muted mt" style="font-size:13px">Photos : <code>${S.photos ? S.photos.length : 0}</code> soumises</div>
+    <div class="grid3 mt">
+      <button class="btn warn" onclick="act('setPhotoPhase',{phase:'vote'})">📸 Ouvrir vote</button>
+      <button class="btn secondary" onclick="act('setPhotoPhase',{phase:'results'})">🏆 Résultats</button>
+      <button class="btn" onclick="act('setPhotoPhase',{phase:null})">⏹ Fermer galerie</button>
+    </div>
+    ${S.photoPhase ? `<div class="mt"><span class="pill neon-yellow">Phase : ${S.photoPhase}</span></div>` : ''}
+  </div>
+
   ${S.activity && S.activity.type === 'music_seq' ? `
   <div class="card" style="border-color:var(--neon3)">
     <div class="pixel neon-yellow" style="font-size:11px">🎵 SÉQUENCE MUSICALE</div>

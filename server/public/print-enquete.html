@@ -115,7 +115,8 @@ function render(E){
       <tr><th>#</th><th>Acte</th><th>Code</th><th>Ce que ça révèle</th></tr>
       ${gmRows}
     </table>
-    <p class="rev" style="margin-top:12px">🗺️ Le plan (acte ${mapAct?mapAct.num:'3'}) dessine la lettre <code>${mapAct?mapAct.map.letter:'G'}</code>, qui sert de clé au cryptogramme (acte ${cipherAct?cipherAct.num:'6'}).</p>
+    <p class="rev" style="margin-top:12px">🗺️ Le plan (acte ${mapAct?mapAct.num:'?'}) dessine la lettre <code>${mapAct?mapAct.map.letter:'G'}</code>, qui sert de clé au cryptogramme (acte ${cipherAct?cipherAct.num:'?'}).</p>
+    ${(E.finale&&E.finale.cast)?`<p class="rev">🎭 ${esc(E.finale.cast)}</p>`:''}
   </div>`;
 
   // ② Pièces à conviction (cartes à découper), regroupées par acte
@@ -130,7 +131,8 @@ function render(E){
         <div class="foot">Dossier 94100 · ${esc(a.title)}</div>
       </div>`;
     }).join('');
-    return `<h2>Pièces — Acte ${a.num} : ${esc(a.title)}</h2><div class="cards">${cards}</div>`;
+    const humor = a.humor ? `<p style="font-style:italic;color:#7a1d1d;font-size:14px;margin:0 6px 8px">📎 ${esc(a.humor)}</p>` : '';
+    return `<h2>Pièces — Acte ${a.num} : ${esc(a.title)}</h2>${humor}<div class="cards">${cards}</div>`;
   }).join('');
 
   // ③ Plan

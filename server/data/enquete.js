@@ -20,10 +20,11 @@
 //   ACTE 1 — REVUE DE PRESSE → l'année où l'affaire éclate ............ 2013
 //   ACTE 2 — L'ORGANIGRAMME → le DGS (Frédéric) qui falsifiait ....... ERZEN
 //   ACTE 3 — L'AMALGAME DES DEUX FRÉDÉRIC → le chevalier blanc ..... COUPAYE
-//   ACTE 4 — LE PLAN DE LA VILLE → le tracé dessine la lettre-clé ........ G
-//   ACTE 5 — LES QUATRE DSI → le seul sans alibi ................. GUILLAUME
-//   ACTE 6 — CINQUANTE BONS → 50 bons = 50 verres brisés ............... 50
-//   ACTE 7 — LE MESSAGE CODÉ (clé = G) → le mobile ............. PARAPHEUR
+//   ACTE 4 — LE FALSIFICATEUR EN CHEF → le complice en cavale ...... LEJARRE
+//   ACTE 5 — LE PLAN DE LA VILLE → le tracé dessine la lettre-clé ........ G
+//   ACTE 6 — LES QUATRE DSI → le seul sans alibi ................. GUILLAUME
+//   ACTE 7 — CINQUANTE BONS → 50 bons = 50 verres brisés ............... 50
+//   ACTE 8 — LE MESSAGE CODÉ (clé = G) → le mobile ............. PARAPHEUR
 // =====================================================================
 
 export const ENQUETE = {
@@ -91,6 +92,9 @@ export const ENQUETE = {
         "C'est l'actuel maire qui, cette année-là, met la main sur le contrat litigieux.",
         "Réponse : 2013.",
       ],
+      humor:
+        "Note de l'inspecteur : 50 verres brisés, mais la coupe pleine intacte. Soit un message " +
+        "codé, soit la directrice était radine même pour son dernier toast.",
       reveal:
         "ACTE 1 — Tout s'arrête en 2013, quand le contrat Idéepôle est découvert. La directrice " +
         "des finances validait les paiements. Mais une signature revenait AU-DESSUS de la sienne : " +
@@ -135,6 +139,9 @@ export const ENQUETE = {
         "L'annuaire interne (une pièce de conviction) donne le nom complet.",
         "Réponse : ERZEN.",
       ],
+      humor:
+        "Note de l'inspecteur : Erzen rangeait les faux dans un dossier nommé « NE_PAS_OUVRIR_" +
+        "vacances.jpg ». On l'a ouvert en premier.",
       reveal:
         "ACTE 2 — Le DGS, Frédéric ERZEN, réécrivait les montants ; la directrice Vasseur validait " +
         "ses faux. Deux complices. Mais les bons étaient RÉDIGÉS plus bas, à la DSI. Et là, un " +
@@ -180,11 +187,14 @@ export const ENQUETE = {
         "Coupaye a déposé un signalement interne en 2012… ignoré, puis placardisé. Un lanceur d'alerte, pas un voleur.",
         "Le chevalier blanc : Frédéric COUPAYE.",
       ],
+      humor:
+        "Note de l'inspecteur : Coupaye a alerté 7 fois. La hiérarchie lui a offert un mug et un " +
+        "pot de départ. Sans le pot.",
       reveal:
         "ACTE 3 — Piège déjoué : Frédéric COUPAYE n'a jamais trempé. Agent de la DSI, il avait " +
         "ALERTÉ en interne dès 2012 sur les bons réécrits — on l'a fait taire, muté, oublié. " +
-        "C'est même lui qui a laissé la trace qui vous guide. Reste à trouver QUI, à la DSI, a " +
-        "vraiment rédigé puis vengé ces bons. Suivez la dernière tournée de la directrice…",
+        "C'est même lui qui a laissé la trace qui vous guide. Mais avant le tueur, il reste un " +
+        "VRAI complice à débusquer : celui qui a ouvert le système financier à Erzen…",
       fragments: [
         { label: "Pièce C1 — amalgame", text: "Sur un brouillon : « Frédéric, DSI ». Mais DEUX Frédéric y bossaient : Erzen (DGS) et Coupaye (agent). Ne pas confondre !" },
         { label: "Pièce C2 — fausse piste", text: "Le nom de COUPAYE apparaît au bas de plusieurs bons → il semble complice. (mais voir C4 et C5…)" },
@@ -196,11 +206,60 @@ export const ENQUETE = {
     },
 
     // ===============================================================
-    //  ACTE 4 — LE PLAN DE LA VILLE (le tracé dessine une lettre = clé)
+    //  ACTE 4 — LE FALSIFICATEUR EN CHEF (Camus Lejarre, en cavale)
     // ===============================================================
     {
       num: 4,
-      key: 'a4',
+      key: 'a4l',
+      kind: 'logic',
+      title: 'LE FALSIFICATEUR EN CHEF',
+      place: "Direction des Finances — régie comptable & salle des serveurs",
+      article: {
+        source: "JOURNAL DES CONNEXIONS — extrait restauré",
+        date: "—",
+        body:
+          "Erzen savait gonfler des montants, pas pirater un logiciel comptable. Quelqu'un lui a " +
+          "OUVERT les portes du système financier et EFFACÉ les traces : un prestataire fantôme, " +
+          "compte admin « C.L. », créé hors marché. Puis, quand la police a commencé à roder, " +
+          "l'homme a disparu du jour au lendemain — parti « se mettre au vert ».",
+      },
+      scene:
+        "Voici le cerveau technique : le FALSIFICATEUR EN CHEF. C'est lui qui a injecté les faux " +
+        "dans la compta et nettoyé les logs pour couvrir Erzen. Il a filé à la campagne avant " +
+        "l'interpellation. Recoupez vos pièces et donnez son NOM de famille.",
+      riddle:
+        "Qui a ouvert le système financier à Erzen, effacé les traces, puis fui se mettre au vert ? " +
+        "(nom de famille du falsificateur en chef)",
+      answer: 'LEJARRE',
+      hints: [
+        "Initiales du compte admin pirate : « C.L. ». Le C, c'est Camus.",
+        "Il a quitté la mairie en catastrophe quand la police a rôdé — adresse de réexpédition : un hameau perdu.",
+        "Le falsificateur en chef : Camus LEJARRE.",
+      ],
+      humor:
+        "Note de l'inspecteur : Lejarre a fui si vite qu'il a laissé son mug « World's Best " +
+        "Falsificateur » encore tiède, et 14 pizzas facturées au budget « fournitures de bureau ».",
+      reveal:
+        "ACTE 4 — Le falsificateur en chef est Camus LEJARRE. Prestataire fantôme, il a ouvert la " +
+        "compta à Erzen et effacé les logs, avant de se volatiliser à la campagne dès que la PJ a " +
+        "approché. Le réseau est complet : ERZEN (DGS) + VASSEUR (finances) + LEJARRE (technique). " +
+        "Reste le tueur. Suivez la dernière tournée de la directrice dans la ville…",
+      fragments: [
+        { label: "Pièce D1 — log admin", text: "Compte admin hors marché « C.L. » créé en 2010, accès TOTAL à la compta. Prénom au dossier : Camus." },
+        { label: "Pièce D2 — RH fantôme", text: "Camus LEJARRE : « prestataire » jamais passé en commission de marché. Payé en liquide." },
+        { label: "Pièce D3 — effacement", text: "Les journaux d'audit ont été PURGÉS la nuit du 24 — par le compte C.L." },
+        { label: "Pièce D4 — cavale", text: "Lejarre a rendu son badge un vendredi soir et n'est jamais revenu. Voisins : « parti se mettre au vert »." },
+        { label: "Pièce D5 — leurre", text: "Un stagiaire, Kevin LARENNE, a les mêmes initiales inversées. Il était en cours de BTS. (fausse piste)" },
+        { label: "Pièce D6 — témoin", text: "« Lejarre ? Le magicien des chiffres. Il faisait disparaître une ligne comptable comme un lapin. »" },
+      ],
+    },
+
+    // ===============================================================
+    //  ACTE 5 — LE PLAN DE LA VILLE (le tracé dessine une lettre = clé)
+    // ===============================================================
+    {
+      num: 5,
+      key: 'a5',
       kind: 'map',
       title: 'LE PARCOURS DANS LA VILLE',
       place: "Boucle de la Marne — sites remarquables de Saint-Maur",
@@ -236,8 +295,11 @@ export const ENQUETE = {
         "On remonte par la droite (la gare) puis on rentre vers le centre (Villa Médicis) : c'est un crochet.",
         "Le tracé dessine un G — comme une certaine initiale. Réponse : G.",
       ],
+      humor:
+        "Note de l'inspecteur : la directrice notait ses tournées au dos de tickets de parking. " +
+        "L'un d'eux mène à un kebab. On a vérifié. Par conscience professionnelle.",
       reveal:
-        "ACTE 4 — Le parcours dessine un G. Une initiale qui revient… La lettre G est votre CLÉ : " +
+        "ACTE 5 — Le parcours dessine un G. Une initiale qui revient… La lettre G est votre CLÉ : " +
         "notez-la, elle décodera le dernier message. Et elle pointe déjà un suspect.",
       fragments: [
         { label: "Étape 1", text: "Le parcours DÉMARRE à l'Hôtel de Ville (en haut à droite du plan)." },
@@ -251,11 +313,11 @@ export const ENQUETE = {
     },
 
     // ===============================================================
-    //  ACTE 5 — LES QUATRE DSI (et l'adjoint Vincent)
+    //  ACTE 6 — LES QUATRE DSI (et l'adjoint Vincent)
     // ===============================================================
     {
-      num: 5,
-      key: 'a5d',
+      num: 6,
+      key: 'a6d',
       kind: 'logic',
       title: 'LES QUATRE DSI (ET L\'ADJOINT)',
       place: "Boucle de la Marne — nuit du crime",
@@ -280,8 +342,11 @@ export const ENQUETE = {
         "Blaise (retraité à La Rochelle), Marc (au Théâtre de Saint-Maur), Djalal (muté à l'étranger) : couverts.",
         "Le parcours dessinait un G. Réponse : GUILLAUME.",
       ],
+      humor:
+        "Note de l'inspecteur : Vincent l'adjoint a un alibi béton ET un sourire à 32 dents qui " +
+        "rayent le parquet. Les deux sont suspects, un seul est puni par la loi.",
       reveal:
-        "ACTE 5 — GUILLAUME. Ancien DSI, parti sans bruit après le « ménage » dans les archives. " +
+        "ACTE 6 — GUILLAUME. Ancien DSI, parti sans bruit après le « ménage » dans les archives. " +
         "Pas d'alibi, badge actif, et l'initiale que la ville elle-même dessinait. Reste à " +
         "comprendre POURQUOI il a brisé exactement 50 verres.",
       fragments: [
@@ -295,11 +360,11 @@ export const ENQUETE = {
     },
 
     // ===============================================================
-    //  ACTE 6 — CINQUANTE BONS, CINQUANTE VERRES
+    //  ACTE 7 — CINQUANTE BONS, CINQUANTE VERRES
     // ===============================================================
     {
-      num: 6,
-      key: 'a6c',
+      num: 7,
+      key: 'a7c',
       kind: 'count',
       title: 'CINQUANTE BONS, CINQUANTE VERRES',
       place: "Quartier de La Varenne — bennes, rue Saint-Hilaire",
@@ -325,8 +390,11 @@ export const ENQUETE = {
         "Le total est rond, et correspond EXACTEMENT au nombre de verres brisés.",
         "Réponse : 50.",
       ],
+      humor:
+        "Note de l'inspecteur : le légiste a recompté trois fois. À 49 il s'est ouvert une bière, " +
+        "à 50 il a compris le message. Corrélation troublante.",
       reveal:
-        "ACTE 6 — 50 bons falsifiés à la signature de Guillaume. 50 trahisons. 50 verres brisés " +
+        "ACTE 7 — 50 bons falsifiés à la signature de Guillaume. 50 trahisons. 50 verres brisés " +
         "autour de la directrice : un éclat pour chaque bon maquillé en son nom. Le compte est un " +
         "message. Reste à le décoder.",
       fragments: [
@@ -340,11 +408,11 @@ export const ENQUETE = {
     },
 
     // ===============================================================
-    //  ACTE 7 — LE MESSAGE CODÉ (clé = la lettre du parcours, G)
+    //  ACTE 8 — LE MESSAGE CODÉ (clé = la lettre du parcours, G)
     // ===============================================================
     {
-      num: 7,
-      key: 'a7',
+      num: 8,
+      key: 'a8',
       kind: 'cipher',
       title: 'LE MESSAGE CODÉ',
       place: "Villa Médicis (La Varenne) — réveillon de la mairie",
@@ -364,9 +432,9 @@ export const ENQUETE = {
         help: "Clé = G, la 7ᵉ lettre de l'alphabet. Recule CHAQUE lettre de 7 rangs (W→P, H→A…).",
       },
       scene:
-        "Vous tenez le coupable (Guillaume), les complices (Erzen + la directrice), le compte (50) " +
-        "et la date (2013). Décodez le dernier mot avec la clé G : il nomme l'objet qui a tout " +
-        "déclenché, et clôt le dossier.",
+        "Vous tenez le coupable (Guillaume), les complices (Erzen, la directrice et Lejarre le " +
+        "falsificateur en chef), le compte (50) et la date (2013). Décodez le dernier mot avec la " +
+        "clé G : il nomme l'objet qui a tout déclenché, et clôt le dossier.",
       riddle:
         "Décodez « WHYHWOLBY » avec la clé G (recul de 7 lettres). Quel mot obtenez-vous ?",
       answer: 'PARAPHEUR',
@@ -375,12 +443,16 @@ export const ENQUETE = {
         "C'est un classeur rigide où l'on range les documents À SIGNER. Relis le titre du dossier.",
         "Réponse : PARAPHEUR.",
       ],
+      humor:
+        "Note de l'inspecteur : Guillaume chiffre ses messages au poil… mais son mot de passe " +
+        "wifi reste « azerty1234 ». Le génie a ses angles morts.",
       reveal:
         "DOSSIER CLOS — Le meurtrier est GUILLAUME, ancien DSI. Mobile : la VENGEANCE des " +
         "parapheurs perdus. Il avait retrouvé dans une benne le parapheur contenant les bons de " +
-        "commande qu'il avait rédigés, falsifiés par le DGS Frédéric ERZEN avec la complicité de la " +
-        "directrice Solène VASSEUR. 50 bons salis, 50 verres brisés. L'affaire Idéepôle aura fait " +
-        "une victime de plus — des années après.",
+        "commande qu'il avait rédigés, falsifiés par le DGS Frédéric ERZEN — épaulé par le " +
+        "falsificateur en chef Camus LEJARRE (en cavale) — et payés par la directrice Solène " +
+        "VASSEUR. 50 bons salis, 50 verres brisés. L'affaire Idéepôle aura fait une victime de " +
+        "plus — des années après.",
       fragments: [
         { label: "Rappel clé", text: "La clé est la lettre du parcours sur le plan : G (7ᵉ lettre de l'alphabet)." },
         { label: "Décodeur", text: "César : pour lire, recule chaque lettre de 7 rangs. Ex : W(23) → P(16)." },
@@ -391,15 +463,19 @@ export const ENQUETE = {
     },
   ],
 
-  // Écran final affiché quand les 6 actes sont résolus.
+  // Écran final affiché quand les 8 actes sont résolus.
   finale: {
     title: "AFFAIRE RÉSOLUE",
     culprit: "GUILLAUME",
     role: "ancien DSI de la mairie de Saint-Maur-des-Fossés",
     mobile:
       "La vengeance des parapheurs perdus : ses bons de commande, falsifiés par le DGS Frédéric " +
-      "Erzen et payés par la directrice Solène Vasseur, retrouvés par hasard dans une benne du " +
-      "quartier de La Varenne.",
+      "Erzen — aidé du falsificateur en chef Camus Lejarre, en cavale — et payés par la directrice " +
+      "Solène Vasseur, retrouvés par hasard dans une benne du quartier de La Varenne.",
+    cast:
+      "Le réseau : Frédéric ERZEN (DGS, falsifiait) · Camus LEJARRE (technique, en fuite) · " +
+      "Solène VASSEUR (finances, victime). Innocenté : Frédéric COUPAYE (lanceur d'alerte). " +
+      "Meurtrier : GUILLAUME (ancien DSI trahi).",
     disclaimer:
       "Fiction. L'affaire Bygmalion/Idéepôle, le magazine municipal et les lieux sont réels " +
       "(sources citées) ; le meurtre, les personnages et les suspects sont inventés pour le jeu.",

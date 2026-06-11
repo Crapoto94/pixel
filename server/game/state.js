@@ -833,7 +833,7 @@ export class GameState {
           ciphertext: act.cipher.ciphertext, keyLetter: act.cipher.keyLetter,
           shift: act.cipher.shift, help: act.cipher.help,
         } : null,
-        scene: act.scene, riddle: act.riddle,
+        scene: act.scene, riddle: act.riddle, humor: act.humor || null,
       },
       hintList: act ? (act.hints || []).slice(0, nHints) : [],
       // Le « mur d'enquête » : révélations des actes déjà résolus

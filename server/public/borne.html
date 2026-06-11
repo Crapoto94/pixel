@@ -419,6 +419,9 @@ function renderEnqueteBorne(a){
         <div class="pill neon-cyan">MOBILE</div>
         <p>${esc(f.mobile)}</p>
       </div>
+      ${f.cast?`<div class="card" style="max-width:900px;margin:0 auto 14px;text-align:left;border-color:var(--neon4)">
+        <div class="pill" style="color:var(--neon4)">🎭 LE RÉSEAU</div>
+        <p>${esc(f.cast)}</p></div>`:''}
       <p class="muted" style="font-size:16px">${esc(f.disclaimer)}</p>
     </div>`;
     tickerEl.textContent = 'AFFAIRE RÉSOLUE — Guillaume, la vengeance des parapheurs perdus.';
@@ -470,6 +473,9 @@ function renderEnqueteBorne(a){
         <p class="big">${esc(act.riddle||'')}</p>
         <p class="neon-yellow blink" style="font-size:22px">Recoupez vos pièces et tapez le code sur un téléphone.</p>
       </div>
+      ${act.humor?`<div class="card" style="border-color:var(--neon4);background:#100a02;margin-top:10px">
+        <div class="pill" style="color:var(--neon4)">📎 NOTE DE L'INSPECTEUR</div>
+        <p style="font-size:19px;font-style:italic;color:#ffd9a0">${esc(act.humor)}</p></div>`:''}
       ${hints?`<div class="card" style="border-color:var(--neon4);background:#0a0820;margin-top:10px">
         <div class="pill neon-cyan">💡 INDICES DU GM</div><ul style="font-size:20px">${hints}</ul></div>`:''}
     </div>

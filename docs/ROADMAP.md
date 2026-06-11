@@ -19,7 +19,7 @@ Suivi des demandes et de leur état. (✅ fait · 🔧 en cours · ⏳ à faire)
 
 ## Affichage & production
 - ⏳ **BORNE plus explicite** : afficher le scénario, le briefing et les attendus de chaque joueur.
-- ⏳ **Matériel imprimable** : préparer toutes les fiches (cartes-avatars, briefings, cartes-indices, colis, carte dorée…) prêtes à imprimer.
+- ✅ **Matériel imprimable** (`/print`) : cartes-avatars **illustrées (SVG)** + QR intégrés, carte dorée Player One, étiquettes COLIS 1-6, jetons PIÈCES/VIES à découper, carte enfants. Bouton Imprimer + mise en page A4.
 
 ## Déjà livré
 - ✅ Appli (serveur SSE, pages joueur/borne/GM), 6 mondes, gages, votes, QR codes.

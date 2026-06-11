@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PIXEL PANIC — Matériel à imprimer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap');
+  * { box-sizing: border-box; }
+  body { font-family: 'Nunito', system-ui, sans-serif; margin: 0; background: #ece8f5; color: #1a1030; }
+  .bar { position: sticky; top: 0; background: #160a2e; color: #fff; padding: 12px 18px; display: flex;
+    gap: 14px; align-items: center; z-index: 10; }
+  .bar h1 { font-family: 'Press Start 2P'; font-size: 14px; margin: 0; color: #ff2e88; }
+  .bar button { font-family: 'Press Start 2P'; font-size: 11px; padding: 10px 14px; border: 0; border-radius: 8px;
+    background: #2effd5; color: #00231c; cursor: pointer; }
+  .bar .muted { opacity: .7; font-size: 13px; }
+  .sheet { padding: 16px; }
+  .sheet h2 { font-family: 'Press Start 2P'; font-size: 13px; color: #7a5cff; margin: 18px 6px 10px; }
+
+  .cards { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* Carte-avatar (format ~ carte à jouer) */
+  .card { width: 85mm; height: 112mm; border-radius: 10px; padding: 6mm; position: relative;
+    background: #fff; border: 3px solid #160a2e; box-shadow: 0 2px 0 #160a2e; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; }
+  .card .role { position: absolute; top: 5mm; left: 5mm; font-family: 'Press Start 2P'; font-size: 7px;
+    background: #160a2e; color: #fff; padding: 4px 6px; border-radius: 5px; }
+  .card .art { width: 42mm; height: 42mm; margin-top: 9mm; }
+  .card .aname { font-family: 'Press Start 2P'; font-size: 13px; margin-top: 3mm; text-align: center; }
+  .card .sub { font-size: 13px; color: #555; }
+  .card .tag { font-style: italic; text-align: center; font-size: 13px; margin: 2mm 4mm 0; }
+  .card .power { font-size: 12px; text-align: center; margin: 2mm 3mm 0; background: #f3eefe;
+    border: 1px dashed #7a5cff; border-radius: 6px; padding: 4px 6px; }
+  .card .qr { position: absolute; bottom: 5mm; right: 5mm; width: 22mm; height: 22mm; }
+  .card .qrlbl { position: absolute; bottom: 5mm; left: 5mm; font-size: 10px; color: #777; width: 40mm; }
+
+  /* Carte dorée Player One */
+  .card.gold { background: linear-gradient(160deg, #fff7d6, #ffe07a); border-color: #b8860b; box-shadow: 0 2px 0 #b8860b; }
+  .card.gold .role { background: #b8860b; }
+  .card.gold .aname { color: #7a5a00; }
+
+  /* Étiquettes COLIS */
+  .colis { width: 90mm; height: 55mm; border: 3px dashed #160a2e; border-radius: 10px; background: #fff;
+    display: flex; align-items: center; gap: 5mm; padding: 5mm; }
+  .colis .num { font-family: 'Press Start 2P'; font-size: 34px; color: #ff2e88; }
+  .colis .txt b { font-family: 'Press Start 2P'; font-size: 12px; }
+  .colis .txt p { margin: 4px 0 0; font-size: 13px; color: #444; }
+
+  /* Jetons */
+  .tokens { display: flex; flex-wrap: wrap; gap: 6px; }
+  .token { width: 22mm; height: 22mm; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    border: 3px solid #160a2e; font-size: 26px; }
+  .coin { background: #ffe07a; } .life { background: #ffd0e0; }
+
+  @media print {
+    body { background: #fff; }
+    .bar { display: none; }
+    .sheet { padding: 0; }
+    .card, .colis { page-break-inside: avoid; }
+    h2 { page-break-before: always; }
+    .sheet h2:first-of-type { page-break-before: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>PIXEL PANIC</h1>
+  <button onclick="window.print()">🖨️ IMPRIMER</button>
+  <span class="muted">Astuce : imprime en couleur, recto, et découpe sur les bords. Active « Graphiques d'arrière-plan » dans les options d'impression.</span>
+</div>
+<div id="app" class="sheet"><p style="padding:20px">Chargement du matériel…</p></div>
+
+<script>
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// --- Illustrations SVG par avatar ---
+const ART = {
+  player_one: `<svg class="art" viewBox="0 0 100 100"><polygon points="22,72 78,72 78,84 22,84" fill="#FFD700" stroke="#a87f00" stroke-width="2"/><polygon points="22,72 32,44 46,62 50,34 54,62 68,44 78,72" fill="#FFD700" stroke="#a87f00" stroke-width="2"/><circle cx="32" cy="44" r="4" fill="#ff2e88"/><circle cx="50" cy="34" r="4" fill="#2effd5"/><circle cx="68" cy="44" r="4" fill="#ff2e88"/><text x="50" y="81" font-size="9" text-anchor="middle" fill="#7a5a00" font-family="Arial" font-weight="bold">P1</text></svg>`,
+  sanique: `<svg class="art" viewBox="0 0 100 100"><polygon points="50,52 14,22 34,46 24,14 46,40 50,8 54,40 76,14 66,46 86,22" fill="#0066FF"/><circle cx="50" cy="60" r="27" fill="#0a7bff"/><ellipse cx="50" cy="64" rx="15" ry="13" fill="#f2d3a0"/><circle cx="44" cy="54" r="6" fill="#fff"/><circle cx="56" cy="54" r="6" fill="#fff"/><circle cx="45" cy="55" r="2.5" fill="#000"/><circle cx="55" cy="55" r="2.5" fill="#000"/><circle cx="50" cy="63" r="3" fill="#000"/></svg>`,
+  riu: `<svg class="art" viewBox="0 0 100 100"><rect x="26" y="38" width="48" height="34" rx="9" fill="#f2c79a" stroke="#b9885a" stroke-width="2"/><line x1="40" y1="42" x2="40" y2="70" stroke="#b9885a" stroke-width="2"/><line x1="50" y1="42" x2="50" y2="70" stroke="#b9885a" stroke-width="2"/><line x1="60" y1="42" x2="60" y2="70" stroke="#b9885a" stroke-width="2"/><rect x="20" y="40" width="60" height="10" fill="#e63329"/><polygon points="80,40 96,36 92,52 80,50" fill="#e63329"/></svg>`,
+  zilda: `<svg class="art" viewBox="0 0 100 100"><polygon points="50,16 63,40 37,40" fill="#ffe600" stroke="#b9a400" stroke-width="1.5"/><polygon points="37,42 50,66 24,66" fill="#ffe600" stroke="#b9a400" stroke-width="1.5"/><polygon points="63,42 76,66 50,66" fill="#ffe600" stroke="#b9a400" stroke-width="1.5"/><rect x="48" y="62" width="4" height="28" fill="#cfd8e3" stroke="#888" stroke-width="1"/><rect x="40" y="70" width="20" height="4" fill="#1fa84c"/></svg>`,
+  super_marino: `<svg class="art" viewBox="0 0 100 100"><path d="M24,56 a26,23 0 0,1 52,0 z" fill="#E52521" stroke="#9e1410" stroke-width="2"/><circle cx="40" cy="44" r="6" fill="#fff"/><circle cx="60" cy="44" r="6" fill="#fff"/><circle cx="50" cy="54" r="5" fill="#fff"/><rect x="38" y="56" width="24" height="28" rx="7" fill="#f2d3a0" stroke="#cBA579" stroke-width="1.5"/><circle cx="45" cy="68" r="3" fill="#000"/><circle cx="55" cy="68" r="3" fill="#000"/></svg>`,
+  lara_croute: `<svg class="art" viewBox="0 0 100 100"><path d="M40,24 h20 v6 h-5 c10,6 13,18 13,30 c0,15 -8,26 -18,26 c-10,0 -18,-11 -18,-26 c0,-12 3,-24 13,-30 h-5 z" fill="#A0703C" stroke="#5e4222" stroke-width="2"/><ellipse cx="50" cy="62" rx="13" ry="17" fill="#c98f54"/><path d="M32,44 q-9,9 0,18" fill="none" stroke="#5e4222" stroke-width="3"/><path d="M68,44 q9,9 0,18" fill="none" stroke="#5e4222" stroke-width="3"/></svg>`,
+  glouton: `<svg class="art" viewBox="0 0 100 100"><path d="M52,50 L88,30 A42,42 0 1,0 88,70 Z" fill="#FFCC00" stroke="#b38f00" stroke-width="2"/><circle cx="50" cy="28" r="5" fill="#160a2e"/></svg>`,
+};
+function art(id){ return ART[id] || `<svg class="art" viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#7a5cff"/></svg>`; }
+
+fetch('/api/print').then(r=>r.json()).then(render).catch(e=>{
+  document.getElementById('app').innerHTML = '<p style="padding:20px;color:#c00">Erreur de chargement : '+esc(String(e))+'</p>';
+});
+
+function render(data){
+  const cards = data.players.map(p=>{
+    const a = p.avatarInfo || {};
+    const gold = p.isHero ? ' gold' : '';
+    const role = p.isHero ? 'PLAYER ONE' : 'AVATAR';
+    return `<div class="card${gold}">
+      <div class="role">${esc(role)}</div>
+      ${art(p.avatar)}
+      <div class="aname">${esc(a.name||'')}</div>
+      <div class="sub">${esc(p.name)}</div>
+      <div class="tag">${esc(a.tagline||'')}</div>
+      <div class="power">${esc(a.power||'')}</div>
+      ${p.qr ? `<img class="qr" src="${p.qr}" alt="QR"/><div class="qrlbl">Scanne pour rejoindre</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const colis = data.colis.map(n=>`
+    <div class="colis">
+      <div class="num">${n}</div>
+      <div class="txt"><b>COLIS ${n}</b><p>🔒 Verrouillé — à ouvrir UNIQUEMENT au signal de la BORNE (« PIXELS, livrez le colis ${n} »).</p></div>
+    </div>`).join('');
+
+  const coins = Array.from({length:18}).map(()=>`<div class="token coin">🪙</div>`).join('');
+  const lives = Array.from({length:12}).map(()=>`<div class="token life">❤️</div>`).join('');
+
+  document.getElementById('app').innerHTML = `
+    <h2>① Cartes-avatars (1 par joueur)</h2>
+    <div class="cards">${cards}</div>
+
+    <h2>② Étiquettes des COLIS (à coller sur les enveloppes)</h2>
+    <div class="cards">${colis}</div>
+
+    <h2>③ Jetons à découper — 🪙 PIÈCES & ❤️ VIES</h2>
+    <div class="tokens">${coins}${lives}</div>
+
+    <h2>④ Pour les enfants (Robin & Juliette)</h2>
+    <div class="cards">
+      <div class="card" style="height:80mm">
+        <div class="role">LES PIXELS</div>
+        <div style="font-size:46px;margin-top:10mm">👾</div>
+        <div class="aname" style="font-size:11px">LES PIXELS</div>
+        <div class="tag">Robin &amp; Juliette — messagers 8-bit</div>
+        <div class="power">Vous livrez les colis, cachez les indices et réveillez l'Élu au Défi des Pixels !</div>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>

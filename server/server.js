@@ -6,7 +6,9 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG } from './config.js';
+import QRCode from 'qrcode';
+import { CONFIG, PLAYERS, NPCS } from './config.js';
+import { AVATARS } from './data/avatars.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -20,6 +22,23 @@ app.use('/static', express.static(path.join(__dirname, 'public', 'static')));
 app.get('/', (req, res) => res.redirect('/borne'));
 app.get('/borne', (req, res) => res.sendFile(path.join(__dirname, 'public', 'borne.html')));
 app.get('/gm', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gm.html')));
+app.get('/print', (req, res) => res.sendFile(path.join(__dirname, 'public', 'print.html')));
+
+// Données pour la page d'impression (cartes-avatars + QR + colis)
+app.get('/api/print', async (req, res) => {
+  const players = [];
+  for (const p of PLAYERS) {
+    const joinUrl = `${CONFIG.publicUrl}/j/${p.token}`;
+    let qr = null;
+    try { qr = await QRCode.toDataURL(joinUrl, { margin: 1, width: 260, color: { dark: '#160a2e', light: '#ffffff' } }); } catch (_) {}
+    players.push({
+      id: p.id, name: p.name, avatar: p.avatar,
+      avatarInfo: AVATARS[p.avatar] || null,
+      isHero: !!p.isHero, joinUrl, qr,
+    });
+  }
+  res.json({ players, npcs: NPCS, colis: [1, 2, 3, 4, 5, 6], publicUrl: CONFIG.publicUrl });
+});
 app.get('/j/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'joueur.html')));
 
 // --- État courant (repli en polling si le SSE est bufferisé par un proxy) ---

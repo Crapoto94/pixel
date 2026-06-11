@@ -521,7 +521,7 @@ function renderPhotoBorne() {
 }
 
 // =================== YOUTUBE (ambiance gaming + blind-test rock) ===================
-let ytAmb = null, ytBt = null, ytApiReady = false, ytInited = false, _ytBtActive = false;
+let ytAmb = null, ytBt = null, ytApiReady = false, ytInited = false;
 
 window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; initYT(); }; // démarre muet sans attendre de clic
 
@@ -542,9 +542,9 @@ function initYT(){
     if (cfg.blindtest) {
       ytBt = new YT.Player('yt-bt', {
         height:'1', width:'1',
-        playerVars:{ listType:'playlist', list:cfg.blindtest, autoplay:0, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1 },
+        playerVars:{ listType:'playlist', list:cfg.blindtest, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
-          onReady(e){ e.target.setShuffle(true); },
+          onReady(e){ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); }, // muet, prêt à unmuter
           onStateChange(e){ if(e.data===YT.PlayerState.ENDED) e.target.playVideo(); }
         }
       });
@@ -557,12 +557,12 @@ function syncYT(s){
   const isReveal = isBT && s.activity.sub === 'reveal';
   try {
     if (isBT && !isReveal) {
-      if (!_ytBtActive && ytBt) { ytBt.playVideo(); _ytBtActive = true; }
+      if (ytBt) { ytBt.unMute(); ytBt.playVideo(); }
       if (ytAmb) ytAmb.pauseVideo();
     } else if (isBT && isReveal) {
-      if (ytBt) ytBt.pauseVideo();
+      if (ytBt) ytBt.mute();
     } else {
-      if (_ytBtActive && ytBt) { ytBt.stopVideo(); _ytBtActive = false; }
+      if (ytBt) ytBt.mute();
       if (ytAmb) ytAmb.playVideo();
     }
   } catch(_){}

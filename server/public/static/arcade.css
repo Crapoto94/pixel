@@ -134,3 +134,13 @@ input[type=text] {
 .pcard { border: 2px solid #ffffff33; border-radius: 8px; padding: 8px; text-align: center; font-size: 16px; }
 .pcard .emoji { font-size: 30px; }
 .pcard.off { opacity: .35; }
+
+#fsbtn {
+  position: fixed; top: 8px; right: 8px; z-index: 100000;
+  width: 44px; height: 44px; padding: 0;
+  font-family: var(--term); font-size: 24px; line-height: 1;
+  color: var(--neon2); background: rgba(3,1,10,.6);
+  border: 2px solid var(--neon2); border-radius: 8px; cursor: pointer;
+  opacity: .55; transition: opacity .15s;
+}
+#fsbtn:hover, #fsbtn:active { opacity: 1; }

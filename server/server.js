@@ -22,6 +22,17 @@ app.get('/borne', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bor
 app.get('/gm', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gm.html')));
 app.get('/j/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'joueur.html')));
 
+// --- État courant (repli en polling si le SSE est bufferisé par un proxy) ---
+app.get('/api/state', (req, res) => {
+  const token = req.query.token || null;
+  if (token) {
+    const p = game.playerByToken(token);
+    if (p) game.connectPlayer(p.id);
+  }
+  res.set('Cache-Control', 'no-store');
+  res.json(game.publicState(token));
+});
+
 // --- Flux temps réel (SSE) ------------------------------------------
 // La borne s'abonne sans token ; un joueur s'abonne avec ?token=...
 app.get('/events', (req, res) => {
@@ -118,6 +129,7 @@ app.post('/api/gm/gage', (req, res) => {
 
 // --- API GM console (Marc) — protégée par mot de passe --------------
 function requireGM(req, res) {
+  if (!CONFIG.gmPassword) return true; // pas de mot de passe configuré = accès libre
   const pwd = req.body.password || req.query.password;
   if (pwd !== CONFIG.gmPassword) { res.status(403).json({ error: 'Mot de passe GM invalide.' }); return false; }
   return true;

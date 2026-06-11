@@ -10,8 +10,9 @@ export const CONFIG = {
   // Port d'écoute du serveur Node
   port: 8080,
 
-  // Mot de passe d'accès à la page Game Master /gm (à changer !)
-  gmPassword: 'marc-borne-2026',
+  // Mot de passe d'accès à la page Game Master /gm.
+  //  Laisser vide ('') = AUCUN mot de passe (accès direct).
+  gmPassword: '',
 
   // Heure « limite » fictive affichée sur la borne (compte à rebours narratif)
   deadlineLabel: 'MINUIT',

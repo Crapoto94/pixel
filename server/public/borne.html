@@ -9,10 +9,9 @@
 <script src="/static/fullscreen.js"></script>
 <script src="/static/pacman-render.js"></script>
 <style>
-  #soundgate { position: fixed; inset: 0; z-index: 99999; background: #0a0118;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; text-align: center; gap: 24px; }
-  #soundgate .big2 { font-size: 64px; }
+  #soundhint { position: fixed; top: 8px; left: 8px; z-index: 100000; cursor: pointer;
+    background: rgba(3,1,10,.7); color: var(--neon3); border: 2px solid var(--neon3);
+    border-radius: 8px; padding: 8px 12px; font-size: 12px; }
   body { font-size: 28px; }
   .stage { max-width: 1100px; margin: 0 auto; padding: 24px; }
   .big { font-size: 56px; }
@@ -38,12 +37,7 @@
 </style>
 </head>
 <body class="scanlines">
-<div id="soundgate">
-  <div class="big2 pixel neon-pink blink">PIXEL&nbsp;PANIC</div>
-  <div class="huge">🕹️🔊</div>
-  <div class="big pixel neon-cyan" style="font-size:22px">TOUCHER POUR DÉMARRER</div>
-  <div class="muted">active le son de la borne</div>
-</div>
+<div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
 
@@ -52,18 +46,25 @@ const stage = document.getElementById('stage');
 const tickerEl = document.getElementById('ticker');
 let STATE = null;
 
+let lastSse = 0;
+function applyState(s){ STATE = s; detectSounds(STATE); detectMusic(STATE); render(); }
 const es = new EventSource('/events');
-es.onmessage = (e) => { STATE = JSON.parse(e.data); detectSounds(STATE); detectMusic(STATE); render(); };
+es.onmessage = (e) => { lastSse = Date.now(); applyState(JSON.parse(e.data)); };
+function pollBorne(){ fetch('/api/state').then(r=>r.json()).then(applyState).catch(()=>{}); }
+pollBorne();
+setInterval(() => { if (Date.now() - lastSse > 1500) pollBorne(); }, 1000);
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-// --- Activation du son (1er tap, obligatoire sur tablette) ---
+// --- Activation du son au 1er clic n'importe où (obligatoire sur navigateur) ---
 let SOUND_ON = false;
-const gate = document.getElementById('soundgate');
-gate.addEventListener('click', () => {
+function enableSound(){
+  if (SOUND_ON) return;
   if (window.SFX) { SFX.unlock(); SFX.coin(); }
   SOUND_ON = true;
-  gate.style.display = 'none';
-});
+  const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
+}
+document.getElementById('soundhint').addEventListener('click', enableSound);
+['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: false }));
 
 // --- Déclenche les bruitages sur les transitions d'état ---
 let _p = { phase: null, world: null, gageId: null, act: null, sub: null };

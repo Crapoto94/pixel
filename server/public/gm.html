@@ -29,15 +29,22 @@ let PWD = null, S = null, timer = null;
 const app = document.getElementById('app');
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-function connect(){
-  PWD = document.getElementById('pwd').value;
+function connect(pwd){
+  const el = document.getElementById('pwd');
+  PWD = (pwd !== undefined) ? pwd : (el ? el.value : '');
   refresh().then(ok=>{ if(ok){ if(timer) clearInterval(timer); timer=setInterval(refresh,1500); } });
 }
+function loginForm(msg){
+  app.innerHTML = `<div class="card"><h2 class="neon-pink pixel" style="font-size:16px">GAME MASTER</h2>
+    ${msg?`<p class="neon-pink">${msg}</p>`:''}
+    <input id="pwd" type="text" placeholder="MOT DE PASSE GM" />
+    <button class="btn mt" onclick="connect()">ENTRER</button></div>`;
+}
 function refresh(){
-  return fetch('/api/gm/state?password='+encodeURIComponent(PWD))
+  return fetch('/api/gm/state?password='+encodeURIComponent(PWD||''))
     .then(r=> r.ok ? r.json() : Promise.reject())
     .then(s=>{ S=s; render(); return true; })
-    .catch(()=>{ app.innerHTML='<div class="card center"><p class="neon-pink">Mot de passe refusé.</p><button class="btn" onclick="location.reload()">Réessayer</button></div>'; return false; });
+    .catch(()=>{ loginForm('Mot de passe refusé.'); return false; });
 }
 function act(action, payload={}){
   return fetch('/api/gm/action',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -160,6 +167,9 @@ function drawGage(){
     targetId:document.getElementById('gageTarget').value||null});
 }
 function tally(){ act('tallyVotes').then(r=>{ if(r.result) alert(r.result.found?'TROUVÉ !':'Raté — le Glitch a survécu.'); }); }
+
+// Auto-connexion : si aucun mot de passe n'est configuré côté serveur, accès direct.
+connect('');
 </script>
 </body>
 </html>

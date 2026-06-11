@@ -32,10 +32,15 @@ function api(path, body) {
   }).then(r => r.json());
 }
 
-// --- Flux temps réel ---
+// --- Flux temps réel (SSE) + repli en polling si un proxy bufferise le flux ---
+let lastSse = 0;
+function applyState(s){ STATE = s; render(); }
 const es = new EventSource('/events?token=' + encodeURIComponent(TOKEN));
-es.onmessage = (e) => { STATE = JSON.parse(e.data); render(); };
+es.onmessage = (e) => { lastSse = Date.now(); applyState(JSON.parse(e.data)); };
 es.onerror = () => { /* l'EventSource se reconnecte tout seul */ };
+function poll(){ fetch('/api/state?token=' + encodeURIComponent(TOKEN)).then(r=>r.json()).then(applyState).catch(()=>{}); }
+poll(); // rendu immédiat dès le chargement (ne reste pas bloqué sur CONNEXION)
+setInterval(() => { if (Date.now() - lastSse > 1500) poll(); }, 1000);
 
 function h(strings, ...vals) { return strings.map((s,i)=>s+(vals[i]??'')).join(''); }
 function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }

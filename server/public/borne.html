@@ -65,7 +65,8 @@ function enableSound(){
   if (window.SFX) { SFX.unlock(); SFX.coin(); }
   SOUND_ON = true;
   const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
-  initYT();
+  if (ytAmb) { try { ytAmb.unMute(); } catch(_){} } // déjà en train de jouer, on retire juste le mute
+  else initYT(); // API pas encore prête, on démarre normalement
 }
 document.getElementById('soundhint').addEventListener('click', enableSound);
 ['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: false }));
@@ -522,7 +523,7 @@ function renderPhotoBorne() {
 // =================== YOUTUBE (ambiance gaming + blind-test rock) ===================
 let ytAmb = null, ytBt = null, ytApiReady = false, ytInited = false, _ytBtActive = false;
 
-window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; if (SOUND_ON) initYT(); };
+window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; initYT(); }; // démarre muet sans attendre de clic
 
 function initYT(){
   if (ytInited || !ytApiReady) return;
@@ -531,9 +532,9 @@ function initYT(){
     if (cfg.ambiance) {
       ytAmb = new YT.Player('yt-amb', {
         height:'1', width:'1',
-        playerVars:{ listType:'playlist', list:cfg.ambiance, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1 },
+        playerVars:{ listType:'playlist', list:cfg.ambiance, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
-          onReady(e){ e.target.setShuffle(true); e.target.playVideo(); },
+          onReady(e){ e.target.setShuffle(true); e.target.playVideo(); }, // muet jusqu'au 1er clic
           onStateChange(e){ if(e.data===YT.PlayerState.ENDED) e.target.playVideo(); }
         }
       });

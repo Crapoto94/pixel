@@ -10,7 +10,7 @@ Suivi des demandes et de leur état. (✅ fait · 🔧 en cours · ⏳ à faire)
 ## Énigmes collaboratives temps réel
 - ⏳ **Mosaïque de téléphones** : poser les téléphones côte à côte pour reconstituer une image (chaque tel = un fragment).
 - ⏳ **Séquence musicale collaborative** : cliquer dans le bon ordre (chacun = une note) pour rejouer un thème de jeu vidéo.
-- ⏳ **PAC-MAN multijoueur** : chacun joue sur son téléphone — Mr Pac-Man, Mrs Pac-Man, et les autres en fantômes ; la BORNE affiche le plateau commun en temps réel.
+- ✅ **PAC-MAN multijoueur** : Mr/Mrs Pac-Man + fantômes (tous humains), borne = plateau commun temps réel, manette sur chaque téléphone. Super-gommes/mode effrayé, vies, scores, victoire Pac/Fantômes. *(GM : bouton 🟡 Pac-Man.)*
 
 ## Contenu / ambiance
 - 🔧 **Blind-test → CLASSIC ROCK** (pour plaire à tous), et **moins de références metal** partout.

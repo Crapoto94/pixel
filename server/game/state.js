@@ -16,6 +16,7 @@ import { PacmanGame } from './pacman.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
+import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -436,6 +437,20 @@ export class GameState {
       this.activity.sub = 'question'; // question | reveal
       this.activity.answers = {}; // { playerId: { choice, t } }
     }
+    // Spotlight : un joueur relève un défi, la salle vote ensuite.
+    if (type === 'spotlight') {
+      const tid = opts.targetId || null;
+      const defi = (opts.defi && opts.defi.trim())
+        || SPOTLIGHT_DEFIS[Math.floor(Math.random() * SPOTLIGHT_DEFIS.length)];
+      this.activity.data = {
+        targetId: tid,
+        targetName: tid ? (this.player(tid)?.name || opts.targetName || '?') : (opts.targetName || '?'),
+        defi,
+      };
+      this.activity.sub = 'challenge'; // challenge | vote | result
+      this.activity.votes = {};        // { voterId: 'ok' | 'ko' }
+      this.activity.verdict = null;    // 'ok' | 'ko'
+    }
     // Blind-test : toujours dynamique (titres tirés de la playlist YouTube).
     // La 1ère chanson est lancée quand le GM appuie sur « ❓ ».
     if (type === 'blindtest') {
@@ -592,6 +607,44 @@ export class GameState {
           this.addLog(`💔 ${loser.name} a buzzé EN DERNIER — vie perdue (${loser.lives} restante(s)) !`);
         }
       }
+    }
+    this.touch();
+  }
+
+  // ---- Spotlight : défi d'un joueur jugé par la salle ---------------
+  spotlightOpenVote() {
+    const a = this.activity;
+    if (!a || a.type !== 'spotlight') return;
+    a.sub = 'vote';
+    a.votes = {};
+    this.addLog(`🔦 Spotlight : ${a.data.targetName} a relevé le défi — à la salle de juger !`);
+    this.touch();
+  }
+
+  spotlightVote(voterId, verdict) {
+    const a = this.activity;
+    if (!a || a.type !== 'spotlight' || a.sub !== 'vote') return;
+    if (voterId === a.data.targetId) return; // la cible ne vote pas pour elle-même
+    if (verdict !== 'ok' && verdict !== 'ko') return;
+    a.votes[voterId] = verdict;
+    this.touch();
+  }
+
+  spotlightTally() {
+    const a = this.activity;
+    if (!a || a.type !== 'spotlight') return;
+    let ok = 0, ko = 0;
+    for (const v of Object.values(a.votes || {})) { if (v === 'ok') ok++; else if (v === 'ko') ko++; }
+    const passed = ok >= ko; // égalité = réussi (on est bienveillant)
+    a.verdict = passed ? 'ok' : 'ko';
+    a.okCount = ok; a.koCount = ko;
+    a.sub = 'result';
+    const target = this.player(a.data.targetId);
+    if (!passed && target && target.lives > 0) {
+      target.lives -= 1;
+      this.addLog(`💔 ${a.data.targetName} n'a pas convaincu (${ok}👏/${ko}💀) — vie perdue (${target.lives} restante(s)).`);
+    } else {
+      this.addLog(`👏 ${a.data.targetName} a relevé le défi avec brio ! (${ok}👏/${ko}💀)`);
     }
     this.touch();
   }

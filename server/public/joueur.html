@@ -238,14 +238,44 @@ function controllerView(act) {
     </div>`;
   }
   if (act.type === 'spotlight') {
-    const target = act.data && act.data.targetName;
+    const d = act.data || {};
+    const target = d.targetName || '?';
+    const isTarget = d.targetId && d.targetId === STATE.me.id;
+    // Résultat
+    if (act.sub === 'result') {
+      const win = act.verdict === 'ok';
+      return `<div class="card center glow-box">
+        <h2 class="${win?'neon-cyan':'neon-pink'}">${win?'👏 RÉUSSI !':'💀 RATÉ !'}</h2>
+        <p><b>${esc(target)}</b> — ${esc(d.defi||'')}</p>
+        <p class="muted">👏 ${act.okCount||0} · 💀 ${act.koCount||0}${(!win&&isTarget)?' — tu perds une vie 💔':''}</p>
+      </div>`;
+    }
+    // Phase défi (avant le vote) ou défi en cours
+    if (isTarget) {
+      return `<div class="card center glow-box" style="border-color:var(--neon3)">
+        <h2 class="neon-yellow">🔦 C'EST TON DÉFI !</h2>
+        <p class="big">${esc(d.defi||'Relève le défi !')}</p>
+        <p class="muted">${act.sub==='vote'?'La salle vote… croise les doigts !':'Relève-le devant tout le monde 🎤'}</p>
+      </div>`;
+    }
+    if (act.sub === 'vote') {
+      const my = act.votes && act.votes[STATE.me.id];
+      return `<div class="card center glow-box">
+        <h2 class="neon-yellow">🔦 VERDICT</h2>
+        <p><b>${esc(target)}</b> a tenté : <i>${esc(d.defi||'')}</i></p>
+        <p>A-t-il/elle réussi ?</p>
+        <div class="row">
+          <button class="btn ${my==='ok'?'secondary':''}" onclick="spotlightVote('ok')">RÉUSSI 👏</button>
+          <button class="btn ${my==='ko'?'danger':''}" onclick="spotlightVote('ko')">RATÉ 💀</button>
+        </div>
+        ${my?'<p class="neon-cyan mt">Vote enregistré ✔ (modifiable)</p>':''}
+      </div>`;
+    }
     return `<div class="card center glow-box">
-      <h2 class="neon-yellow">SPOTLIGHT</h2>
-      <p>Défi de <b>${esc(target||'?')}</b>. La salle juge !</p>
-      <div class="row">
-        <button class="btn secondary" onclick="vote('ok')">RÉUSSI 👏</button>
-        <button class="btn danger" onclick="vote('ko')">RATÉ 💀</button>
-      </div>
+      <h2 class="neon-yellow">🔦 SPOTLIGHT</h2>
+      <p><b>${esc(target)}</b> relève un défi…</p>
+      <p class="muted">${esc(d.defi||'')}</p>
+      <p class="muted">Regarde, tu voteras juste après ! 👀</p>
     </div>`;
   }
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
@@ -494,6 +524,7 @@ function toggleReady(){ api('/api/ready', { ready: !STATE.me.ready }); }
 function buzz(){ api('/api/buzz'); }
 function vote(t){ api('/api/vote', { targetId: t }); }
 function answer(i){ api('/api/answer', { choice: i }); }
+function spotlightVote(v){ api('/api/spotlight/vote', { verdict: v }); }
 function submitCode(){
   const v = document.getElementById('codeInput').value;
   api('/api/code', { code: v }).then(r=>{

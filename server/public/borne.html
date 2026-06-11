@@ -211,11 +211,35 @@ function activityView(act){
     </div>`;
   }
   if (act.type==='spotlight'){
+    const name = esc(act.data?.targetName||'?');
+    const defi = esc(act.data?.defi||'Relève le défi !');
+    if (act.sub==='vote'){
+      const votes = act.votes||{};
+      const ok = Object.values(votes).filter(v=>v==='ok').length;
+      const ko = Object.values(votes).filter(v=>v==='ko').length;
+      return `<div class="center glow-box">
+        <h1 class="huge neon-yellow">🔦 VERDICT ?</h1>
+        <div class="big neon-pink">${name}</div>
+        <p class="big">${defi}</p>
+        <p class="big neon-cyan blink">Votez sur vos téléphones !</p>
+        <div class="big" style="margin-top:14px">👏 <b class="neon-cyan">${ok}</b> &nbsp;·&nbsp; 💀 <b class="neon-pink">${ko}</b></div>
+      </div>`;
+    }
+    if (act.sub==='result'){
+      const win = act.verdict==='ok';
+      return `<div class="center glow-box">
+        <h1 class="huge ${win?'neon-cyan':'neon-pink'}">${win?'👏 RÉUSSI !':'💀 RATÉ !'}</h1>
+        <div class="big">${name}</div>
+        <p class="big">${defi}</p>
+        <div class="big" style="margin-top:10px">👏 ${act.okCount||0} &nbsp;·&nbsp; 💀 ${act.koCount||0}</div>
+        ${win?'':'<p class="big neon-pink blink">−1 vie 💔</p>'}
+      </div>`;
+    }
     return `<div class="center glow-box">
       <h1 class="huge neon-yellow">🔦 SPOTLIGHT</h1>
-      <div class="big">${esc(act.data?.targetName||'?')}</div>
-      <p class="big">${esc(act.data?.defi||'Relève le défi !')}</p>
-      <div class="huge pixel">${esc(act.data?.timer||'')}</div>
+      <div class="big neon-pink">${name}</div>
+      <p class="big">${defi}</p>
+      <p class="big neon-yellow blink">À toi de jouer ! 🎤</p>
     </div>`;
   }
   if (act.type==='roue_des_gages'){
@@ -236,9 +260,9 @@ function activityView(act){
 }
 
 function quizBorne(act){
-  const letters=[‘A’,’B’,’C’,’D’,’E’];
-  const reveal = act.sub===’reveal’;
-  const title = act.type===’blindtest’?’🎵 BLIND-TEST’:’❓ QUIZ ARCADE’;
+  const letters=['A','B','C','D','E'];
+  const reveal = act.sub==='reveal';
+  const title = act.type==='blindtest'?'🎵 BLIND-TEST':'❓ QUIZ ARCADE';
 
   // Blind-test dynamique : avant la 1ère chanson (le GM doit appuyer sur ❓)
   if (act.dynamicBlindtest && !(act.choices && act.choices.length)) {
@@ -251,32 +275,32 @@ function quizBorne(act){
   }
 
   const choices = (act.choices||[]).map((c,i)=>{
-    let bg = ‘#1a0b2e’, bd=’#ffffff33’;
-    if (reveal && i===act.answer){ bg=’#063d1e’; bd=’var(--ok)’; }
+    let bg = '#1a0b2e', bd='#ffffff33';
+    if (reveal && i===act.answer){ bg='#063d1e'; bd='var(--ok)'; }
     return `<div class="qchoice" style="background:${bg};border-color:${bd}">
-      <b class="neon-yellow">${letters[i]}</b> ${esc(c)} ${reveal&&i===act.answer?’✔’:’’}</div>`;
-  }).join(‘’);
-  const audio = (reveal && act.audioUrl) ? `<audio autoplay src="${esc(act.audioUrl)}"></audio>` : ‘’;
+      <b class="neon-yellow">${letters[i]}</b> ${esc(c)} ${reveal&&i===act.answer?'✔':''}</div>`;
+  }).join('');
+  const audio = (reveal && act.audioUrl) ? `<audio autoplay src="${esc(act.audioUrl)}"></audio>` : '';
   const progress = `${act.answeredCount}/${act.playerCount} ont répondu`;
 
-  let footer = ‘’;
+  let footer = '';
   if (reveal && act.leaderboard){
     const champ = act.firstCorrectName
       ? `<p class="big neon-yellow" style="margin:6px 0">🥇 ${esc(act.firstCorrectName)} a trouvé en premier — BRAVO !</p>`
-      : `<p class="big muted" style="margin:6px 0">Personne n’a trouvé… 😬</p>`;
+      : `<p class="big muted" style="margin:6px 0">Personne n'a trouvé… 😬</p>`;
     footer = `${champ}<div class="card leaderboard" style="max-width:600px;margin:14px auto 0;text-align:left">
       <div class="pixel neon-yellow center" style="font-size:13px">RÉSULTATS</div>
-      ${act.leaderboard.map(p=>`<div>${p.correct?’✅’:’❌’} ${esc(p.name)}${p.pts?` <span class="coins">+${p.pts} pts</span>`:’’}</div>`).join(‘’)||’<div class="muted center">Aucun joueur connecté.</div>’}
+      ${act.leaderboard.map(p=>`<div>${p.correct?'✅':'❌'} ${esc(p.name)}${p.pts?` <span class="coins">+${p.pts} pts</span>`:''}</div>`).join('')||'<div class="muted center">Aucun joueur connecté.</div>'}
     </div>`;
   } else {
     footer = `<p class="big muted center mt">${progress}</p>`;
   }
 
-  const qnum = `Q${act.qIndex+1}${act.total!=null?’/’+act.total:’’}`;
+  const qnum = `Q${act.qIndex+1}${act.total!=null?'/'+act.total:''}`;
   return `<div class="center">
     <div class="pill neon-cyan">${title} — ${qnum}</div>
     <h1 class="big neon-pink" style="margin:14px 0">${esc(act.prompt)}</h1>
-    ${act.type===’blindtest’ && !reveal ? ‘<p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>’:’’}
+    ${act.type==='blindtest' && !reveal ? '<p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>':''}
     <div style="max-width:760px;margin:auto;text-align:left">${choices}</div>
     ${footer}${audio}
   </div>`;

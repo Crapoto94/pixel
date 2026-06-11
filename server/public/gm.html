@@ -81,7 +81,6 @@ function render(){
       <button class="btn secondary" onclick="startAct('reaction_race')">⚡ Réaction</button>
       <button class="btn secondary" onclick="startAct('quiz',{deck:'videogame'})">❓ Quiz JV</button>
       <button class="btn secondary" onclick="startAct('blindtest')">🎵 Blind-test</button>
-      <button class="btn secondary" onclick="spotlight()">🔦 Spotlight</button>
       <button class="btn secondary" onclick="startAct('roue_des_gages')">🎰 Roue</button>
       <button class="btn secondary" onclick="startAct('boss_final',{hp:100})">👾 Boss</button>
       <button class="btn warn" onclick="startAct('pixel_pad',{len:3})">🧒 Défi Pixels</button>
@@ -92,6 +91,44 @@ function render(){
     </div>
     <button class="btn danger mt" onclick="act('stopActivity')">⏹ STOP activité</button>
   </div>
+
+  ${(() => {
+    const conn = S.players.filter(p=>p.connected);
+    const connOpts = conn.length
+      ? conn.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')
+      : '<option value="">(aucun joueur connecté)</option>';
+    const defiOpts = SPOT_DEFIS.map((d,i)=>`<option value="${i}">${esc(d.length>58?d.slice(0,58)+'…':d)}</option>`).join('');
+    const sp = (S.activity && S.activity.type==='spotlight') ? S.activity : null;
+    let ctrl = '';
+    if (sp){
+      const d = sp.data||{};
+      if (sp.sub==='challenge'){
+        ctrl = `<div class="mt"><span class="pill neon-yellow">🔦 ${esc(d.targetName||'?')}</span>
+          <div class="muted" style="font-size:13px;margin:6px 0">${esc(d.defi||'')}</div>
+          <button class="btn warn" onclick="act('spotlightOpenVote')">🗳️ Ouvrir le vote</button></div>`;
+      } else if (sp.sub==='vote'){
+        const ok = Object.values(sp.votes||{}).filter(v=>v==='ok').length;
+        const ko = Object.values(sp.votes||{}).filter(v=>v==='ko').length;
+        ctrl = `<div class="mt"><span class="pill neon-cyan">VOTE EN COURS</span>
+          <div class="mt">👏 <code>${ok}</code> &nbsp;·&nbsp; 💀 <code>${ko}</code></div>
+          <button class="btn warn mt" onclick="act('spotlightTally')">✅ Clôturer & verdict</button></div>`;
+      } else if (sp.sub==='result'){
+        ctrl = `<div class="mt"><span class="pill ${sp.verdict==='ok'?'neon-cyan':'neon-pink'}">${sp.verdict==='ok'?'👏 RÉUSSI':'💀 RATÉ'}</span>
+          <div class="muted mt">👏 ${sp.okCount||0} · 💀 ${sp.koCount||0}</div>
+          <button class="btn mt" onclick="act('stopActivity')">⏹ Terminer</button></div>`;
+      }
+    }
+    return `<div class="card">
+      <div class="pixel neon-cyan" style="font-size:11px">🔦 SPOTLIGHT</div>
+      <div class="muted mt" style="font-size:13px">Choisis qui passe sur la sellette, et un défi (ou laisse au hasard).</div>
+      <select id="spotTarget" class="mt" onchange="_spotSel.target=this.value">${connOpts}</select>
+      <select id="spotDefi" class="mt" onchange="_spotSel.defi=this.value">
+        <option value="">🎲 Défi au hasard</option>${defiOpts}
+      </select>
+      <button class="btn secondary mt" onclick="launchSpotlight()">🔦 Lancer le Spotlight</button>
+      ${ctrl}
+    </div>`;
+  })()}
 
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">📸 DÉFIS PHOTO</div>
@@ -173,15 +210,29 @@ function render(){
     <div class="pixel" style="font-size:9px">JOURNAL</div>
     ${(S.log||[]).map(l=>`<div>${esc(l.msg)}</div>`).join('')}
   </div>`;
+
+  // Restaure les sélections Spotlight après le rafraîchissement (1,5 s)
+  const st = document.getElementById('spotTarget');
+  if (st && _spotSel.target && [...st.options].some(o=>o.value===_spotSel.target)) st.value = _spotSel.target;
+  const sd = document.getElementById('spotDefi');
+  if (sd && _spotSel.defi) sd.value = _spotSel.defi;
 }
 
 function startAct(type, opts={}){ act('startActivity',{type,opts}); }
 function mosaic(){ const w = prompt('Mot à reconstituer (le code) :','KONAMI'); if(w) act('startActivity',{type:'mosaic',opts:{word:w}}); }
-function spotlight(){
-  const sel = document.getElementById('gageTarget');
-  const name = sel && sel.value ? S.players.find(p=>p.id===sel.value).name : prompt('Qui ?','');
-  const defi = prompt('Défi ?','Headbang 15 s !');
-  act('startActivity',{type:'spotlight',opts:{targetName:name,defi}});
+
+// --- Spotlight : liste de défis chargée une fois, sélections persistées ---
+let SPOT_DEFIS = [];
+let _spotSel = { target:'', defi:'' };
+fetch('/api/spotlight/defis').then(r=>r.json()).then(d=>{ SPOT_DEFIS = d.defis||[]; if(S) render(); }).catch(()=>{});
+function launchSpotlight(){
+  const t = document.getElementById('spotTarget');
+  const targetId = (t && t.value) || _spotSel.target || null;
+  if (!targetId) { alert('Choisis un joueur connecté.'); return; }
+  const di = document.getElementById('spotDefi');
+  const idx = (di && di.value !== '') ? di.value : _spotSel.defi;
+  const defi = (idx !== '' && idx != null) ? (SPOT_DEFIS[Number(idx)] || '') : '';
+  act('startActivity',{type:'spotlight',opts:{targetId,defi}});
 }
 function drawGage(){
   act('drawGage',{pool:document.getElementById('gagePool').value||null,

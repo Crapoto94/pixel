@@ -4,6 +4,9 @@ node_modules/
 # État de partie (généré à l'exécution)
 server/save.json
 
+# Photos uploadées par les joueurs (créées à l'exécution)
+server/public/uploads/
+
 # QR codes générés (régénérés par `npm run qr`)
 server/qr/
 

@@ -7,7 +7,11 @@ set -e
 cd "$(dirname "$0")"
 
 echo "⬇️   Récupération du code depuis GitHub..."
-git pull --ff-only
+git fetch origin
+# On force l'alignement sur le remote : seuls les fichiers SUIVIS sont touchés.
+# save.json (état de partie) est gitignoré et les photos uploads/ sont non suivies
+# → tout cela reste intact, même en pleine soirée.
+git reset --hard origin/main
 
 echo "📦  Vérification des dépendances..."
 cd server

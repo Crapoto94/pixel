@@ -13,6 +13,7 @@ import { CONFIG, PLAYERS, NPCS } from './config.js';
 import { AVATARS } from './data/avatars.js';
 import { SCENARIO_SLIDES, AVATAR_BRIEF } from './data/briefing.js';
 import { PHOTO_MISSIONS } from './data/photos.js';
+import { SPOTLIGHT_DEFIS } from './data/spotlight.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -203,6 +204,18 @@ app.post('/api/blindtest/addtrack', (req, res) => {
   res.json({ ok: true, total: game.playlistTracks.length });
 });
 
+// --- Spotlight : vote de la salle (réussi / raté) --------------------
+app.post('/api/spotlight/vote', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.spotlightVote(p.id, req.body.verdict);
+  res.json({ ok: true });
+});
+
+// Liste des défis Spotlight (pour le menu déroulant du GM)
+app.get('/api/spotlight/defis', (req, res) => {
+  res.json({ defis: SPOTLIGHT_DEFIS });
+});
+
 // Défi des enfants joué directement sur la BORNE (pas de token)
 app.post('/api/kids/done', (req, res) => {
   game.markKidsDone();
@@ -281,6 +294,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'reset': game.reset(); break;
     case 'setPhotoPhase': game.setPhotoPhase(payload.phase ?? null); break;
     case 'blindtestAsk': game.blindtestAsk(); break;
+    case 'spotlightOpenVote': game.spotlightOpenVote(); break;
+    case 'spotlightTally': game.spotlightTally(); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });

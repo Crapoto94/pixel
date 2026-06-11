@@ -90,8 +90,17 @@ function detectSounds(s){
 let kidsKey = null;
 let pacKey = null;
 let pacEventSeen = 0;
+let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
   if(!STATE) return;
+  // Nettoyage du briefing si on en sort
+  if (briefTimer && !(STATE.activity && STATE.activity.type==='briefing')){
+    clearInterval(briefTimer); briefTimer = null; briefKey = null;
+  }
+  // --- BRIEFING : déroulé scénario + attendus par joueur ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='briefing'){
+    setupBriefing(); return;
+  }
   // --- PAC-MAN : prend le contrôle de la borne ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='pacman' && STATE.pacman){
     renderPacmanBorne(); return;
@@ -273,6 +282,38 @@ function highScore(){
     <div class="pixel neon-yellow center" style="font-size:14px">HIGH SCORE</div>
     ${ranked.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">🪙 ${p.coins}</span></div>`).join('')}
   </div>`;
+}
+
+// =================== BRIEFING (affichage borne) ===================
+function setupBriefing(){
+  if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
+  briefKey = STATE.activity.startedAt;
+  briefSlides = null; briefIdx = 0;
+  stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
+  tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
+  fetch('/api/briefing').then(r=>r.json()).then(d=>{
+    const scn = d.scenario.map(s=>({kind:'scn', title:s.title, text:s.text}));
+    const ply = d.players.map(p=>({kind:'ply', ...p}));
+    briefSlides = [...scn, {kind:'sep'}, ...ply, {kind:'go'}];
+    briefIdx = 0; showBriefSlide();
+    if (briefTimer) clearInterval(briefTimer);
+    briefTimer = setInterval(()=>{ briefIdx=(briefIdx+1)%briefSlides.length; showBriefSlide(); }, 6500);
+  }).catch(()=>{ stage.innerHTML='<div class="center"><p class="big">Erreur de chargement du briefing.</p></div>'; });
+}
+function showBriefSlide(){
+  if(!briefSlides) return;
+  const s = briefSlides[briefIdx]; if(!s) return;
+  let html = '';
+  if (s.kind==='scn')
+    html = `<div class="center glow-box"><h1 class="huge neon-pink">${esc(s.title)}</h1><p class="big" style="max-width:900px;margin:24px auto">${esc(s.text)}</p></div>`;
+  else if (s.kind==='sep')
+    html = `<div class="center glow-box"><h1 class="huge neon-yellow">LES AVATARS</h1><p class="big">Voici qui vous êtes…</p></div>`;
+  else if (s.kind==='ply')
+    html = `<div class="center"><div class="huge">${s.emoji||'🎮'}</div><h1 class="big" style="color:${s.color||'#fff'}">${esc(s.avatarName||'')}</h1><p class="big">${esc(s.name)}${s.isHero?' 👑':''}</p><p class="big" style="max-width:840px;margin:16px auto">${esc(s.brief||'')}</p></div>`;
+  else if (s.kind==='go')
+    html = `<div class="center glow-box"><h1 class="huge neon-pink blink">PRÊTS&nbsp;?</h1><p class="big">INSERT COIN…</p></div>`;
+  html += `<div class="center" style="margin-top:22px">${briefSlides.map((_,i)=>`<span style="display:inline-block;width:12px;height:12px;border-radius:50%;margin:0 4px;background:${i===briefIdx?'var(--neon)':'#ffffff33'}"></span>`).join('')}</div>`;
+  stage.innerHTML = html;
 }
 
 // =================== SÉQUENCE MUSICALE (affichage borne) ===================

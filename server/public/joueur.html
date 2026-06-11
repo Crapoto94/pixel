@@ -161,6 +161,14 @@ function footer() {
 }
 
 function controllerView(act) {
+  // BRIEFING : on invite à regarder la borne
+  if (act.type === 'briefing') {
+    return `<div class="card center glow-box">
+      <div class="pill neon-cyan">📖 BRIEFING</div>
+      <h2 class="neon-pink">Regarde la BORNE 📺</h2>
+      <p>Le scénario et ton rôle sont en train d'être présentés…</p>
+    </div>`;
+  }
   // SÉQUENCE MUSICALE : les pads de notes du joueur
   if (act.type === 'music_seq') {
     return musicController(act);

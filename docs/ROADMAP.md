@@ -18,7 +18,7 @@ Suivi des demandes et de leur état. (✅ fait · 🔧 en cours · ⏳ à faire)
 - ⏳ **Blind-test YouTube** : lecture auto des extraits (son seul) — *en attente des liens de Marc (il pré-remplit/corrige)*.
 
 ## Affichage & production
-- ⏳ **BORNE plus explicite** : afficher le scénario, le briefing et les attendus de chaque joueur.
+- ✅ **BORNE plus explicite** : écran **Briefing** (`📖 Briefing` sur la GM) qui déroule en slides auto le scénario puis les **attendus de chaque joueur** (avatar, prénom, mission). Source : `data/briefing.js`.
 - ✅ **Matériel imprimable** (`/print`) : cartes-avatars **illustrées (SVG)** + QR intégrés, carte dorée Player One, étiquettes COLIS 1-6, jetons PIÈCES/VIES à découper, carte enfants. Bouton Imprimer + mise en page A4.
 
 ## Déjà livré

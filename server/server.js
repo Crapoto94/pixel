@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import QRCode from 'qrcode';
 import { CONFIG, PLAYERS, NPCS } from './config.js';
 import { AVATARS } from './data/avatars.js';
+import { SCENARIO_SLIDES, AVATAR_BRIEF } from './data/briefing.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -38,6 +39,18 @@ app.get('/api/print', async (req, res) => {
     });
   }
   res.json({ players, npcs: NPCS, colis: [1, 2, 3, 4, 5, 6], publicUrl: CONFIG.publicUrl });
+});
+
+// Données du briefing affiché sur la BORNE (scénario + attendus par joueur)
+app.get('/api/briefing', (req, res) => {
+  const players = PLAYERS.map((p) => {
+    const a = AVATARS[p.avatar] || {};
+    return {
+      name: p.name, avatar: p.avatar, avatarName: a.name, emoji: a.emoji,
+      color: a.color, brief: AVATAR_BRIEF[p.avatar] || '', isHero: !!p.isHero,
+    };
+  });
+  res.json({ scenario: SCENARIO_SLIDES, players });
 });
 app.get('/j/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'joueur.html')));
 

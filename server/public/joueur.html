@@ -34,7 +34,15 @@ function api(path, body) {
 
 // --- Flux temps réel (SSE) + repli en polling si un proxy bufferise le flux ---
 let lastSse = 0;
-function applyState(s){ STATE = s; render(); }
+// On ne redessine QUE si l'état a vraiment changé : sinon le polling (~1/s)
+// recréerait l'<input> et effacerait le code en cours de frappe + le focus.
+let _lastJoueurJson = null;
+function applyState(s){
+  const j = JSON.stringify(s);
+  if (j === _lastJoueurJson) return;
+  _lastJoueurJson = j;
+  STATE = s; render();
+}
 const es = new EventSource('/events?token=' + encodeURIComponent(TOKEN));
 es.onmessage = (e) => { lastSse = Date.now(); applyState(JSON.parse(e.data)); };
 es.onerror = () => { /* l'EventSource se reconnecte tout seul */ };
@@ -411,6 +419,7 @@ function enqueteController(act) {
     </div>`;
   }
   const a = act.act || {};
+  if (_enqActSeen !== a.num) { _enqActSeen = a.num; _enqDraft = ''; } // nouvel acte → on vide le brouillon
   const frags = (act.myFragments||[]).map(f=>`
     <div style="border:2px solid var(--neon3);border-radius:10px;padding:10px;margin:8px 0;background:#1a1400">
       <div class="pill neon-yellow" style="font-size:11px">${esc(f.label||'PIÈCE')}</div>
@@ -426,16 +435,22 @@ function enqueteController(act) {
     ${frags ? `<div class="pill neon-cyan mt">🔍 TES PIÈCES À CONVICTION</div>${frags}
       <p class="muted" style="font-size:12px">Partage-les à voix haute avec la table : seule l'addition de toutes les pièces donne le code.</p>`
       : `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`}
-    <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase" />
+    <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase"
+      value="${esc(_enqDraft)}" oninput="_enqDraft=this.value" onkeydown="if(event.key==='Enter')enqueteCode()" autocomplete="off" />
     <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>
     <div id="enqMsg" class="center mt">${wrong}</div>
   </div>`;
 }
+// brouillon de code conservé entre les rendus ; réinitialisé à chaque acte
+let _enqDraft = '';
+let _enqActSeen = null;
 function enqueteCode(){
   const el = document.getElementById('enqCode');
   const v = el ? el.value : '';
+  _enqDraft = v;
   api('/api/enquete/code', { code: v }).then(r=>{
     const m = document.getElementById('enqMsg');
+    if (r.ok) { _enqDraft = ''; }
     if (m) m.innerHTML = r.ok
       ? '<span class="neon-cyan pixel" style="font-size:11px">✔ ACTE DÉBLOQUÉ !</span>'
       : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;

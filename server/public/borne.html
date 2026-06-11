@@ -50,7 +50,13 @@ const tickerEl = document.getElementById('ticker');
 let STATE = null;
 
 let lastSse = 0;
-function applyState(s){ STATE = s; detectSounds(STATE); detectMusic(STATE); syncYT(STATE); syncBlindtest(STATE); render(); }
+let _lastBorneJson = null;
+function applyState(s){
+  STATE = s; detectSounds(STATE); detectMusic(STATE); syncYT(STATE); syncBlindtest(STATE);
+  // On ne reconstruit le DOM que si l'état a changé (évite le clignotement à chaque poll).
+  const j = JSON.stringify(s);
+  if (j !== _lastBorneJson) { _lastBorneJson = j; render(); }
+}
 const es = new EventSource('/events');
 es.onmessage = (e) => { lastSse = Date.now(); applyState(JSON.parse(e.data)); };
 function pollBorne(){ fetch('/api/state').then(r=>r.json()).then(applyState).catch(()=>{}); }

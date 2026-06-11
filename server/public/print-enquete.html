@@ -48,6 +48,15 @@
   .mapkey svg { width:70mm; }
   .mapcard h3 { font-family:'Press Start 2P'; font-size:9px; margin:2px 4px 8px; }
 
+  /* Revue de presse (vrais articles) */
+  .press { background:#fff; border:2px solid #1a1030; border-radius:10px; padding:14px 18px; }
+  .press .art { border-top:1px solid #ddd; padding:10px 0; }
+  .press .art:first-child { border-top:0; }
+  .press .ttl { font-weight:900; color:#7a1d1d; font-size:16px; }
+  .press .src { color:#555; font-size:13px; }
+  .press .src a { color:#2a5db0; word-break:break-all; }
+  .press .sum { font-size:14px; margin-top:4px; }
+
   /* Cryptogramme */
   .cipher { background:#fff; border:2px solid #1a1030; border-radius:10px; padding:14px 18px; }
   .cipher .crypto span { display:inline-block; width:34px; height:44px; line-height:44px; text-align:center;
@@ -102,6 +111,18 @@ function render(E){
   const acts = E.acts || [];
   const mapAct = acts.find(a=>a.kind==='map');
   const cipherAct = acts.find(a=>a.kind==='cipher');
+
+  // Revue de presse réelle (articles à afficher / poser sur la table)
+  const pressActs = acts.filter(a=>a.sources && a.sources.length);
+  const pressBlock = pressActs.map(a=>`
+    <h2>Revue de presse — Acte ${a.num} (à poser sur la table)</h2>
+    <div class="press">
+      ${a.sources.map(s=>`<div class="art">
+        <div class="ttl">${esc(s.title)}</div>
+        <div class="src">${esc(s.source)}${s.date?(' · '+esc(s.date)):''} — <a href="${esc(s.url)}">${esc(s.url)}</a></div>
+        <div class="sum">${esc(s.summary)}</div>
+      </div>`).join('')}
+    </div>`).join('');
 
   // ① Fiche MJ — solution
   const gmRows = acts.map(a=>`<tr>
@@ -167,6 +188,8 @@ function render(E){
 
     <h2>① FICHE MJ — solution (à NE PAS distribuer)</h2>
     ${gm}
+
+    ${pressBlock}
 
     ${mapBlock}
 

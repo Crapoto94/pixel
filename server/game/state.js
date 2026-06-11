@@ -13,6 +13,7 @@ import { WORLDS, getWorld, normalize } from '../data/worlds.js';
 import { pickGage } from '../data/gages.js';
 import { QUESTIONS } from '../data/quiz.js';
 import { PacmanGame } from './pacman.js';
+import { NOTE_PALETTE, MELODY } from '../data/collab.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -273,6 +274,24 @@ export class GameState {
       buzzes: [], // [{id, name, t}]
       scores: {},
     };
+    // Séquence musicale collaborative : attribution des notes aux joueurs
+    if (type === 'music_seq') {
+      const players = this.players.filter((p) => p.connected);
+      const distinct = [...new Set(MELODY)]; // notes indispensables d'abord
+      const decoys = NOTE_PALETTE.map((_, i) => i).filter((i) => !distinct.includes(i));
+      const order = [...distinct, ...decoys];
+      const owners = {};
+      order.forEach((paletteIdx, i) => {
+        const owner = players[i % Math.max(1, players.length)];
+        if (owner) owners[paletteIdx] = owner.id;
+      });
+      this.activity.owners = owners;
+      this.activity.step = 0;
+      this.activity.revealed = 0;
+      this.activity.demo = null;
+      this.activity.wrongAt = 0;
+      this.activity.status = 'playing';
+    }
     // Quiz / blind-test : on initialise le déroulé QCM
     if (type === 'quiz' || type === 'blindtest') {
       const deck = type === 'blindtest' ? 'blindtest' : (opts.deck || 'videogame');
@@ -341,6 +360,7 @@ export class GameState {
   activityPublic(forPlayerId = null) {
     const a = this.activity;
     if (!a) return null;
+    if (a.type === 'music_seq') return this.musicPublic(forPlayerId);
     if (a.type !== 'quiz' && a.type !== 'blindtest') return a;
     const q = this.quizQuestion();
     const list = QUESTIONS[a.deck] || [];
@@ -421,6 +441,78 @@ export class GameState {
   pacmanDir(playerId, dir) {
     if (this.pacman) this.pacman.setDir(playerId, dir);
     // pas de broadcast ici : le prochain tick rafraîchit (évite le spam réseau)
+  }
+
+  // ---- Séquence musicale collaborative -----------------------------
+  musicPress(playerId, paletteIndex) {
+    const a = this.activity;
+    if (!a || a.type !== 'music_seq' || a.status !== 'playing') return;
+    paletteIndex = Number(paletteIndex);
+    if (a.owners[paletteIndex] !== playerId) return; // tu ne possèdes pas cette note
+    if (MELODY[a.step] === paletteIndex) {
+      a.step += 1;
+      if (a.step >= MELODY.length) {
+        a.status = 'win';
+        this.addLog('🎵 Mélodie reconstituée — BRAVO l\'orchestre !');
+      }
+    } else {
+      a.step = 0;
+      a.wrongAt = Date.now();
+    }
+    this.touch();
+  }
+
+  musicDemo() {
+    const a = this.activity;
+    if (!a || a.type !== 'music_seq') return;
+    a.demo = { seq: [...MELODY], at: Date.now() };
+    a.step = 0;
+    this.addLog('🎶 Démo de la mélodie jouée sur la borne.');
+    this.touch();
+  }
+
+  musicHint() {
+    const a = this.activity;
+    if (!a || a.type !== 'music_seq') return;
+    a.revealed = Math.min(MELODY.length, (a.revealed || 0) + 1);
+    this.addLog(`💡 Indice musical : ${a.revealed} note(s) révélée(s).`);
+    this.touch();
+  }
+
+  musicPublic(forPlayerId) {
+    const a = this.activity;
+    const len = MELODY.length;
+    const slots = [];
+    for (let i = 0; i < len; i++) {
+      let st = 'hidden', pi = null;
+      if (i < a.step) { st = 'done'; pi = MELODY[i]; }
+      else if (i < (a.revealed || 0)) { st = 'hint'; pi = MELODY[i]; }
+      slots.push({
+        st,
+        color: pi != null ? NOTE_PALETTE[pi].color : null,
+        label: pi != null ? NOTE_PALETTE[pi].label : null,
+        freq: pi != null ? NOTE_PALETTE[pi].freq : null,
+      });
+    }
+    const pads = [];
+    if (forPlayerId) {
+      Object.entries(a.owners).forEach(([pi, owner]) => {
+        if (owner === forPlayerId) {
+          const n = NOTE_PALETTE[pi];
+          pads.push({ index: Number(pi), label: n.label, color: n.color, freq: n.freq });
+        }
+      });
+    }
+    return {
+      type: 'music_seq', state: a.state, status: a.status,
+      len, step: a.step, revealed: a.revealed || 0, wrongAt: a.wrongAt || 0,
+      slots,
+      demo: a.demo ? {
+        at: a.demo.at,
+        seq: a.demo.seq.map((pi) => ({ color: NOTE_PALETTE[pi].color, freq: NOTE_PALETTE[pi].freq, label: NOTE_PALETTE[pi].label })),
+      } : null,
+      pads,
+    };
   }
 
   // Les enfants (Robin & Juliette) ont réussi le « Défi des Pixels »

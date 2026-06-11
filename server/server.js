@@ -101,6 +101,13 @@ app.post('/api/pacman/dir', (req, res) => {
   res.json({ ok: true });
 });
 
+// Séquence musicale : le joueur joue une de ses notes
+app.post('/api/music/press', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.musicPress(p.id, req.body.index);
+  res.json({ ok: true });
+});
+
 // --- API Game Master (Vincent éveillé OU Marc l'hôte) ---------------
 app.post('/api/gm/gage', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
@@ -147,6 +154,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'stopActivity': game.stopActivity(); break;
     case 'quizReveal': game.quizReveal(); break;
     case 'quizNext': game.quizNext(); break;
+    case 'musicDemo': game.musicDemo(); break;
+    case 'musicHint': game.musicHint(); break;
     case 'drawGage': game.drawGage(payload.pool || null, payload.targetId || null); break;
     case 'clearGage': game.clearGage(); break;
     case 'startVote': game.startVote(); break;

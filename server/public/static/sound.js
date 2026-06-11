@@ -71,5 +71,7 @@ window.SFX = (function () {
     // sons des 4 pads colorés (jeu des enfants)
     pad(i)   { const f = [392, 523, 659, 784][i % 4]; tone(f, 0, 0.32, 'square', 0.22); },
     padOk()  { seq([[523, 0.09], [659, 0.09], [784, 0.09], [1047, 0.22]], 'square', 0.22); },
+    // note libre (séquence musicale) — freq en Hz, départ optionnel
+    note(freq, start, dur) { tone(freq, start || 0, dur || 0.34, 'square', 0.22); },
   };
 })();

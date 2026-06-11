@@ -150,6 +150,10 @@ function footer() {
 }
 
 function controllerView(act) {
+  // SÉQUENCE MUSICALE : les pads de notes du joueur
+  if (act.type === 'music_seq') {
+    return musicController(act);
+  }
   // QUIZ / BLIND-TEST : QCM (question sur la BORNE, réponse ici)
   if (act.type === 'quiz' || act.type === 'blindtest') {
     return quizController(act);
@@ -216,6 +220,26 @@ function renderPacmanPlayer(me) {
   }
 }
 function pacDir(d){ if(window.SFX) {} api('/api/pacman/dir', { dir: d }); }
+
+function musicController(act) {
+  const slots = act.slots.map(s=>{
+    if(s.st==='done') return `<span class="mslot" style="background:${s.color};color:#111">${esc(s.label)}</span>`;
+    if(s.st==='hint') return `<span class="mslot" style="border-color:${s.color};color:${s.color}">${esc(s.label)}</span>`;
+    return `<span class="mslot mhidden">?</span>`;
+  }).join('');
+  const pads = (act.pads||[]).map(p=>
+    `<button class="mpad" style="background:${p.color}" onclick="musicPress(${p.index},${p.freq})">${esc(p.label)}</button>`
+  ).join('');
+  const win = act.status==='win';
+  return `<div class="card center glow-box">
+    <div class="pill neon-pink">🎵 SÉQUENCE MUSICALE</div>
+    <div class="mrow mt">${slots}</div>
+    <p class="muted">${act.step}/${act.len}${win?' — <span class="neon-yellow">RÉUSSI !</span>':(act.wrongAt?' — <span class="neon-pink">raté, on reprend</span>':'')}</p>
+    <p>${pads?'Ta/tes note(s) — joue au bon moment :':'<span class="muted">Tu observes la borne…</span>'}</p>
+    <div class="mpadrow">${pads}</div>
+  </div>`;
+}
+function musicPress(index, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/music/press', { index }); }
 
 function quizController(act) {
   const letters = ['A','B','C','D','E'];

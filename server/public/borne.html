@@ -53,7 +53,7 @@ const tickerEl = document.getElementById('ticker');
 let STATE = null;
 
 const es = new EventSource('/events');
-es.onmessage = (e) => { STATE = JSON.parse(e.data); detectSounds(STATE); render(); };
+es.onmessage = (e) => { STATE = JSON.parse(e.data); detectSounds(STATE); detectMusic(STATE); render(); };
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
 // --- Activation du son (1er tap, obligatoire sur tablette) ---
@@ -95,6 +95,10 @@ function render(){
     renderPacmanBorne(); return;
   }
   pacKey = null;
+  // --- Séquence musicale ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
+    renderMusicBorne(STATE.activity); return;
+  }
   // --- Défi des enfants : prend le contrôle de la borne (insensible au SSE) ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='pixel_pad'){
     if (kidsKey !== STATE.activity.startedAt){ kidsKey = STATE.activity.startedAt; buildKidsPad(); }
@@ -254,6 +258,40 @@ function highScore(){
     <div class="pixel neon-yellow center" style="font-size:14px">HIGH SCORE</div>
     ${ranked.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">🪙 ${p.coins}</span></div>`).join('')}
   </div>`;
+}
+
+// =================== SÉQUENCE MUSICALE (affichage borne) ===================
+function renderMusicBorne(a){
+  const slots = a.slots.map(s=>{
+    if(s.st==='done') return `<div class="mslot" style="background:${s.color};color:#111">${esc(s.label)}</div>`;
+    if(s.st==='hint') return `<div class="mslot" style="border-color:${s.color};color:${s.color}">${esc(s.label)}</div>`;
+    return `<div class="mslot mhidden">?</div>`;
+  }).join('');
+  const win = a.status==='win';
+  stage.innerHTML = `<div class="center">
+    <h1 class="big neon-pink">🎵 SÉQUENCE MUSICALE</h1>
+    <p class="big">${win?'<span class="neon-yellow pixel">MÉLODIE COMPLÈTE !</span>'
+      :'Reproduisez la mélodie — chacun sa note, dans le bon ordre.'}</p>
+    <div class="mrow" style="gap:12px">${slots}</div>
+    <p class="muted mt">${a.step}/${a.len} ${a.wrongAt&&!win?'· <span class="neon-pink blink">raté, on reprend !</span>':''}</p>
+  </div>`;
+  tickerEl.textContent = 'SÉQUENCE MUSICALE — coordonnez-vous !';
+}
+
+// Détection sonore de la séquence musicale (démo, note jouée, erreur, victoire)
+let _m = { demoAt: 0, step: 0, wrongAt: 0, win: false };
+function detectMusic(s){
+  if(!SOUND_ON || !window.SFX) return;
+  const a = s.activity;
+  if(!a || a.type!=='music_seq'){ _m = { demoAt:0, step:0, wrongAt:0, win:false }; return; }
+  if(a.demo && a.demo.at && a.demo.at!==_m.demoAt){
+    _m.demoAt = a.demo.at; let t = 0;
+    a.demo.seq.forEach(n=>{ SFX.note(n.freq, t, 0.34); t += 0.42; });
+  }
+  if(a.step>_m.step && a.slots[a.step-1] && a.slots[a.step-1].freq){ SFX.note(a.slots[a.step-1].freq); }
+  if(a.wrongAt && a.wrongAt!==_m.wrongAt){ SFX.wrong(); }
+  if(a.status==='win' && !_m.win){ SFX.win(); _m.win = true; }
+  _m.step = a.step; _m.wrongAt = a.wrongAt || 0;
 }
 
 // =================== PAC-MAN (affichage borne) ===================

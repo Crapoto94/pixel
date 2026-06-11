@@ -79,9 +79,20 @@ function render(){
       <button class="btn secondary" onclick="startAct('boss_final',{hp:100})">👾 Boss</button>
       <button class="btn warn" onclick="startAct('pixel_pad',{len:3})">🧒 Défi Pixels</button>
       <button class="btn warn" onclick="startAct('pacman',{seconds:120})">🟡 Pac-Man</button>
+      <button class="btn warn" onclick="startAct('music_seq')">🎵 Séquence</button>
     </div>
     <button class="btn danger mt" onclick="act('stopActivity')">⏹ STOP activité</button>
   </div>
+
+  ${S.activity && S.activity.type === 'music_seq' ? `
+  <div class="card" style="border-color:var(--neon3)">
+    <div class="pixel neon-yellow" style="font-size:11px">🎵 SÉQUENCE MUSICALE</div>
+    <div class="mt">Progression : <code>${S.activity.step}/${S.activity.len}</code> · indices : <code>${S.activity.revealed}</code> ${S.activity.status==='win'?'<span class="pill neon-cyan">RÉUSSI</span>':''}</div>
+    <div class="grid mt">
+      <button class="btn secondary" onclick="act('musicDemo')">🎶 Jouer la démo</button>
+      <button class="btn warn" onclick="act('musicHint')">💡 Indice (+1 note)</button>
+    </div>
+  </div>`:''}
 
   ${S.quizMaster ? `
   <div class="card" style="border-color:var(--neon3)">

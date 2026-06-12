@@ -164,7 +164,7 @@ function render(){
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='videoshow'){
     renderVideoBorne(STATE.activity); return;
   }
-  videoKey = null;
+  if (videoKey){ videoKey = null; destroyShowPlayer(); } // on a quitté : coupe le son
   // --- Mosaïque de téléphones ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='mosaic'){
     const a = STATE.activity;
@@ -471,24 +471,54 @@ function renderMusicBorne(a){
 }
 
 // =================== DIFFUSION VIDÉO (affichage borne) ===================
-let videoKey = null;
+//  Joue d'abord un STING d'intro (son à fond) puis enchaîne sur la vidéo
+//  principale (en boucle). Sting par défaut : Y0r3bg8hKG4 (override via a.intro).
+let videoKey = null, ytShow = null;
+const SHOW_INTRO = 'Y0r3bg8hKG4';
 function renderVideoBorne(a){
   if (videoKey === a.startedAt) return; // construit une seule fois (sinon la vidéo redémarre)
   videoKey = a.startedAt;
-  const v = a.video || '7kyY29BHTZs';
-  const src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';
   stage.innerHTML = `<div class="center">
     <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:20px;padding:8px 14px;border-radius:6px;display:inline-block;animation:blink 1s steps(1) infinite">${a.topLabel||'📺 VIDÉO'}</div>
     <div style="position:relative;max-width:430px;margin:12px auto;border:4px solid #ff2e88;border-radius:12px;overflow:hidden;background:#000">
-      <iframe width="100%" style="aspect-ratio:9/16;display:block;border:0"
-        src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+      <div style="aspect-ratio:9/16"><div id="ytshow" style="width:100%;height:100%"></div></div>
       ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
         font-family:var(--pixel);font-size:14px;line-height:1.5;padding:10px 12px;text-align:center">${a.chyron}</div>`:''}
     </div>
     ${a.footer?`<p class="big neon-yellow blink">${a.footer}</p>`:''}
   </div>`;
   tickerEl.textContent = (a.topLabel||'VIDÉO').replace(/<[^>]+>/g,'') + ' — ' + (a.chyron||'').replace(/<[^>]+>/g,' ');
-  try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); } catch(_){}
+  try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+  startShowPlayer(a.intro || SHOW_INTRO, a.video || '7kyY29BHTZs');
+}
+function destroyShowPlayer(){ try { if (ytShow) { ytShow.destroy(); ytShow = null; } } catch(_){ ytShow = null; } }
+function startShowPlayer(intro, main){
+  // Sans l'API YouTube : on saute le sting et on joue la vidéo principale.
+  if (!(window.YT && YT.Player)){
+    const el = document.getElementById('ytshow');
+    if (el) el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
+      src="https://www.youtube.com/embed/${main}?autoplay=1&playsinline=1&loop=1&playlist=${main}&rel=0"
+      allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+    return;
+  }
+  destroyShowPlayer();
+  ytShow = new YT.Player('ytshow', {
+    height:'100%', width:'100%', videoId: intro,
+    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
+    events:{
+      onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+      onStateChange(e){
+        if (e.data === YT.PlayerState.ENDED){
+          if (!ytShow._main){ // fin du sting → on lance la vidéo principale
+            ytShow._main = true;
+            try{ e.target.loadVideoById(main); e.target.unMute(); e.target.setVolume(100); }catch(_){}
+          } else { // boucle la vidéo principale
+            try{ e.target.seekTo(0, true); e.target.playVideo(); }catch(_){}
+          }
+        }
+      }
+    }
+  });
 }
 
 // =================== ROUE DES GAGES (affichage borne) ===================

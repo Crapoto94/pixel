@@ -453,7 +453,7 @@ export class GameState {
     this.addLog(`💡 ${p ? p.name : '?'} demande un indice !`);
     this.startActivity('videoshow', {
       video: 'hIovAaitgsI',
-      startAt: 56,
+      startAt: 0,
       skipIntro: true,
       topLabel: '💡 INDICE',
       chyron: 'Un indice pour vous aider…',

@@ -70,7 +70,7 @@ function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>'
 let SOUND_ON = false;
 function enableSound(){
   if (SOUND_ON) return;
-  if (window.SFX) { SFX.unlock(); SFX.coin(); }
+  if (window.SFX) { SFX.unlock(); SFX.coin(); if (SFX.pacPreload) SFX.pacPreload(); }
   SOUND_ON = true;
   const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
   if (ytAmb) { try { ytAmb.unMute(); } catch(_){} } // déjà en train de jouer, on retire juste le mute
@@ -665,6 +665,38 @@ function detectMusic(s){
 
 // =================== PAC-MAN (affichage borne) ===================
 function pacIcon(e){ return e.role==='ghost' ? '👻' : (e.role==='mr' ? '🟡' : '🌸'); }
+// Sons Pac-Man branchés au CONTEXTE : waka à chaque gomme, super-gomme,
+// fantôme mangé, mort, élimination, victoire/défaite. (fichiers si présents,
+// sinon recréations 8-bit — cf. SFX.pac dans sound.js)
+let _pacAudio = { dots: null, fright: false, status: 'playing' };
+function detectPacAudio(pm){
+  if (!SOUND_ON || !window.SFX || !SFX.pac || !pm) return;
+  // waka-waka : une gomme de moins → un chomp (throttlé à 1 par tick)
+  if (_pacAudio.dots != null && pm.dotsLeft < _pacAudio.dots && pm.status === 'playing') SFX.pac.chomp();
+  _pacAudio.dots = pm.dotsLeft;
+  // super-gomme : entrée en mode fantômes bleus
+  if (pm.frightened && !_pacAudio.fright) SFX.pac.power();
+  _pacAudio.fright = !!pm.frightened;
+  // événements transitoires (non rejoués)
+  if (pm.events && pm.events.length){
+    let maxAt = pacEventSeen;
+    pm.events.forEach(ev=>{
+      if (ev.at > pacEventSeen){
+        if (ev.type === 'ghost_eaten') SFX.pac.eatGhost();
+        else if (ev.type === 'pac_caught') SFX.pac.death();
+        else if (ev.type === 'eliminated') SFX.pacOut();
+      }
+      if (ev.at > maxAt) maxAt = ev.at;
+    });
+    pacEventSeen = maxAt;
+  }
+  // fin de partie : jingle de victoire (Pac) ou de défaite
+  if (pm.status !== 'playing' && _pacAudio.status === 'playing'){
+    if (pm.status === 'pacwin') SFX.pac.win(); else SFX.pac.lose();
+  }
+  _pacAudio.status = pm.status;
+}
+
 function renderPacmanBorne(){
   const pm = STATE.pacman;
   if (pacKey !== STATE.activity.startedAt){
@@ -676,22 +708,12 @@ function renderPacmanBorne(){
           style="max-width:94vw;max-height:66vh;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
         <div id="pacroles" class="muted" style="font-size:18px;margin-top:8px"></div>
       </div>`;
+    _pacAudio = { dots: null, fright: false, status: 'playing' }; // reset sons
+    if (SOUND_ON && window.SFX && SFX.pac) SFX.pac.intro(); // coup d'envoi
   }
   const canvas = document.getElementById('paccanvas');
   if (canvas) drawPacman(canvas, pm, null, { names: true });
-  // sons sur les événements (capture = musique de perte / fantôme mangé / élimination)
-  if (SOUND_ON && window.SFX && pm.events && pm.events.length){
-    let maxAt = pacEventSeen;
-    pm.events.forEach(ev=>{
-      if(ev.at>pacEventSeen){
-        if(ev.type==='eliminated') SFX.pacOut();
-        else if(ev.type==='pac_caught') SFX.pacDeath();   // 🎵 musique de perte
-        else if(ev.type==='ghost_eaten') SFX.coin();
-      }
-      if(ev.at>maxAt) maxAt=ev.at;
-    });
-    pacEventSeen = maxAt;
-  }
+  detectPacAudio(pm);
   const hud = document.getElementById('pachud');
   if (hud){
     if (pm.status!=='playing'){

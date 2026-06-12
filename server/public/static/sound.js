@@ -56,8 +56,71 @@ window.SFX = (function () {
     o.stop(t0 + dur + 0.03);
   }
 
+  // ===================================================================
+  //  PAC-MAN — couche audio « fichier OU synthèse ».
+  //  Si un fichier existe dans /static/sfx/<nom>.mp3 (ou .wav), il est joué ;
+  //  sinon on retombe sur une recréation 8-bit synthétisée (zéro fichier,
+  //  hors-ligne). Déposez vos propres sons dans server/public/static/sfx/.
+  // ===================================================================
+  const PAC_NAMES = ['intro', 'chomp', 'eatghost', 'death', 'power', 'fruit', 'extend', 'win', 'lose'];
+  const pacFiles = {}; // nom -> { ok:bool|null, el:Audio }
+  function pacTryLoad(name) {
+    if (pacFiles[name]) return;
+    const rec = { ok: null, el: null };
+    pacFiles[name] = rec;
+    const tryExt = (exts) => {
+      if (!exts.length) { rec.ok = false; return; }
+      const el = new Audio();
+      el.preload = 'auto';
+      el.addEventListener('canplaythrough', () => { rec.ok = true; rec.el = el; }, { once: true });
+      el.addEventListener('error', () => tryExt(exts.slice(1)), { once: true });
+      el.src = '/static/sfx/' + name + '.' + exts[0];
+      el.load();
+    };
+    tryExt(['mp3', 'ogg', 'wav']);
+  }
+  function pacPreload() { PAC_NAMES.forEach(pacTryLoad); }
+  // Joue le fichier s'il est dispo, sinon la version synthétisée (synth()).
+  function pacPlay(name, synth, vol = 0.5) {
+    const rec = pacFiles[name];
+    if (rec && rec.ok && rec.el) {
+      try { const c = rec.el.cloneNode(); c.volume = vol; c.play(); return; } catch (_) { /* fallback */ }
+    }
+    try { synth(); } catch (_) {}
+  }
+
+  // --- Recréations 8-bit (style Pac-Man, non extraites de l'original) ---
+  let _waka = 0;
+  const pac = {
+    preload: pacPreload,
+    // « waka-waka » : on alterne deux blips (montant / descendant) à chaque gomme
+    chomp() {
+      pacPlay('chomp', () => {
+        _waka ^= 1;
+        if (_waka) slide(420, 190, 0.07, 'square', 0.12);
+        else slide(190, 420, 0.07, 'square', 0.12);
+      }, 0.35);
+    },
+    // super-gomme / mode fantômes bleus
+    power() { pacPlay('power', () => seq([[330,0.08],[392,0.08],[494,0.08],[392,0.08],[330,0.12]], 'square', 0.18)); },
+    // Pac mange un fantôme (montée rapide « bweeoop »)
+    eatGhost() { pacPlay('eatghost', () => { slide(280, 1000, 0.22, 'square', 0.22); tone(1245, 0.2, 0.12, 'square', 0.2); }); },
+    // un Pac se fait attraper (jingle de mort caractéristique)
+    death() { pacPlay('death', () => { slide(660, 110, 0.55, 'square', 0.25);
+      seq([[0,0.1],[523,0.1],[0,0.05],[415,0.1],[0,0.05],[330,0.1],[0,0.05],[262,0.22]], 'square', 0.2); }); },
+    // bonus fruit
+    fruit() { pacPlay('fruit', () => seq([[784,0.08],[988,0.08],[1319,0.16]], 'square', 0.2)); },
+    // vie supplémentaire
+    extend() { pacPlay('extend', () => seq([[523,0.1],[784,0.1],[1047,0.24]], 'square', 0.22)); },
+    // intro / coup d'envoi (arpège, pas la mélodie originale)
+    intro() { pacPlay('intro', () => seq([[262,0.12],[392,0.12],[523,0.12],[659,0.12],[523,0.12],[659,0.12],[784,0.3]], 'square', 0.2)); },
+    win() { pacPlay('win', () => seq([[523,0.12],[659,0.12],[784,0.12],[1047,0.12],[1319,0.45]], 'square', 0.24)); },
+    lose() { pacPlay('lose', () => seq([[392,0.14],[330,0.14],[262,0.14],[196,0.36]], 'sawtooth', 0.24)); },
+  };
+
   return {
     unlock,
+    pac, pacPreload,
     coin()   { seq([[988, 0.08], [1319, 0.18]], 'square', 0.22); },
     start()  { seq([[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.28]], 'square', 0.22); },
     level()  { seq([[392, 0.08], [523, 0.08], [659, 0.2]], 'square', 0.22); },

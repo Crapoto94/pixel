@@ -26,7 +26,7 @@
 export const ENQUETE = {
   title: "DOSSIER 94100 — L'AFFAIRE DES PARAPHEURS PERDUS",
   pitch:
-    "Saint-Maur-des-Fossés. La directrice des finances de la mairie, Solène Vasseur, est " +
+    "Saint-Maur-des-Fossés. La directrice des finances de la mairie, Nathalie NEVES, est " +
     "retrouvée morte dans la salle des mariages de l'Hôtel de Ville, entourée de 50 verres de " +
     "champagne brisés. Pas d'effraction. Juste un toast funèbre. Rien ne vous sera donné : tout " +
     "se déduit. Croisez les articles, les documents et vos pièces à conviction.",
@@ -112,7 +112,7 @@ export const ENQUETE = {
         date: "—",
         body:
           "MAIRE › DIRECTEUR GÉNÉRAL DES SERVICES (signature « F. E. ») › Direction des Finances " +
-          "(Solène VASSEUR) · Direction des Systèmes d'Information (DSI) · Services techniques.\n" +
+          "(Nathalie NEVES) · Direction des Systèmes d'Information (DSI) · Services techniques.\n" +
           "Note RH en marge : prénom du DGS = Frédéric ; NOM = 5 lettres, deux voyelles E.\n" +
           "Mention manuscrite : « les bons étaient RÉÉCRITS après signature des services ».",
       },
@@ -231,7 +231,7 @@ export const ENQUETE = {
       reveal:
         "ACTE 4 — Le falsificateur en chef est Camus LEJARRE : prestataire fantôme (compte AD-666, " +
         "hors marché), il a purgé les logs la nuit du 24 puis s'est volatilisé à la campagne. Le " +
-        "réseau est complet : ERZEN + VASSEUR + LEJARRE. Reste le tueur. Suivez la ville.",
+        "réseau est complet : ERZEN + NEVES + LEJARRE. Reste le tueur. Suivez la ville.",
       fragments: [
         { label: "Pièce D1 — le compte", text: "Le falsificateur opérait depuis un compte admin créé HORS marché public. (Lequel, dans la table ?)" },
         { label: "Pièce D2 — la purge", text: "C'est CE compte qui a purgé les journaux d'audit la nuit du 24." },
@@ -412,7 +412,7 @@ export const ENQUETE = {
         help: "Clé = la lettre du plan. Trouvez son rang dans l'alphabet, puis reculez CHAQUE lettre d'autant.",
       },
       scene:
-        "Vous tenez le coupable (Guillaume), les complices (Erzen, Vasseur, Lejarre), le compte (50) " +
+        "Vous tenez le coupable (Guillaume), les complices (Erzen, Neves, Lejarre), le compte (50) " +
         "et la date (2013). Le décalage n'est pas donné : c'est le rang de la lettre du plan. " +
         "Décodez le mot — il nomme l'objet du mobile et clôt le dossier.",
       riddle:
@@ -431,7 +431,7 @@ export const ENQUETE = {
         "DOSSIER CLOS — Le meurtrier est GUILLAUME, ancien DSI. Mobile : la VENGEANCE des parapheurs " +
         "perdus. Il avait retrouvé dans une benne le parapheur contenant les bons qu'il avait " +
         "rédigés, falsifiés par le DGS Frédéric ERZEN — épaulé par le falsificateur en chef Camus " +
-        "LEJARRE (en cavale) — et payés par la directrice Solène VASSEUR. 50 bons salis, 50 verres " +
+        "LEJARRE (en cavale) — et payés par la directrice Nathalie NEVES. 50 bons salis, 50 verres " +
         "brisés. L'affaire Idéepôle aura fait une victime de plus.",
       fragments: [
         { label: "Rappel clé", text: "La clé du chiffre est la LETTRE obtenue sur le plan (acte 5). Retrouvez-la." },
@@ -451,10 +451,10 @@ export const ENQUETE = {
     mobile:
       "La vengeance des parapheurs perdus : ses bons de commande, falsifiés par le DGS Frédéric " +
       "Erzen — aidé du falsificateur en chef Camus Lejarre, en cavale — et payés par la directrice " +
-      "Solène Vasseur, retrouvés par hasard dans une benne du quartier de La Varenne.",
+      "Nathalie NEVES, retrouvés par hasard dans une benne du quartier de La Varenne.",
     cast:
       "Le réseau : Frédéric ERZEN (DGS, falsifiait) · Camus LEJARRE (technique, en fuite) · " +
-      "Solène VASSEUR (finances, victime). Innocenté : Frédéric COUPAYE (lanceur d'alerte). " +
+      "Nathalie NEVES (finances, victime). Innocenté : Frédéric COUPAYE (lanceur d'alerte). " +
       "Meurtrier : GUILLAUME (ancien DSI trahi).",
     disclaimer:
       "Fiction. L'affaire Bygmalion/Idéepôle, le magazine municipal et les lieux sont réels " +

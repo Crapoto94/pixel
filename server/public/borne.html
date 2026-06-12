@@ -111,6 +111,7 @@ let kidsKey = null;
 let pacKey = null;
 let tronKey = null;
 let pongKey = null;
+let bombKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
@@ -147,6 +148,11 @@ function render(){
     renderPongBorne(); return;
   }
   pongKey = null;
+  // --- BOMBERMAN : arène centrale ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='bomberman' && STATE.bomb){
+    renderBombBorne(); return;
+  }
+  bombKey = null;
   // --- Séquence musicale ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
@@ -1027,6 +1033,51 @@ function renderPongBorne(){
   const hud=document.getElementById('ponghud');
   if(hud) hud.innerHTML = '🏓 PONG &nbsp; ' + t.players.map(p=>`<span style="color:${p.color};${p.alive?'':'opacity:.4'}">${esc(p.name)} ${'❤'.repeat(Math.max(0,p.hp))||'💀'}</span>`).join(' &nbsp; ');
   tickerEl.textContent='PONG — ne laisse pas passer la balle !';
+}
+
+// =================== BOMBERMAN (affichage borne/joueur) ===================
+function bombDraw(ctx, cvw, cvh, t, mineId){
+  const cell = Math.floor(Math.min(cvw/t.w, cvh/t.h));
+  const ox = Math.floor((cvw - cell*t.w)/2), oy = Math.floor((cvh - cell*t.h)/2);
+  ctx.fillStyle='#05010f'; ctx.fillRect(0,0,cvw,cvh);
+  for(let r=0;r<t.h;r++){ const row=t.grid[r]; for(let c=0;c<t.w;c++){ const ch=row[c]; const x=ox+c*cell,y=oy+r*cell;
+    if(ch==='W'){ ctx.fillStyle='#3a2bd0'; ctx.fillRect(x+1,y+1,cell-2,cell-2); }
+    else if(ch==='B'){ ctx.fillStyle='#7a5a3a'; ctx.fillRect(x+2,y+2,cell-4,cell-4); ctx.strokeStyle='#9a7a4a'; ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5); }
+    else { ctx.fillStyle='#120826'; ctx.fillRect(x,y,cell,cell); }
+  } }
+  // souffles
+  const blink = Math.floor(Date.now()/80)%2===0;
+  for(const b of (t.blasts||[])){ const x=ox+b.c*cell,y=oy+b.r*cell; ctx.fillStyle=blink?'#ffe600':'#ff7a2c'; ctx.fillRect(x+1,y+1,cell-2,cell-2); }
+  // bombes
+  for(const b of (t.bombs||[])){ const x=ox+b.c*cell+cell/2,y=oy+b.r*cell+cell/2; const pulse=0.5+0.5*Math.sin(Date.now()/120); ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(x,y,cell*0.34*(0.9+0.15*pulse),0,7); ctx.fill(); ctx.fillStyle='#ff2e88'; ctx.fillRect(x-1,y-cell*0.4,2,cell*0.12); }
+  // joueurs
+  for(const p of t.players){ if(!p.alive) continue; const x=ox+p.c*cell+cell/2,y=oy+p.r*cell+cell/2; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(x,y,cell*0.36,0,7); ctx.fill(); if(mineId&&p.id===mineId){ ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,cell*0.42,0,7); ctx.stroke(); } }
+}
+function renderBombBorne(){
+  const t = STATE.bomb;
+  if (t.status!=='playing' && t.ranking){
+    stage.innerHTML = `<div class="center">
+      <h1 class="huge neon-yellow pixel">💣 BOMBERMAN TERMINÉ</h1>
+      ${t.ranking[0]?`<p class="big neon-cyan">🏆 ${esc(t.ranking[0].name)} survit (+1 vie ❤️)</p>`:''}
+      <div class="card leaderboard" style="max-width:520px;margin:auto;text-align:left">
+        ${t.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} ${i===0?'❤️':'💔'} ${p.alive?'':'☠️'}</div>`).join('')}
+      </div></div>`;
+    tickerEl.textContent='BOMBERMAN — manche terminée !';
+    return;
+  }
+  if (bombKey !== STATE.activity.startedAt){
+    bombKey = STATE.activity.startedAt;
+    stage.innerHTML = `<div class="center">
+      <div id="bombhud" class="muted" style="font-size:18px;margin-bottom:4px"></div>
+      <canvas id="bombcv" width="${t.w*40}" height="${t.h*40}"
+        style="max-width:92vw;max-height:64vh;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+    </div>`;
+  }
+  const cv=document.getElementById('bombcv');
+  if(cv) bombDraw(cv.getContext('2d'), cv.width, cv.height, t, null);
+  const hud=document.getElementById('bombhud');
+  if(hud) hud.innerHTML = '💣 BOMBERMAN &nbsp; ' + t.players.map(p=>`<span style="color:${p.color};${p.alive?'':'opacity:.35;text-decoration:line-through'}">${esc(p.name)}</span>`).join(' &nbsp; ');
+  tickerEl.textContent='BOMBERMAN — survis au dernier !';
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================

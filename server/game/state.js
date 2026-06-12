@@ -18,6 +18,7 @@ import { TetrisGame } from './tetris.js';
 import { TronGame } from './tron.js';
 import { Game2048 } from './game2048.js';
 import { PongGame } from './pong.js';
+import { BombermanGame } from './bomberman.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
@@ -57,6 +58,7 @@ export class GameState {
     if (this.tronTimer) { clearInterval(this.tronTimer); this.tronTimer = null; }
     if (this.g2048Timer) { clearInterval(this.g2048Timer); this.g2048Timer = null; }
     if (this.pongTimer) { clearInterval(this.pongTimer); this.pongTimer = null; }
+    if (this.bombTimer) { clearInterval(this.bombTimer); this.bombTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
@@ -65,6 +67,7 @@ export class GameState {
     this.tron = null;   // partie Tron en cours
     this.g2048 = null;  // partie 2048 en cours
     this.pong = null;   // partie Pong en cours
+    this.bomb = null;   // partie Bomberman en cours
     this.pacRotation = []; // historique des rôles Pac (rotation entre manches)
     this.mosaicCount = 0; // manches de mosaïque jouées (difficulté croissante)
     this.phase = 'lobby'; // lobby | world | bonus | activity | finale | win
@@ -111,7 +114,7 @@ export class GameState {
     //  - pacmanTimer / _autoAdvanceTimer (objets Timer)
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
-      g2048Timer, g2048, pongTimer, pong, _autoAdvanceTimer, _roueTimer, _briefTimer, ...data } = this;
+      g2048Timer, g2048, pongTimer, pong, bombTimer, bomb, _autoAdvanceTimer, _roueTimer, _briefTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -508,6 +511,7 @@ export class GameState {
     if (type === 'tron') return this.startTron(opts);
     if (type === '2048') return this.startG2048(opts);
     if (type === 'pong') return this.startPong(opts);
+    if (type === 'bomberman') return this.startBomberman(opts);
     this.activity = {
       type,
       startedAt: Date.now(),
@@ -1074,12 +1078,14 @@ export class GameState {
     if (this.tronTimer) { clearInterval(this.tronTimer); this.tronTimer = null; }
     if (this.g2048Timer) { clearInterval(this.g2048Timer); this.g2048Timer = null; }
     if (this.pongTimer) { clearInterval(this.pongTimer); this.pongTimer = null; }
+    if (this.bombTimer) { clearInterval(this.bombTimer); this.bombTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;
     this.g2048 = null;
     this.pong = null;
+    this.bomb = null;
     if (this.activity) this.activity.state = 'done';
     this.phase = 'world';
     this.touch();
@@ -1242,6 +1248,30 @@ export class GameState {
   }
   pongMove(playerId, dir) { if (this.pong) this.pong.move(playerId, dir); }
 
+  // ---- BOMBERMAN ---------------------------------------------------
+  startBomberman(opts = {}) {
+    const players = this.players.filter((p) => p.connected);
+    if (players.length < 2) { this.addLog('⚠️ Bomberman : il faut au moins 2 joueurs connectés.'); this.touch(); return; }
+    this.bomb = new BombermanGame(players, opts);
+    this.activity = { type: 'bomberman', startedAt: Date.now(), state: 'running', data: {} };
+    this.phase = 'activity';
+    this.addLog('💣 BOMBERMAN lancé ! Posez des bombes, survivez le dernier.');
+    if (this.bombTimer) clearInterval(this.bombTimer);
+    this.bombTimer = setInterval(() => {
+      if (!this.bomb) return;
+      this.bomb.tick();
+      if (this.bomb.status !== 'playing') {
+        clearInterval(this.bombTimer); this.bombTimer = null;
+        this._applyArcadeLives(this.bomb.ranking(), 'BOMBERMAN', () => 'survivant');
+        this.save();
+      }
+      this.broadcast();
+    }, this.bomb.tickMs);
+    this.touch();
+  }
+  bombMove(playerId, dir) { if (this.bomb) { this.bomb.move(playerId, dir); this.broadcast(); } }
+  bombDrop(playerId) { if (this.bomb) { this.bomb.placeBomb(playerId); this.broadcast(); } }
+
   // Applique les vies de fin de manche arcade : vainqueur +1 (max 3), autres −1.
   _applyArcadeLives(rank, label, detail) {
     rank.forEach((r, i) => {
@@ -1396,6 +1426,7 @@ export class GameState {
       tron: this.tron ? this.tron.publicState() : null,
       g2048: this.g2048 ? this.g2048.publicState() : null,
       pong: this.pong ? this.pong.publicState() : null,
+      bomb: this.bomb ? this.bomb.publicState() : null,
       photoPhase: this.photoPhase,
       photos: this.photoPhase ? this.photos : [],
       photoResults: this.photoPhase === 'results' ? this.photoResults() : null,

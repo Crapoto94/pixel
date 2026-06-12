@@ -56,6 +56,8 @@
   .press .src { color:#555; font-size:13px; }
   .press .src a { color:#2a5db0; word-break:break-all; }
   .press .sum { font-size:14px; margin-top:4px; }
+  .press .sum.doc { white-space:pre-line; font-family:'Special Elite','Courier New',monospace; font-size:13px;
+    background:#fbfaf5; border:1px dashed #b9a; border-radius:6px; padding:8px 10px; margin-top:6px; }
 
   /* Cryptogramme */
   .cipher { background:#fff; border:2px solid #1a1030; border-radius:10px; padding:14px 18px; }
@@ -112,18 +114,6 @@ function render(E){
   const mapAct = acts.find(a=>a.kind==='map');
   const cipherAct = acts.find(a=>a.kind==='cipher');
 
-  // Revue de presse réelle (articles à afficher / poser sur la table)
-  const pressActs = acts.filter(a=>a.sources && a.sources.length);
-  const pressBlock = pressActs.map(a=>`
-    <h2>Revue de presse — Acte ${a.num} (à poser sur la table)</h2>
-    <div class="press">
-      ${a.sources.map(s=>`<div class="art">
-        <div class="ttl">${esc(s.title)}</div>
-        <div class="src">${esc(s.source)}${s.date?(' · '+esc(s.date)):''} — <a href="${esc(s.url)}">${esc(s.url)}</a></div>
-        <div class="sum">${esc(s.summary)}</div>
-      </div>`).join('')}
-    </div>`).join('');
-
   // ① Fiche MJ — solution
   const gmRows = acts.map(a=>`<tr>
     <td><b>${a.num}</b></td>
@@ -140,10 +130,26 @@ function render(E){
     ${(E.finale&&E.finale.cast)?`<p class="rev">🎭 ${esc(E.finale.cast)}</p>`:''}
   </div>`;
 
-  // ② Pièces à conviction (cartes à découper), regroupées par acte
+  // ② Par acte : le DOCUMENT à poser sur la table (où se cache l'info) + les
+  //    pièces à conviction (contraintes) à découper et distribuer.
   const clueSheets = acts.map(a=>{
+    // Document de l'acte : revue de presse, OU organigramme/registre/table/rapport…
+    let doc = '';
+    if (a.sources && a.sources.length) {
+      doc = `<div class="press">${a.sources.map(s=>`<div class="art">
+        <div class="ttl">${esc(s.title)}</div>
+        <div class="src">${esc(s.source)}${s.date?(' · '+esc(s.date)):''} — <a href="${esc(s.url)}">${esc(s.url)}</a></div>
+        <div class="sum">${esc(s.summary)}</div>
+      </div>`).join('')}</div>`;
+    } else if (a.article && a.article.body) {
+      doc = `<div class="press"><div class="art">
+        <div class="ttl">📄 ${esc(a.article.source||'')}${a.article.date?(' · '+esc(a.article.date)):''}</div>
+        <div class="sum doc">${esc(a.article.body)}</div>
+      </div></div>`;
+    }
+    const docLabel = doc ? `<p style="font-size:13px;color:#2a5db0;margin:0 6px 6px">📌 DOCUMENT À POSER SUR LA TABLE (l'info-clé est ici) :</p>${doc}` : '';
     const cards = (a.fragments||[]).map(f=>{
-      const give = /leurre|fausse piste/i.test(f.text) ? ' giveaway' : '';
+      const give = /leurre|fausse piste|écartez|homonyme/i.test(f.text) ? ' giveaway' : '';
       return `<div class="clue${give}">
         <div class="tag">PIÈCE À CONVICTION</div>
         <div class="act">ACTE ${a.num}</div>
@@ -152,8 +158,11 @@ function render(E){
         <div class="foot">Dossier 94100 · ${esc(a.title)}</div>
       </div>`;
     }).join('');
-    const humor = a.humor ? `<p style="font-style:italic;color:#7a1d1d;font-size:14px;margin:0 6px 8px">📎 ${esc(a.humor)}</p>` : '';
-    return `<h2>Pièces — Acte ${a.num} : ${esc(a.title)}</h2>${humor}<div class="cards">${cards}</div>`;
+    const humor = a.humor ? `<p style="font-style:italic;color:#7a1d1d;font-size:14px;margin:8px 6px">📎 ${esc(a.humor)}</p>` : '';
+    const riddle = a.riddle ? `<p style="font-size:14px;margin:0 6px 8px"><b>❓ Énigme :</b> ${esc(a.riddle)}</p>` : '';
+    return `<h2>Acte ${a.num} : ${esc(a.title)}</h2>${riddle}${docLabel}
+      <p style="font-size:13px;color:#555;margin:10px 6px 4px">✂️ Pièces à conviction à découper et distribuer :</p>
+      <div class="cards">${cards}</div>${humor}`;
   }).join('');
 
   // ③ Plan
@@ -188,8 +197,6 @@ function render(E){
 
     <h2>① FICHE MJ — solution (à NE PAS distribuer)</h2>
     ${gm}
-
-    ${pressBlock}
 
     ${mapBlock}
 

@@ -476,7 +476,7 @@ function renderEnqueteBorne(a){
   const artBlock = (!act.sources && (art.body)) ? `
     <div class="card glow-box" style="text-align:left;border-color:var(--neon3);margin-top:14px">
       <div class="pill neon-yellow">📄 ${esc(art.source||'')}${art.date?(' — '+esc(art.date)):''}</div>
-      <p style="font-size:22px;line-height:1.45">${esc(art.body||'')}</p>
+      <p style="font-size:20px;line-height:1.5;white-space:pre-line">${esc(art.body||'')}</p>
     </div>` : '';
   const mapBlock = act.map ? enqueteMapSvg(act.map) : '';
   const cipherBlock = act.cipher ? enqueteCipherStrip(act.cipher) : '';

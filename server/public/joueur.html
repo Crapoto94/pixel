@@ -59,6 +59,8 @@ function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>
 let pacKey = null;
 let mosKey = null;
 let tetKey = null;
+let tronKey = null;
+let g2048Key = null;
 
 // --- Upload photo (input caché, réutilisé) ---
 let _photoMissionIdx = 0;
@@ -99,6 +101,16 @@ function render() {
     renderTetrisPlayer(me); return;
   }
   tetKey = null;
+  // --- TRON : manette directionnelle ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'tron' && STATE.tron) {
+    renderTronPlayer(me); return;
+  }
+  tronKey = null;
+  // --- 2048 : glissements ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === '2048' && STATE.g2048) {
+    render2048Player(me); return;
+  }
+  g2048Key = null;
   // --- MOSAÏQUE : fragment plein écran ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'mosaic') {
     renderMosaicPlayer(me); return;
@@ -479,6 +491,79 @@ function renderTetrisPlayer(me){
   }
   if (nextEl) nextEl.innerHTML = (mine && !mine.eliminated && t.status==='playing') ? tetMini(mine.next, Math.max(8,Math.floor(cell*0.6))) : '';
   if (grid && mine) grid.innerHTML = tetGrid(mine.cells, cell);
+}
+
+// =================== TRON (manette joueur) ===================
+function tronDir(d){ api('/api/tron/move', { dir: d }); }
+function renderTronPlayer(me){
+  const t = STATE.tron;
+  const mine = t.players.find(p=>p.id===me.id);
+  if (tronKey !== STATE.activity.startedAt){
+    tronKey = STATE.activity.startedAt;
+    app.innerHTML = `
+      <div class="center">
+        <div id="troninfo" class="pixel" style="font-size:13px;margin:6px 0"></div>
+        <div class="dpad">
+          <div class="empty"></div><button data-d="up">▲</button><div class="empty"></div>
+          <button data-d="left">◄</button><div class="empty"></div><button data-d="right">►</button>
+          <div class="empty"></div><button data-d="down">▼</button><div class="empty"></div>
+        </div>
+        <p class="muted mt" style="font-size:14px">Tourne sans percuter les traînées. Demi-tour interdit !</p>
+      </div>`;
+    app.querySelectorAll('.dpad button').forEach(b=>{
+      const f=(ev)=>{ ev.preventDefault(); tronDir(b.dataset.d); };
+      b.addEventListener('touchstart', f, {passive:false});
+      b.addEventListener('mousedown', f);
+    });
+  }
+  const info = document.getElementById('troninfo');
+  if (info){
+    if (t.status!=='playing'){ const w=(t.ranking||[])[0]; info.innerHTML = (w&&w.id===me.id)?'<span class="neon-yellow">🏆 TU GAGNES !</span>':(w?('🏆 '+esc(w.name)+' gagne'):'Terminé'); }
+    else if (mine && !mine.alive) info.innerHTML = '<span class="neon-pink">💥 CRASH — regarde la borne !</span>';
+    else info.innerHTML = mine ? `<span style="color:${mine.color}">● TA MOTO</span> · ${mine.len} cases` : 'Spectateur';
+  }
+}
+
+// =================== 2048 (manette joueur) ===================
+const T2COL = {0:'#1d1133',2:'#3a2bd0',4:'#5a3bd0',8:'#ff9a3c',16:'#ff7a2c',32:'#ff5b6e',64:'#ff2e88',128:'#2effd5',256:'#38ff9c',512:'#ffe600',1024:'#ffd000',2048:'#ff00aa'};
+function g2048Dir(d){ if(window.SFX){SFX.unlock();} api('/api/2048/move', { dir: d }); }
+function grid2048P(board, cell){
+  let h=`<div style="display:inline-grid;grid-template-columns:repeat(4,${cell}px);gap:5px;background:#0a0420;padding:5px;border:3px solid var(--neon4);border-radius:8px">`;
+  for(const row of board){ for(const v of row){ const col=T2COL[v]||'#ff00aa'; h+=`<div style="width:${cell}px;height:${cell}px;display:flex;align-items:center;justify-content:center;background:${col};border-radius:6px;color:#0a0420;font-weight:900;font-size:${v>=128?Math.floor(cell*0.34):Math.floor(cell*0.42)}px">${v||''}</div>`; } }
+  return h+'</div>';
+}
+function render2048Player(me){
+  const t = STATE.g2048;
+  const mine = t.players.find(p=>p.id===me.id);
+  if (g2048Key !== STATE.activity.startedAt){
+    g2048Key = STATE.activity.startedAt;
+    const cell = Math.max(40, Math.floor((Math.min(window.innerWidth-30,300)-25)/4));
+    app._g2cell = cell;
+    app.innerHTML = `
+      <div class="center">
+        <div id="g2info" class="pixel" style="font-size:13px;margin:6px 0"></div>
+        <div id="g2grid"></div>
+        <div class="dpad" style="margin-top:10px">
+          <div class="empty"></div><button data-d="up">▲</button><div class="empty"></div>
+          <button data-d="left">◄</button><div class="empty"></div><button data-d="right">►</button>
+          <div class="empty"></div><button data-d="down">▼</button><div class="empty"></div>
+        </div>
+      </div>`;
+    app.querySelectorAll('.dpad button').forEach(b=>{
+      const f=(ev)=>{ ev.preventDefault(); g2048Dir(b.dataset.d); };
+      b.addEventListener('touchstart', f, {passive:false});
+      b.addEventListener('mousedown', f);
+    });
+  }
+  const cell = app._g2cell || 50;
+  const info = document.getElementById('g2info');
+  const grid = document.getElementById('g2grid');
+  if (info){
+    if (t.status!=='playing'){ const w=(t.ranking||[])[0]; info.innerHTML = (w&&w.id===me.id)?'<span class="neon-yellow">🏆 TU GAGNES !</span>':(w?('🏆 '+esc(w.name)+' gagne — '+w.score+' pts'):'Terminé'); }
+    else if (mine && mine.eliminated) info.innerHTML = '<span class="neon-pink">☠️ BLOQUÉ — regarde la borne !</span>';
+    else info.innerHTML = mine ? `<span class="neon-cyan">${mine.score} pts · top ${mine.best}</span>` : '';
+  }
+  if (grid && mine) grid.innerHTML = grid2048P(mine.board, cell);
 }
 
 function musicController(act) {

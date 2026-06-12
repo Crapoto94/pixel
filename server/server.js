@@ -258,6 +258,20 @@ app.post('/api/tetris/move', (req, res) => {
   res.json({ ok: true });
 });
 
+// Tron / Snake : direction (up/down/left/right)
+app.post('/api/tron/move', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.tronMove(p.id, req.body.dir);
+  res.json({ ok: true });
+});
+
+// 2048 : glissement (up/down/left/right)
+app.post('/api/2048/move', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.g2048Move(p.id, req.body.dir);
+  res.json({ ok: true });
+});
+
 // Roue des gages : un joueur vote pour le meilleur
 app.post('/api/roue/vote', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

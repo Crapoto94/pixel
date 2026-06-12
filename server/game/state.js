@@ -15,6 +15,8 @@ import { pickGage, GAGES } from '../data/gages.js';
 import { QUESTIONS } from '../data/quiz.js';
 import { PacmanGame } from './pacman.js';
 import { TetrisGame } from './tetris.js';
+import { TronGame } from './tron.js';
+import { Game2048 } from './game2048.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
@@ -50,10 +52,14 @@ export class GameState {
   reset(persist = true) {
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
     if (this.tetrisTimer) { clearInterval(this.tetrisTimer); this.tetrisTimer = null; }
+    if (this.tronTimer) { clearInterval(this.tronTimer); this.tronTimer = null; }
+    if (this.g2048Timer) { clearInterval(this.g2048Timer); this.g2048Timer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
+    this.tron = null;   // partie Tron en cours
+    this.g2048 = null;  // partie 2048 en cours
     this.pacRotation = []; // historique des rôles Pac (rotation entre manches)
     this.mosaicCount = 0; // manches de mosaïque jouées (difficulté croissante)
     this.phase = 'lobby'; // lobby | world | bonus | activity | finale | win
@@ -99,7 +105,8 @@ export class GameState {
     //  - listeners (Set de callbacks SSE)
     //  - pacmanTimer / _autoAdvanceTimer (objets Timer)
     //  - pacman (partie en cours, recréée à chaque manche)
-    const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, _autoAdvanceTimer, _roueTimer, ...data } = this;
+    const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
+      g2048Timer, g2048, _autoAdvanceTimer, _roueTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -483,6 +490,8 @@ export class GameState {
   startActivity(type, opts = {}) {
     if (type === 'pacman') return this.startPacman(opts);
     if (type === 'tetris') return this.startTetris(opts);
+    if (type === 'tron') return this.startTron(opts);
+    if (type === '2048') return this.startG2048(opts);
     this.activity = {
       type,
       startedAt: Date.now(),
@@ -1024,9 +1033,13 @@ export class GameState {
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
     if (this.tetrisTimer) { clearInterval(this.tetrisTimer); this.tetrisTimer = null; }
+    if (this.tronTimer) { clearInterval(this.tronTimer); this.tronTimer = null; }
+    if (this.g2048Timer) { clearInterval(this.g2048Timer); this.g2048Timer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     this.pacman = null;
     this.tetris = null;
+    this.tron = null;
+    this.g2048 = null;
     if (this.activity) this.activity.state = 'done';
     this.phase = 'world';
     this.touch();
@@ -1117,6 +1130,66 @@ export class GameState {
 
   tetrisMove(playerId, dir) {
     if (this.tetris) { this.tetris.move(playerId, dir); this.broadcast(); }
+  }
+
+  // ---- TRON / SNAKE multijoueur ------------------------------------
+  startTron(opts = {}) {
+    const players = this.players.filter((p) => p.connected);
+    if (players.length < 2) { this.addLog('⚠️ Tron : il faut au moins 2 joueurs connectés.'); this.touch(); return; }
+    this.tron = new TronGame(players, opts);
+    this.activity = { type: 'tron', startedAt: Date.now(), state: 'running', data: {} };
+    this.phase = 'activity';
+    this.addLog('🟦 TRON lancé ! Laissez une traînée, survivez le dernier.');
+    if (this.tronTimer) clearInterval(this.tronTimer);
+    this.tronTimer = setInterval(() => {
+      if (!this.tron) return;
+      this.tron.tick();
+      if (this.tron.status !== 'playing') {
+        clearInterval(this.tronTimer); this.tronTimer = null;
+        this._applyArcadeLives(this.tron.ranking(), 'TRON', (w) => `${w.len} cases`);
+        this.save();
+      }
+      this.broadcast();
+    }, this.tron.tickMs);
+    this.touch();
+  }
+  tronMove(playerId, dir) { if (this.tron) this.tron.setDir(playerId, dir); }
+
+  // ---- 2048 multijoueur --------------------------------------------
+  startG2048(opts = {}) {
+    const players = this.players.filter((p) => p.connected);
+    if (players.length < 1) { this.addLog('⚠️ 2048 : aucun joueur connecté.'); this.touch(); return; }
+    this.g2048 = new Game2048(players, opts);
+    this.activity = { type: '2048', startedAt: Date.now(), state: 'running', data: {} };
+    this.phase = 'activity';
+    this.addLog('🔢 2048 lancé ! Fusionnez les tuiles, meilleur score gagne.');
+    if (this.g2048Timer) clearInterval(this.g2048Timer);
+    this.g2048Timer = setInterval(() => {
+      if (!this.g2048) return;
+      this.g2048.tick();
+      if (this.g2048.status !== 'playing') {
+        clearInterval(this.g2048Timer); this.g2048Timer = null;
+        this._applyArcadeLives(this.g2048.ranking(), '2048', (w) => `${w.score} pts`);
+        this.save();
+      }
+      this.broadcast();
+    }, this.g2048.tickMs);
+    this.touch();
+  }
+  g2048Move(playerId, dir) { if (this.g2048) { this.g2048.move(playerId, dir); this.broadcast(); } }
+
+  // Applique les vies de fin de manche arcade : vainqueur +1 (max 3), autres −1.
+  _applyArcadeLives(rank, label, detail) {
+    rank.forEach((r, i) => {
+      const p = this.player(r.id);
+      if (!p) return;
+      if (i === 0) { if (p.lives < 3) p.lives += 1; }
+      else if (p.lives > 0) p.lives -= 1;
+    });
+    const win = rank[0];
+    this.addLog(win
+      ? `🏆 ${label} : ${win.name} gagne (${detail(win)}) — +1 vie ❤️ ! Les autres −1 vie 💔.`
+      : `${label} terminé.`);
   }
 
   // ---- Séquence musicale collaborative -----------------------------
@@ -1256,6 +1329,8 @@ export class GameState {
       activity: this.activityPublic(me ? me.id : null),
       pacman: this.pacman ? this.pacman.publicState(me ? me.id : null) : null,
       tetris: this.tetris ? this.tetris.publicState() : null,
+      tron: this.tron ? this.tron.publicState() : null,
+      g2048: this.g2048 ? this.g2048.publicState() : null,
       photoPhase: this.photoPhase,
       photos: this.photoPhase ? this.photos : [],
       photoResults: this.photoPhase === 'results' ? this.photoResults() : null,

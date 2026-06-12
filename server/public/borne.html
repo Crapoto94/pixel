@@ -109,6 +109,7 @@ function detectSounds(s){
 
 let kidsKey = null;
 let pacKey = null;
+let tronKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
@@ -129,6 +130,15 @@ function render(){
   // --- TETRIS : les 2 meilleurs encore en vie ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='tetris' && STATE.tetris){
     renderTetrisBorne(); return;
+  }
+  // --- TRON : arène centrale ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='tron' && STATE.tron){
+    renderTronBorne(); return;
+  }
+  tronKey = null;
+  // --- 2048 : les 2 meilleurs ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='2048' && STATE.g2048){
+    render2048Borne(); return;
   }
   // --- Séquence musicale ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
@@ -805,6 +815,77 @@ function renderTetrisBorne(){
     ${others.length?`<p class="muted mt">Autres : ${others.map(p=>`${esc(p.name)} ${p.eliminated?'☠️':'('+p.lines+'L)'}`).join(' · ')}</p>`:''}
   </div>`;
   tickerEl.textContent='TETRIS — survivez le plus longtemps !';
+}
+
+// =================== TRON (affichage borne) ===================
+function renderTronBorne(){
+  const t = STATE.tron;
+  if (t.status!=='playing' && t.ranking){
+    stage.innerHTML = `<div class="center">
+      <h1 class="huge neon-yellow pixel">🟦 TRON TERMINÉ</h1>
+      ${t.ranking[0]?`<p class="big neon-cyan">🏆 ${esc(t.ranking[0].name)} — ${t.ranking[0].len} cases (+1 vie ❤️)</p>`:''}
+      <div class="card leaderboard" style="max-width:520px;margin:auto;text-align:left">
+        ${t.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.len}</span> ${i===0?'❤️':'💔'}</div>`).join('')}
+      </div></div>`;
+    tickerEl.textContent='TRON — manche terminée !';
+    return;
+  }
+  if (tronKey !== STATE.activity.startedAt){
+    tronKey = STATE.activity.startedAt;
+    stage.innerHTML = `<div class="center">
+      <div id="tronhud" class="big" style="margin-bottom:4px"></div>
+      <canvas id="troncv" width="${t.w*16}" height="${t.h*16}"
+        style="max-width:94vw;max-height:62vh;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+      <div id="tronroles" class="muted" style="font-size:16px;margin-top:6px"></div>
+    </div>`;
+  }
+  const cv = document.getElementById('troncv');
+  if (cv){
+    const ctx = cv.getContext('2d');
+    const cell = Math.floor(Math.min(cv.width/t.w, cv.height/t.h));
+    ctx.fillStyle='#05010f'; ctx.fillRect(0,0,cv.width,cv.height);
+    const colByIdx = {}; t.players.forEach(p=>colByIdx[p.idx]=p.color);
+    for(let r=0;r<t.h;r++){ const row=t.grid[r]; for(let c=0;c<t.w;c++){ const v=+row[c]; if(v){ ctx.fillStyle=colByIdx[v]||'#888'; ctx.globalAlpha=0.55; ctx.fillRect(c*cell,r*cell,cell-1,cell-1); ctx.globalAlpha=1; } } }
+    // têtes plus vives
+    t.players.forEach(p=>{ if(p.alive){ ctx.fillStyle=p.color; ctx.fillRect(p.c*cell-1,p.r*cell-1,cell+1,cell+1); } });
+  }
+  const hud=document.getElementById('tronhud');
+  if(hud) hud.innerHTML = `🟦 TRON — ${t.players.filter(p=>p.alive).length} en vie`;
+  const roles=document.getElementById('tronroles');
+  if(roles) roles.innerHTML = t.players.map(p=>`<span style="color:${p.color};margin:0 8px;${p.alive?'':'opacity:.4;text-decoration:line-through'}">${esc(p.name)}</span>`).join('');
+  tickerEl.textContent='TRON — ne percute aucune traînée !';
+}
+
+// =================== 2048 (affichage borne) ===================
+const T2COL = {0:'#1d1133',2:'#3a2bd0',4:'#5a3bd0',8:'#ff9a3c',16:'#ff7a2c',32:'#ff5b6e',64:'#ff2e88',128:'#2effd5',256:'#38ff9c',512:'#ffe600',1024:'#ffd000',2048:'#ff00aa'};
+function tile2048(v){ const col=T2COL[v]||'#ff00aa'; const fs=v>=1024?'17px':v>=128?'20px':'24px'; return `<div style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:${col};border-radius:6px;color:#0a0420;font-weight:900;font-size:${fs}">${v||''}</div>`; }
+function grid2048(board){ let h='<div style="display:inline-grid;grid-template-columns:repeat(4,54px);gap:6px;background:#0a0420;padding:6px;border:3px solid var(--neon4);border-radius:8px">'; for(const row of board){ for(const v of row){ h+=tile2048(v); } } return h+'</div>'; }
+function render2048Borne(){
+  const t = STATE.g2048;
+  if (t.status!=='playing' && t.ranking){
+    stage.innerHTML = `<div class="center">
+      <h1 class="huge neon-yellow pixel">🔢 2048 TERMINÉ</h1>
+      ${t.ranking[0]?`<p class="big neon-cyan">🏆 ${esc(t.ranking[0].name)} — ${t.ranking[0].score} pts (+1 vie ❤️)</p>`:''}
+      <div class="card leaderboard" style="max-width:520px;margin:auto;text-align:left">
+        ${t.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.score} pts</span> ${i===0?'❤️':'💔'} ${p.eliminated?'☠️':''}</div>`).join('')}
+      </div></div>`;
+    tickerEl.textContent='2048 — manche terminée !';
+    return;
+  }
+  const order = t.players.slice().sort((a,b)=>(b.eliminated?0:1)-(a.eliminated?0:1)||b.score-a.score);
+  const show = order.slice(0,2);
+  const board=(p,i)=>`<div style="text-align:center">
+    <div class="big" style="color:#fff">${['🥇','🥈'][i]||''} ${esc(p.name)} ${p.eliminated?'☠️':''}</div>
+    <div class="muted" style="font-size:16px">${p.score} pts · top ${p.best}</div>
+    ${grid2048(p.board)}
+  </div>`;
+  const others = order.slice(2);
+  stage.innerHTML = `<div class="center">
+    <h1 class="big neon-cyan">🔢 2048 — TOP 2 &nbsp;·&nbsp; ⏱ ${t.timeLeft}s</h1>
+    <div class="row" style="gap:36px;justify-content:center;align-items:flex-start;flex-wrap:wrap">${show.map(board).join('')}</div>
+    ${others.length?`<p class="muted mt">Autres : ${others.map(p=>`${esc(p.name)} ${p.eliminated?'☠️':'('+p.score+')'}`).join(' · ')}</p>`:''}
+  </div>`;
+  tickerEl.textContent='2048 — fusionnez pour le meilleur score !';
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================

@@ -516,7 +516,7 @@ export class GameState {
       let word, rows;
       if (round === 1) { word = MOSAIC_DEFAULT_WORD; rows = 1; }
       else {
-        rows = Math.min(round, 4); // 2, 3, 4, puis reste 4
+        rows = Math.min(round, 3); // 2 puis 3 lignes max (4 en quinconce = trop dur)
         word = (opts.word && opts.word.trim()) ? opts.word : pickMosaicWord(n);
       }
       word = (word || MOSAIC_DEFAULT_WORD).toUpperCase().replace(/[^A-Z]/g, '') || 'KONAMI';

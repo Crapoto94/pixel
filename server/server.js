@@ -251,6 +251,13 @@ app.post('/api/pacman/dir', (req, res) => {
   res.json({ ok: true });
 });
 
+// Tetris multijoueur : le joueur envoie une action (left/right/rotate/down/drop)
+app.post('/api/tetris/move', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.tetrisMove(p.id, req.body.dir);
+  res.json({ ok: true });
+});
+
 // Enquête collaborative : un joueur propose un code pour l'acte courant
 app.post('/api/enquete/code', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

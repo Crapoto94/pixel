@@ -13,6 +13,9 @@
     background:var(--neon4); color:#fff; box-shadow:0 5px 0 #3a2bd0; }
   .dpad button:active { transform:translateY(4px); box-shadow:0 1px 0 #3a2bd0; }
   .dpad .empty { visibility:hidden; }
+  .tbtn { font-size:26px; padding:16px 0; border:3px solid #000; border-radius:12px;
+    background:var(--neon4); color:#fff; box-shadow:0 5px 0 #3a2bd0; touch-action:manipulation; }
+  .tbtn:active { transform:translateY(4px); box-shadow:0 1px 0 #3a2bd0; }
 </style>
 </head>
 <body class="scanlines">
@@ -55,6 +58,7 @@ function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>
 
 let pacKey = null;
 let mosKey = null;
+let tetKey = null;
 
 // --- Upload photo (input caché, réutilisé) ---
 let _photoMissionIdx = 0;
@@ -90,6 +94,11 @@ function render() {
     renderPacmanPlayer(me); return;
   }
   pacKey = null;
+  // --- TETRIS : ma grille + manette ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'tetris' && STATE.tetris) {
+    renderTetrisPlayer(me); return;
+  }
+  tetKey = null;
   // --- MOSAÏQUE : fragment plein écran ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'mosaic') {
     renderMosaicPlayer(me); return;
@@ -393,6 +402,56 @@ function renderPacmanPlayer(me) {
   }
 }
 function pacDir(d){ if(window.SFX) {} api('/api/pacman/dir', { dir: d }); }
+
+// =================== TETRIS (manette joueur) ===================
+const TCOLORS = ['#15092e','#2effd5','#ffe600','#b15cff','#38ff9c','#ff2e88','#3a7bff','#ff9a3c'];
+function tetGrid(cells, cell){
+  let html = `<div style="display:inline-grid;grid-template-columns:repeat(10,${cell}px);grid-template-rows:repeat(20,${cell}px);gap:1px;background:#0a0420;padding:3px;border:3px solid var(--neon4);border-radius:8px">`;
+  for(const row of (cells||[])){ for(const ch of row){ const v=+ch; html += `<div style="background:${TCOLORS[v]||'#15092e'};border-radius:2px"></div>`; } }
+  return html + '</div>';
+}
+function tetrisMove(dir){ if(window.SFX){SFX.unlock();} api('/api/tetris/move', { dir }); }
+function renderTetrisPlayer(me){
+  const t = STATE.tetris;
+  const mine = t.players.find(p=>p.id===me.id);
+  if (tetKey !== STATE.activity.startedAt){
+    tetKey = STATE.activity.startedAt;
+    const cell = Math.max(14, Math.floor((Math.min(window.innerWidth-26,300)-8)/10));
+    app._tcell = cell;
+    app.innerHTML = `
+      <div class="center">
+        <div id="tetinfo" class="pixel" style="font-size:13px;margin:4px 0"></div>
+        <div id="tetgrid"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:340px;margin:10px auto 0">
+          <button class="tbtn" data-d="left">◀</button>
+          <button class="tbtn" data-d="rotate">⟳</button>
+          <button class="tbtn" data-d="right">▶</button>
+          <button class="tbtn" data-d="down">▼</button>
+        </div>
+        <button class="tbtn" data-d="drop" style="width:100%;max-width:340px;margin:8px auto 0">⏬ POSER</button>
+      </div>`;
+    app.querySelectorAll('.tbtn[data-d]').forEach(b=>{
+      const f=(ev)=>{ ev.preventDefault(); tetrisMove(b.dataset.d); };
+      b.addEventListener('touchstart', f, {passive:false});
+      b.addEventListener('mousedown', f);
+    });
+  }
+  const cell = app._tcell || 24;
+  const info = document.getElementById('tetinfo');
+  const grid = document.getElementById('tetgrid');
+  if (info){
+    if (t.status!=='playing'){
+      const w=(t.ranking||[])[0];
+      info.innerHTML = (w&&w.id===me.id) ? '<span class="neon-yellow">🏆 TU GAGNES !</span>'
+        : (w?('🏆 '+esc(w.name)+' gagne — '+w.lines+' lignes'):'Terminé');
+    } else if (mine && mine.eliminated){
+      info.innerHTML = '<span class="neon-pink">☠️ ÉLIMINÉ — regarde la borne !</span>';
+    } else {
+      info.innerHTML = mine ? `<span class="neon-cyan">${mine.lines} lignes · ${mine.score} pts</span>` : '';
+    }
+  }
+  if (grid && mine) grid.innerHTML = tetGrid(mine.cells, cell);
+}
 
 function musicController(act) {
   const slots = act.slots.map(s=>{

@@ -24,22 +24,39 @@ window.drawPacman = function (canvas, pm, meId, opts) {
   ctx.fillStyle = '#05010f';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // --- labyrinthe ---
+  // --- labyrinthe : MURS en traits fins bleus (style arcade classique) ---
+  const isW = (r, c) => r >= 0 && r < H && c >= 0 && c < W && pm.grid[r][c] === '#';
+  ctx.strokeStyle = '#2a4bff';
+  ctx.lineWidth = Math.max(2, cell * 0.15);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = '#2a4bff';
+  ctx.shadowBlur = Math.max(3, cell * 0.18);
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      if (!isW(r, c)) continue;
+      const cx = ox + c * cell + cell / 2, cy = oy + r * cell + cell / 2;
+      const up = isW(r - 1, c), down = isW(r + 1, c), left = isW(r, c - 1), right = isW(r, c + 1);
+      if (up)    { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - cell / 2 - 0.5); ctx.stroke(); }
+      if (down)  { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + cell / 2 + 0.5); ctx.stroke(); }
+      if (left)  { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - cell / 2 - 0.5, cy); ctx.stroke(); }
+      if (right) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + cell / 2 + 0.5, cy); ctx.stroke(); }
+      if (!up && !down && !left && !right) { // mur isolé : petit point
+        ctx.fillStyle = '#2a4bff'; ctx.beginPath(); ctx.arc(cx, cy, ctx.lineWidth / 2, 0, 7); ctx.fill();
+      }
+    }
+  }
+  ctx.shadowBlur = 0;
+  // --- gommes & super-gommes ---
   for (let r = 0; r < H; r++) {
     const row = pm.grid[r];
     for (let c = 0; c < W; c++) {
       const ch = row[c];
       const x = ox + c * cell, y = oy + r * cell;
-      if (ch === '#') {
-        ctx.fillStyle = '#1b1060';
-        ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
-        ctx.strokeStyle = '#3a2bd0';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x + 1.5, y + 1.5, cell - 3, cell - 3);
-      } else if (ch === '.') {
+      if (ch === '.') {
         ctx.fillStyle = '#ffd6a0';
         ctx.beginPath();
-        ctx.arc(x + cell / 2, y + cell / 2, Math.max(1.5, cell * 0.09), 0, 7);
+        ctx.arc(x + cell / 2, y + cell / 2, Math.max(1.5, cell * 0.08), 0, 7);
         ctx.fill();
       } else if (ch === 'o') {
         const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 150);

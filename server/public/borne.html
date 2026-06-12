@@ -119,6 +119,10 @@ function render(){
     renderPacmanBorne(); return;
   }
   pacKey = null;
+  // --- TETRIS : les 2 meilleurs encore en vie ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='tetris' && STATE.tetris){
+    renderTetrisBorne(); return;
+  }
   // --- Séquence musicale ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
@@ -635,6 +639,43 @@ function renderPacmanBorne(){
     }
   }
   tickerEl.textContent = pm.status!=='playing' ? 'PAC-MAN — manche terminée !' : 'PAC-MAN — survivez et gobez les gommes !';
+}
+
+// =================== TETRIS (affichage borne) ===================
+const TCOLORS = ['#15092e','#2effd5','#ffe600','#b15cff','#38ff9c','#ff2e88','#3a7bff','#ff9a3c'];
+function tetrisGrid(cells, cellPx){
+  let html = `<div style="display:inline-grid;grid-template-columns:repeat(10,${cellPx}px);grid-template-rows:repeat(20,${cellPx}px);gap:1px;background:#0a0420;padding:4px;border:3px solid var(--neon4);border-radius:8px">`;
+  for(const row of (cells||[])){
+    for(const ch of row){ const v=+ch; html += `<div style="background:${TCOLORS[v]||'#15092e'};border-radius:2px"></div>`; }
+  }
+  return html + '</div>';
+}
+function renderTetrisBorne(){
+  const t = STATE.tetris;
+  if (t.status!=='playing' && t.ranking){
+    stage.innerHTML = `<div class="center">
+      <h1 class="huge neon-yellow pixel">🧱 TETRIS TERMINÉ</h1>
+      ${t.ranking[0]?`<p class="big neon-cyan">🏆 ${esc(t.ranking[0].name)} — ${t.ranking[0].lines} lignes</p>`:''}
+      <div class="card leaderboard" style="max-width:520px;margin:auto;text-align:left">
+        ${t.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.lines} lignes</span> ${p.eliminated?'☠️':''}</div>`).join('')}
+      </div></div>`;
+    tickerEl.textContent='TETRIS — manche terminée !';
+    return;
+  }
+  const alive = t.players.filter(p=>!p.eliminated).sort((a,b)=>b.lines-a.lines||b.score-a.score);
+  const show = (alive.length?alive:t.players.slice().sort((a,b)=>b.lines-a.lines)).slice(0,2);
+  const board = (p)=>`<div style="text-align:center">
+    <div class="big" style="color:#fff">${esc(p.name)} ${p.eliminated?'☠️':''}</div>
+    <div class="muted" style="font-size:16px">${p.lines} lignes · ${p.score} pts</div>
+    ${tetrisGrid(p.cells, 22)}
+  </div>`;
+  const others = t.players.filter(p=>!show.includes(p));
+  stage.innerHTML = `<div class="center">
+    <h1 class="big neon-cyan">🧱 TETRIS — DUEL DE TÊTE &nbsp;⏱ ${t.timeLeft}s</h1>
+    <div class="row" style="gap:30px;justify-content:center;align-items:flex-start;flex-wrap:wrap">${show.map(board).join('')}</div>
+    ${others.length?`<p class="muted mt">Autres : ${others.map(p=>`${esc(p.name)} ${p.eliminated?'☠️':'('+p.lines+'L)'}`).join(' · ')}</p>`:''}
+  </div>`;
+  tickerEl.textContent='TETRIS — survivez le plus longtemps !';
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================

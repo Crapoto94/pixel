@@ -14,6 +14,7 @@ import { WORLDS, getWorld, normalize } from '../data/worlds.js';
 import { pickGage } from '../data/gages.js';
 import { QUESTIONS } from '../data/quiz.js';
 import { PacmanGame } from './pacman.js';
+import { TetrisGame } from './tetris.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
@@ -35,8 +36,10 @@ export class GameState {
   // ---- Cycle de vie -------------------------------------------------
   reset(persist = true) {
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
+    if (this.tetrisTimer) { clearInterval(this.tetrisTimer); this.tetrisTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
+    this.tetris = null; // partie Tetris en cours
     this.pacRotation = []; // historique des rôles Pac (rotation entre manches)
     this.phase = 'lobby'; // lobby | world | bonus | activity | finale | win
     this.worldIndex = 0; // index dans WORLDS
@@ -81,7 +84,7 @@ export class GameState {
     //  - listeners (Set de callbacks SSE)
     //  - pacmanTimer / _autoAdvanceTimer (objets Timer)
     //  - pacman (partie en cours, recréée à chaque manche)
-    const { listeners, pacmanTimer, pacman, _autoAdvanceTimer, ...data } = this;
+    const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, _autoAdvanceTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -464,6 +467,7 @@ export class GameState {
   // ---- Activités BORNE (reaction, buzzer, spotlight, roue...) -------
   startActivity(type, opts = {}) {
     if (type === 'pacman') return this.startPacman(opts);
+    if (type === 'tetris') return this.startTetris(opts);
     this.activity = {
       type,
       startedAt: Date.now(),
@@ -884,8 +888,10 @@ export class GameState {
 
   stopActivity() {
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
+    if (this.tetrisTimer) { clearInterval(this.tetrisTimer); this.tetrisTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     this.pacman = null;
+    this.tetris = null;
     if (this.activity) this.activity.state = 'done';
     this.phase = 'world';
     this.touch();
@@ -935,6 +941,37 @@ export class GameState {
   pacmanDir(playerId, dir) {
     if (this.pacman) this.pacman.setDir(playerId, dir);
     // pas de broadcast ici : le prochain tick rafraîchit (évite le spam réseau)
+  }
+
+  // ---- TETRIS multijoueur ------------------------------------------
+  startTetris(opts = {}) {
+    const players = this.players.filter((p) => p.connected);
+    if (players.length < 1) {
+      this.addLog('⚠️ Tetris : aucun joueur connecté.');
+      this.touch();
+      return;
+    }
+    this.tetris = new TetrisGame(players, opts);
+    this.activity = { type: 'tetris', startedAt: Date.now(), state: 'running', data: {} };
+    this.phase = 'activity';
+    this.addLog('🧱 TETRIS lancé ! Mêmes pièces pour tous, chacun sa grille.');
+    if (this.tetrisTimer) clearInterval(this.tetrisTimer);
+    this.tetrisTimer = setInterval(() => {
+      if (!this.tetris) return;
+      this.tetris.tick();
+      if (this.tetris.status !== 'playing') {
+        clearInterval(this.tetrisTimer); this.tetrisTimer = null;
+        const win = this.tetris.ranking()[0];
+        this.addLog(win ? `🏆 TETRIS terminé ! Vainqueur : ${win.name} (${win.lines} lignes).` : '🧱 TETRIS terminé.');
+        this.save();
+      }
+      this.broadcast();
+    }, this.tetris.tickMs);
+    this.touch();
+  }
+
+  tetrisMove(playerId, dir) {
+    if (this.tetris) { this.tetris.move(playerId, dir); this.broadcast(); }
   }
 
   // ---- Séquence musicale collaborative -----------------------------
@@ -1051,6 +1088,7 @@ export class GameState {
       currentGage: this.currentGage,
       activity: this.activityPublic(me ? me.id : null),
       pacman: this.pacman ? this.pacman.publicState(me ? me.id : null) : null,
+      tetris: this.tetris ? this.tetris.publicState() : null,
       photoPhase: this.photoPhase,
       photos: this.photoPhase ? this.photos : [],
       photoResults: this.photoPhase === 'results' ? this.photoResults() : null,

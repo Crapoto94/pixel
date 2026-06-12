@@ -284,18 +284,6 @@ app.post('/api/pong/move', (req, res) => {
   res.json({ ok: true });
 });
 
-// Bomberman : déplacement (up/down/left/right) ou pose de bombe
-app.post('/api/bomb/move', (req, res) => {
-  const p = requirePlayer(req, res); if (!p) return;
-  game.bombMove(p.id, req.body.dir);
-  res.json({ ok: true });
-});
-app.post('/api/bomb/drop', (req, res) => {
-  const p = requirePlayer(req, res); if (!p) return;
-  game.bombDrop(p.id);
-  res.json({ ok: true });
-});
-
 // Mosaïque : un joueur propose la réponse (le mot reconstitué)
 app.post('/api/mosaic/guess', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

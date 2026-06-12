@@ -63,7 +63,6 @@ let tetKey = null;
 let tronKey = null;
 let g2048Key = null;
 let pongKey = null;
-let bombKey = null;
 let drawKey = null;
 let _drawStrokes = [];
 let _drawCur = null;
@@ -123,11 +122,6 @@ function render() {
     renderPongPlayer(me); return;
   }
   pongKey = null;
-  // --- BOMBERMAN : arène + manette + bombe ---
-  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'bomberman' && STATE.bomb) {
-    renderBombPlayer(me); return;
-  }
-  bombKey = null;
   // --- DESSINE-MOI : dessinateur ou devineur ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'draw') {
     renderDrawPlayer(me); return;
@@ -683,60 +677,6 @@ function renderPongPlayer(me){
     if (t.status!=='playing'){ const w=(t.ranking||[])[0]; info.innerHTML=(w&&w.id===me.id)?'<span class="neon-yellow">🏆 TU GAGNES !</span>':(w?('🏆 '+esc(w.name)+' gagne'):'Terminé'); }
     else if (mine && !mine.alive) info.innerHTML='<span class="neon-pink">💀 ÉLIMINÉ — regarde la borne !</span>';
     else info.innerHTML = mine ? `<span style="color:${mine.color}">● côté ${mine.side}</span> · ${'❤'.repeat(Math.max(0,mine.hp))}` : 'Spectateur';
-  }
-}
-
-// =================== BOMBERMAN (manette joueur) ===================
-function bombMove(d){ api('/api/bomb/move', { dir: d }); }
-function bombDrop(){ if(window.SFX){SFX.unlock();} api('/api/bomb/drop', {}); }
-function bombDrawJ(ctx, cvw, cvh, t, mineId){
-  const cell=Math.floor(Math.min(cvw/t.w, cvh/t.h));
-  const ox=Math.floor((cvw-cell*t.w)/2), oy=Math.floor((cvh-cell*t.h)/2);
-  ctx.fillStyle='#05010f'; ctx.fillRect(0,0,cvw,cvh);
-  for(let r=0;r<t.h;r++){ const row=t.grid[r]; for(let c=0;c<t.w;c++){ const ch=row[c]; const x=ox+c*cell,y=oy+r*cell;
-    if(ch==='W'){ ctx.fillStyle='#3a2bd0'; ctx.fillRect(x+1,y+1,cell-2,cell-2); }
-    else if(ch==='B'){ ctx.fillStyle='#7a5a3a'; ctx.fillRect(x+2,y+2,cell-4,cell-4); }
-    else { ctx.fillStyle='#120826'; ctx.fillRect(x,y,cell,cell); } } }
-  const blink=Math.floor(Date.now()/80)%2===0;
-  for(const b of (t.blasts||[])){ const x=ox+b.c*cell,y=oy+b.r*cell; ctx.fillStyle=blink?'#ffe600':'#ff7a2c'; ctx.fillRect(x+1,y+1,cell-2,cell-2); }
-  for(const b of (t.bombs||[])){ const x=ox+b.c*cell+cell/2,y=oy+b.r*cell+cell/2; ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(x,y,cell*0.34,0,7); ctx.fill(); }
-  for(const p of t.players){ if(!p.alive)continue; const x=ox+p.c*cell+cell/2,y=oy+p.r*cell+cell/2; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(x,y,cell*0.36,0,7); ctx.fill(); if(mineId&&p.id===mineId){ ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,cell*0.42,0,7); ctx.stroke(); } }
-}
-function renderBombPlayer(me){
-  const t = STATE.bomb;
-  const mine = t.players.find(p=>p.id===me.id);
-  if (bombKey !== STATE.activity.startedAt){
-    bombKey = STATE.activity.startedAt;
-    const cw = Math.min(window.innerWidth-14, 380);
-    const ch = Math.round(cw * t.h / t.w);
-    app.innerHTML = `
-      <div class="center">
-        <div id="bombinfo" class="pixel" style="font-size:13px;margin:6px 0"></div>
-        <canvas id="bombcvj" width="${t.w*22}" height="${t.h*22}" style="width:${cw}px;height:${ch}px;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
-        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px">
-          <div class="dpad" style="margin:0">
-            <div class="empty"></div><button data-d="up">▲</button><div class="empty"></div>
-            <button data-d="left">◄</button><div class="empty"></div><button data-d="right">►</button>
-            <div class="empty"></div><button data-d="down">▼</button><div class="empty"></div>
-          </div>
-          <button id="bombbtn" class="tbtn" style="width:88px;height:88px;font-size:34px">💣</button>
-        </div>
-      </div>`;
-    app.querySelectorAll('.dpad button').forEach(b=>{
-      const f=(ev)=>{ ev.preventDefault(); bombMove(b.dataset.d); };
-      b.addEventListener('touchstart', f, {passive:false}); b.addEventListener('mousedown', f);
-    });
-    const bb=document.getElementById('bombbtn');
-    const fb=(ev)=>{ ev.preventDefault(); bombDrop(); };
-    bb.addEventListener('touchstart', fb, {passive:false}); bb.addEventListener('mousedown', fb);
-  }
-  const cv=document.getElementById('bombcvj');
-  if(cv) bombDrawJ(cv.getContext('2d'), cv.width, cv.height, t, me.id);
-  const info=document.getElementById('bombinfo');
-  if(info){
-    if (t.status!=='playing'){ const w=(t.ranking||[])[0]; info.innerHTML=(w&&w.id===me.id)?'<span class="neon-yellow">🏆 TU SURVIS — VICTOIRE !</span>':(w?('🏆 '+esc(w.name)+' gagne'):'Terminé'); }
-    else if (mine && !mine.alive) info.innerHTML='<span class="neon-pink">💥 BOOM — éliminé ! Regarde la borne.</span>';
-    else info.innerHTML = mine ? `<span style="color:${mine.color}">● TOI</span> — pose des bombes 💣` : 'Spectateur';
   }
 }
 

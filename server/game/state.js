@@ -317,19 +317,23 @@ export class GameState {
     a.sub = 'final';
     a.finalBoard = board;
     a.loserNames = [];
+    a.winnerNames = [];
     if (board.length) {
       const min = Math.min(...board.map((b) => b.pts));
       const max = Math.max(...board.map((b) => b.pts));
-      if (max !== min) { // il y a un vrai dernier (sinon égalité parfaite : on épargne)
+      // Vainqueur(s) : meilleur score (à condition d'avoir marqué des points)
+      if (max > 0) a.winnerNames = board.filter((b) => b.pts === max).map((b) => b.name);
+      // Perdant(s) : score le plus bas (sauf égalité parfaite, on épargne tout le monde)
+      if (max !== min) {
         board.filter((b) => b.pts === min).forEach((b) => {
           const p = this.player(b.id);
           if (p && p.lives > 0) { p.lives -= 1; a.loserNames.push(p.name); }
         });
       }
     }
-    this.addLog(a.loserNames.length
-      ? `🏁 Blind-test terminé ! Dernier(s) : ${a.loserNames.join(', ')} — −1 vie 💔`
-      : '🏁 Blind-test terminé ! Égalité — personne ne perd de vie.');
+    const win = a.winnerNames.length ? `🏆 Vainqueur : ${a.winnerNames.join(', ')}.` : '';
+    const lose = a.loserNames.length ? ` Dernier(s) : ${a.loserNames.join(', ')} — −1 vie 💔` : ' Égalité — personne ne perd de vie.';
+    this.addLog(`🏁 Blind-test terminé ! ${win}${lose}`);
     this.touch();
   }
 
@@ -594,12 +598,13 @@ export class GameState {
     }
     this.addLog(`💡 Réponse : « ${q.choices[q.answer]} » (${corrects.length} bonne(s) réponse(s)).`);
     this.touch();
-    // Auto-passage : chanson/question suivante après 9 secondes
+    // Auto-passage : chanson/question suivante après 13 s (laisse le temps de
+    // voir le titre, féliciter, souffler entre deux morceaux)
     if (this._autoAdvanceTimer) clearTimeout(this._autoAdvanceTimer);
     this._autoAdvanceTimer = setTimeout(() => {
       this._autoAdvanceTimer = null;
       this.quizNext();
-    }, 9000);
+    }, 13000);
   }
 
   quizNext() {
@@ -660,6 +665,7 @@ export class GameState {
       firstCorrectName: reveal ? (a.firstCorrectName || null) : null,
       finalBoard: a.sub === 'final' ? (a.finalBoard || []) : null,
       loserNames: a.sub === 'final' ? (a.loserNames || []) : null,
+      winnerNames: a.sub === 'final' ? (a.winnerNames || []) : null,
     };
   }
 

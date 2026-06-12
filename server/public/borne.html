@@ -274,14 +274,16 @@ function quizBorne(act){
   const reveal = act.sub==='reveal';
   const title = act.type==='blindtest'?'🎵 BLIND-TEST':'❓ QUIZ ARCADE';
 
-  // Fin de manche blind-test : classement + perdant
+  // Fin de manche blind-test : classement + vainqueur + perdant
   if (act.sub==='final'){
     const board = act.finalBoard||[];
     const losers = act.loserNames||[];
+    const winners = act.winnerNames||[];
     const min = board.length ? Math.min(...board.map(b=>b.pts)) : 0;
     const max = board.length ? Math.max(...board.map(b=>b.pts)) : 0;
     return `<div class="center">
       <h1 class="huge neon-yellow pixel">🏁 BLIND-TEST TERMINÉ</h1>
+      ${winners.length ? `<p class="big neon-cyan glow-box" style="display:inline-block;padding:6px 18px">🏆 VAINQUEUR : ${winners.map(esc).join(' & ')}</p>` : ''}
       <div class="card leaderboard" style="max-width:620px;margin:14px auto;text-align:left">
         ${board.map((p,i)=>{
           const last = max!==min && p.pts===min;

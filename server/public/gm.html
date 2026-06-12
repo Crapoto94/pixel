@@ -157,9 +157,11 @@ function render(){
   <div class="card" style="border-color:var(--neon3)">
     <div class="pixel neon-yellow" style="font-size:11px">🎵 BLIND-TEST · ${S.playlistTrackCount||0} titres · manche ${Math.min(S.activity.asked||0,S.activity.total||15)}/${S.activity.total||15}</div>
     ${S.activity.sub === 'final'
-      ? `<div class="mt">🏁 Manche terminée. ${(S.activity.loserNames&&S.activity.loserNames.length)
-            ? 'Dernier(s) : <b>'+S.activity.loserNames.map(esc).join(', ')+'</b> (−1 vie 💔)'
-            : 'Égalité — personne ne perd de vie.'}
+      ? `<div class="mt">🏁 Manche terminée.
+          ${(S.activity.winnerNames&&S.activity.winnerNames.length) ? '<br>🏆 Vainqueur : <b>'+S.activity.winnerNames.map(esc).join(', ')+'</b>' : ''}
+          ${(S.activity.loserNames&&S.activity.loserNames.length)
+            ? '<br>Dernier(s) : <b>'+S.activity.loserNames.map(esc).join(', ')+'</b> (−1 vie 💔)'
+            : '<br>Égalité — personne ne perd de vie.'}
           <button class="btn mt" onclick="act('stopActivity')">⏹ Terminer</button></div>`
       : (!S.quizMaster
           ? ((S.playlistTrackCount||0) < 4

@@ -1,44 +1,39 @@
 // =====================================================================
 //  L'AFFAIRE DES PARAPHEURS PERDUS — enquête collaborative (Cold Case).
-//  Une énigme « escape » en 6 actes, jouable ~1 h, table + smartphones.
+//  Escape-game en 8 actes, ~1 h, table + smartphones.
 //
-//  ⚠️  FICTION. Le décor s'appuie sur des FAITS PUBLICS et RÉELS survenus à
-//  Saint-Maur-des-Fossés (affaire Bygmalion / Idéepôle, magazine municipal
-//  « Saint-Maur Le Mag », monuments de la ville) — sources citées sur la
-//  borne. Mais le meurtre, la victime, le DGS « Erzen » et les suspects
-//  (prénoms des invités de la soirée) sont entièrement INVENTÉS pour le jeu.
+//  ⚠️  FICTION. Décor RÉEL (affaire Bygmalion/Idéepôle, magazine « Saint-Maur
+//  Le Mag », monuments) — sources citées. Meurtre, victime, DGS « Erzen » et
+//  suspects (prénoms des invités) INVENTÉS pour le jeu.
 //
-//  Mécaniques demandées :
-//   • La BORNE affiche de VRAIS articles de presse (titre, source, date, URL) ;
-//     les indices sont planqués dans ces bulletins.
-//   • Un acte « PLAN DE LA VILLE » : relier des sites publics remarquables dans
-//     le bon ordre dessine une LETTRE (G) — la CLÉ d'un acte ultérieur.
-//   • Un acte « MESSAGE CODÉ » : la lettre du parcours sert de clé de César
-//     pour décoder le mobile.
+//  PRINCIPE DE DIFFICULTÉ — aucun code n'est écrit en clair nulle part :
+//   • L'information-clé est dans l'ARTICLE / le DOCUMENT affiché et imprimé.
+//   • Les PIÈCES À CONVICTION (sur les téléphones) ne donnent que des
+//     CONTRAINTES : il faut les recouper avec le document, puis DÉDUIRE.
+//   • Les indices « hints » sont une roue de secours révélée par le MJ.
 //
-//  Chaîne de résolution :
-//   ACTE 1 — REVUE DE PRESSE → l'année où l'affaire éclate ............ 2013
-//   ACTE 2 — L'ORGANIGRAMME → le DGS (Frédéric) qui falsifiait ....... ERZEN
-//   ACTE 3 — L'AMALGAME DES DEUX FRÉDÉRIC → le chevalier blanc ..... COUPAYE
-//   ACTE 4 — LE FALSIFICATEUR EN CHEF → le complice en cavale ...... LEJARRE
-//   ACTE 5 — LE PLAN DE LA VILLE → le tracé dessine la lettre-clé ........ G
-//   ACTE 6 — LES QUATRE DSI → le seul sans alibi ................. GUILLAUME
-//   ACTE 7 — CINQUANTE BONS → 50 bons = 50 verres brisés ............... 50
-//   ACTE 8 — LE MESSAGE CODÉ (clé = G) → le mobile ............. PARAPHEUR
+//  Chaîne :
+//   1 REVUE DE PRESSE — déduire l'année (perquisition − 1) ............ 2013
+//   2 L'ORGANIGRAMME — recomposer le nom (ER + ZEN) ................. ERZEN
+//   3 LE REGISTRE — retrouver le bon signalement .................. COUPAYE
+//   4 LA TABLE DES COMPTES — éliminer les homonymes C.L. .......... LEJARRE
+//   5 LE PLAN — ordonner le parcours, lire la lettre ................... G
+//   6 LES SUSPECTS — éliminer les alibis ...................... GUILLAUME
+//   7 LES LIASSES — additionner (multiple de 10) ..................... 50
+//   8 LE MESSAGE CODÉ — César, clé = G ........................ PARAPHEUR
 // =====================================================================
 
 export const ENQUETE = {
   title: "DOSSIER 94100 — L'AFFAIRE DES PARAPHEURS PERDUS",
   pitch:
-    "Saint-Maur-des-Fossés. La directrice des finances de la mairie, Solène Vasseur, " +
-    "est retrouvée morte dans la salle des mariages de l'Hôtel de Ville, entourée de " +
-    "50 verres de champagne brisés. Pas d'effraction. Juste un toast funèbre. À vous de " +
-    "remonter le fil — des marchés publics truqués jusqu'à un parapheur oublié dans une " +
-    "poubelle de la ville.",
+    "Saint-Maur-des-Fossés. La directrice des finances de la mairie, Solène Vasseur, est " +
+    "retrouvée morte dans la salle des mariages de l'Hôtel de Ville, entourée de 50 verres de " +
+    "champagne brisés. Pas d'effraction. Juste un toast funèbre. Rien ne vous sera donné : tout " +
+    "se déduit. Croisez les articles, les documents et vos pièces à conviction.",
 
   acts: [
     // ===============================================================
-    //  ACTE 1 — REVUE DE PRESSE (vrais articles)
+    //  ACTE 1 — REVUE DE PRESSE → DÉDUIRE l'année (2013)
     // ===============================================================
     {
       num: 1,
@@ -46,7 +41,6 @@ export const ENQUETE = {
       kind: 'press',
       title: 'LA REVUE DE PRESSE',
       place: "Hôtel de Ville de Saint-Maur — salle des mariages",
-      // Vrais articles / faits publics affichés sur la borne (avec sources & URL)
       sources: [
         {
           source: "Europe 1",
@@ -54,62 +48,58 @@ export const ENQUETE = {
           title: "Fausses factures Bygmalion : 3 ans d'inéligibilité pour l'ex-maire de Saint-Maur",
           url: "https://www.europe1.fr/societe/fausses-factures-avec-bygmalion-trois-ans-dineligibilite-pour-lex-ministre-henri-plagnol-3497876",
           summary:
-            "L'ancien maire (à la tête de la ville de 2008 à 2014) est condamné pour " +
-            "complicité de détournement de fonds publics : 1 an de prison avec sursis, " +
-            "3 ans d'inéligibilité, 8 000 € d'amende.",
+            "L'ancien maire a dirigé la ville de 2008 à 2014. Condamné pour complicité de " +
+            "détournement de fonds publics : 1 an avec sursis, 3 ans d'inéligibilité, 8 000 € " +
+            "d'amende. Préjudice remboursé à la ville : 230 000 €.",
         },
         {
           source: "Compte-rendu d'audience — parquet de Créteil",
-          date: "faits 2009–2013",
-          title: "Le marché de communication Idéepôle / Bygmalion",
+          date: "faits & procédure",
+          title: "Le marché de communication Idéepôle (filiale de Bygmalion)",
           url: "https://www.lehelloco.fr/bygmalion-que-sest-il-passe-a-saint-maur/",
           summary:
-            "Idéepôle, filiale de Bygmalion, éditait le MAGAZINE municipal et les supports " +
-            "de com'. Entre 2009 et 2013, la ville lui paie une soixantaine de factures ; " +
-            "6 sont contestées, pour près de 280 000 €. Préjudice réglé à la ville : 230 000 €.",
+            "Idéepôle éditait le MAGAZINE municipal. Le marché démarre en DÉCEMBRE 2009. La " +
+            "Brigade de répression de la délinquance économique PERQUISITIONNE l'Hôtel de Ville " +
+            "en 2014. Sur une soixantaine de factures, 6 sont contestées (~280 000 €).",
         },
         {
           source: "Saint-Maur Le Mag — kiosque municipal",
           date: "n° d'archive",
-          title: "Le magazine de la ville (48 p., 20 000 ex.) — celui qu'éditait Idéepôle",
+          title: "Le magazine de la ville (48 p., 20 000 ex.) — édité par Idéepôle",
           url: "https://www.saint-maur.com/kiosque",
-          summary:
-            "Chaque bon de commande gonflé renvoie à un numéro précis du magazine. " +
-            "C'est en recoupant ces bulletins que le pot aux roses a été découvert.",
+          summary: "Chaque bon de commande gonflé renvoie à un numéro précis du magazine.",
         },
       ],
       scene:
-        "Sur la table de la défunte : une coupe encore pleine et 50 autres en miettes. À côté, " +
-        "une pile de « Saint-Maur Le Mag » annotés au stylo rouge, et une facture à demi brûlée " +
-        "au nom d'« IDÉEPÔLE ». La directrice fêtait quelque chose. Pas un anniversaire : la fin " +
-        "tranquille d'une affaire que tout le monde croyait enterrée.",
+        "Sur la table : une coupe pleine, 50 coupes en miettes, et une pile de « Saint-Maur Le " +
+        "Mag » annotés au stylo rouge. L'année du dernier méfait n'est imprimée nulle part. " +
+        "Mais la presse donne des points de repère. Reliez-les.",
       riddle:
-        "Lisez la revue de presse et recoupez vos pièces : en quelle ANNÉE l'affaire des " +
-        "fausses factures a-t-elle éclaté au grand jour (dernière facture truquée) ? (4 chiffres)",
+        "En quelle ANNÉE a été émise la DERNIÈRE fausse facture ? (Elle n'est écrite nulle part : " +
+        "déduisez-la à partir de l'article et de vos pièces. 4 chiffres.)",
       answer: '2013',
       hints: [
-        "Le marché Idéepôle court « de 2009 à 20██ ». La fraude s'arrête l'année où elle est découverte.",
-        "C'est l'actuel maire qui, cette année-là, met la main sur le contrat litigieux.",
+        "L'article donne l'année de la PERQUISITION (lisez-le). Une pièce dit combien de temps AVANT la dernière facture a été émise.",
+        "Perquisition = 2014. La dernière fausse facture a été émise un an plus tôt. 2014 − 1 = ?",
         "Réponse : 2013.",
       ],
       humor:
-        "Note de l'inspecteur : 50 verres brisés, mais la coupe pleine intacte. Soit un message " +
-        "codé, soit la directrice était radine même pour son dernier toast.",
+        "Note de l'inspecteur : 50 verres brisés, mais la coupe pleine intacte. Soit un message, " +
+        "soit la directrice était radine même pour son dernier toast.",
       reveal:
-        "ACTE 1 — Tout s'arrête en 2013, quand le contrat Idéepôle est découvert. La directrice " +
-        "des finances validait les paiements. Mais une signature revenait AU-DESSUS de la sienne : " +
-        "celle du Directeur Général des Services. Initiales relevées sur les bons : « F. E. »",
+        "ACTE 1 — La dernière fausse facture date de 2013 (un an avant la perquisition de 2014). " +
+        "La directrice validait les paiements ; au-dessus d'elle, une signature « F. E. ». Le DGS.",
       fragments: [
-        { label: "Pièce A1 — scellé n°1", text: "Marge d'un « Saint-Maur Le Mag » : dernière facture truquée datée de 2013." },
-        { label: "Pièce A2 — note du parquet", text: "Enquête du parquet de CRÉTEIL. 6 factures contestées sur une soixantaine." },
-        { label: "Pièce A3 — coupure Europe 1", text: "Ex-maire condamné : 3 ans d'inéligibilité, 8 000 € d'amende, 1 an avec sursis." },
-        { label: "Pièce A4 — facture brûlée", text: "Agence : IDÉEPÔLE (filiale de Bygmalion). Objet : édition du MAGAZINE municipal." },
-        { label: "Pièce A5 — chiffrage", text: "Préjudice réglé à la ville : 230 000 €. Mandat du maire de l'époque : 2008 → 2014." },
+        { label: "Pièce A1 — recoupement", text: "La DERNIÈRE fausse facture a été émise exactement UN AN avant la perquisition (dont l'année est dans l'article)." },
+        { label: "Pièce A2 — durée", text: "Le marché Idéepôle a duré 42 mois pile. (Il démarre en décembre 2009 — comptez.)" },
+        { label: "Pièce A3 — remboursement", text: "Le préjudice a été remboursé l'année qui a SUIVI la dernière fausse facture, soit l'année de la perquisition." },
+        { label: "Pièce A4 — contexte", text: "6 factures sur ~60 étaient truquées. (Vous chercherez lesquelles plus tard.)" },
+        { label: "Pièce A5 — méthode", text: "Trois chemins mènent à la même année : la perquisition −1, OU décembre 2009 + 42 mois. Vérifiez qu'ils concordent." },
       ],
     },
 
     // ===============================================================
-    //  ACTE 2 — L'ORGANIGRAMME (le DGS Erzen)
+    //  ACTE 2 — L'ORGANIGRAMME → RECOMPOSER le nom (ERZEN)
     // ===============================================================
     {
       num: 2,
@@ -121,141 +111,139 @@ export const ENQUETE = {
         source: "ORGANIGRAMME INTERNE — caviardé",
         date: "—",
         body:
-          "MAIRE › DIRECTEUR GÉNÉRAL DES SERVICES (F. E████) › Direction des Finances " +
-          "(Solène VASSEUR) · Direction des Systèmes d'Information (DSI) · Services techniques. " +
-          "Mention manuscrite en marge : « les bons de commande étaient RÉÉCRITS après " +
-          "signature des services ».",
+          "MAIRE › DIRECTEUR GÉNÉRAL DES SERVICES (signature « F. E. ») › Direction des Finances " +
+          "(Solène VASSEUR) · Direction des Systèmes d'Information (DSI) · Services techniques.\n" +
+          "Note RH en marge : prénom du DGS = Frédéric ; NOM = 5 lettres, deux voyelles E.\n" +
+          "Mention manuscrite : « les bons étaient RÉÉCRITS après signature des services ».",
       },
       scene:
-        "La mécanique se dessine : un agent rédige un bon de commande honnête ; le DGS le " +
-        "récupère, GONFLE les montants, et la directrice des finances le paie sans broncher. " +
-        "Le DGS a un nom, presque effacé sur l'organigramme. Recollez-le.",
+        "Le DGS gonflait les montants après coup, la directrice payait. Son nom (5 lettres) est " +
+        "effacé. Personne ne vous le donnera : vos pièces décrivent ses lettres. Recomposez-le.",
       riddle:
-        "Recomposez le NOM de famille du DGS qui falsifiait les bons (celui qui couvrait la " +
-        "directrice). 5 lettres.",
+        "Recomposez le NOM de famille du DGS (5 lettres). Il n'est écrit nulle part — il se " +
+        "construit à partir de vos pièces.",
       answer: 'ERZEN',
       hints: [
-        "Ses initiales sur les bons : « F. E. ». Le F, c'est son prénom : Frédéric.",
-        "L'annuaire interne (une pièce de conviction) donne le nom complet.",
+        "Deux morceaux à coller : un début de 2 lettres, et un mot de 3 lettres qui invite au calme.",
+        "« ER » (début) + « ZEN » (le calme) = un nom de 5 lettres commençant par E.",
         "Réponse : ERZEN.",
       ],
       humor:
         "Note de l'inspecteur : Erzen rangeait les faux dans un dossier nommé « NE_PAS_OUVRIR_" +
         "vacances.jpg ». On l'a ouvert en premier.",
       reveal:
-        "ACTE 2 — Le DGS, Frédéric ERZEN, réécrivait les montants ; la directrice Vasseur validait " +
-        "ses faux. Deux complices. Mais les bons étaient RÉDIGÉS plus bas, à la DSI. Et là, un " +
-        "prénom trouble l'enquête : un AUTRE Frédéric y travaillait. Lequel des deux a trempé ?",
+        "ACTE 2 — Le DGS est Frédéric ERZEN (ER + ZEN). Il réécrivait les montants, la directrice " +
+        "validait. Mais Erzen ne savait pas pirater la compta : quelqu'un l'a aidé. Et un AGENT " +
+        "de la DSI, lui, avait tenté d'alerter… il porte le même prénom. Méfiance.",
       fragments: [
-        { label: "Pièce B1 — annuaire interne", text: "DGS de la mairie (2010–2016) : Frédéric ERZEN. Bureau au 2ᵉ étage." },
-        { label: "Pièce B2 — graphologie", text: "Sur les bons, les montants gonflés sont d'une AUTRE main que celle qui les a rédigés." },
-        { label: "Pièce B3 — témoignage compta", text: "« C'est ERZEN qui rapportait les bons corrigés. Mme Vasseur signait les yeux fermés. »" },
-        { label: "Pièce B4 — leurre", text: "Un certain M. EVANO a travaillé à l'accueil. Aucun lien avec les finances. (fausse piste)" },
-        { label: "Pièce B5 — post-it retrouvé", text: "« E-R-Z-E-N. Penser à détruire le double. » — écriture d'Erzen." },
+        { label: "Pièce B1 — au cœur du nom", text: "Au CŒUR de son nom se cache un mot de 3 lettres qui invite au calme (pensez yoga…)." },
+        { label: "Pièce B2 — le début", text: "Son nom COMMENCE par les deux premières lettres du mot « ERREUR », dans l'ordre." },
+        { label: "Pièce B3 — montage", text: "Le nom = [le début de B2] suivi de [le mot de B1]. Cinq lettres en tout." },
+        { label: "Pièce B4 — Scrabble", text: "Sa 3ᵉ lettre vaut 10 points au Scrabble français (la lettre la plus chère). Cela confirme le mot du milieu." },
+        { label: "Pièce B5 — leurre", text: "Un certain M. EVANO (accueil) a les mêmes initiales F.E… mais ce n'est pas un nom de 5 lettres avec deux E. Écartez-le." },
       ],
     },
 
     // ===============================================================
-    //  ACTE 3 — L'AMALGAME DES DEUX FRÉDÉRIC (le chevalier blanc)
+    //  ACTE 3 — LE REGISTRE → RETROUVER le bon signalement (COUPAYE)
     // ===============================================================
     {
       num: 3,
-      key: 'a3b',
+      key: 'a3',
       kind: 'logic',
       title: 'L\'AMALGAME DES DEUX FRÉDÉRIC',
-      place: "Direction des Systèmes d'Information — open space",
+      place: "Direction des Systèmes d'Information — registre des alertes",
       article: {
-        source: "DOSSIER RH — deux fiches mélangées",
-        date: "—",
+        source: "REGISTRE DES SIGNALEMENTS INTERNES — extrait",
+        date: "2010–2013",
         body:
-          "Deux Frédéric dans le dossier. Frédéric ERZEN, le DGS qui falsifiait. Et Frédéric " +
-          "COUPAYE, simple agent de la DSI. Mêmes initiales, même prénom : les enquêteurs les " +
-          "ont d'abord confondus et ont cru Coupaye complice. Les pièces, elles, racontent " +
-          "autre chose.",
+          "2010 — accès du parking municipal .................. signalé par M. DURUY (logistique)\n" +
+          "2011 — cantines scolaires (allergènes) ............. signalé par Mme NABLI (écoles)\n" +
+          "2012 — « montants des bons de commande réécrits » .. signalé par F. COUPAYE (DSI)\n" +
+          "2012 — éclairage public quartier Adamville ......... signalé par M. PARENT (voirie)\n" +
+          "2013 — stationnement marché de La Varenne .......... signalé par Mme OHNET (police mun.)",
       },
       scene:
-        "Tout accuse Coupaye : même prénom qu'Erzen, même service, son nom dans les paraphes. " +
-        "Trop facile. Recoupez vos pièces : l'une d'elles fait basculer le portrait. Coupaye " +
-        "n'est pas un complice — c'est le CHEVALIER BLANC de l'histoire. Innocentez-le pour " +
-        "avancer.",
+        "Deux Frédéric brouillent la piste : Frédéric ERZEN (le DGS, coupable) et un agent de la " +
+        "DSI, lui aussi prénommé Frédéric, qu'on a cru complice. Le bon nom est dans le REGISTRE " +
+        "affiché — mais à vous de trouver LA bonne ligne. Vos pièces disent laquelle.",
       riddle:
-        "Deux Frédéric : l'un falsifie (le DGS), l'autre a tenté d'alerter et s'est fait broyer. " +
-        "Qui est le CHEVALIER BLANC à mettre hors de cause ? (nom de famille)",
+        "Dans le registre affiché, qui est le CHEVALIER BLANC (l'agent qui a tenté d'alerter) ? " +
+        "Recoupez vos pièces pour isoler la bonne ligne. (nom de famille)",
       answer: 'COUPAYE',
       hints: [
-        "Le complice falsificateur, c'est ERZEN (acte précédent). L'amalgame, c'est l'AUTRE Frédéric.",
-        "Coupaye a déposé un signalement interne en 2012… ignoré, puis placardisé. Un lanceur d'alerte, pas un voleur.",
-        "Le chevalier blanc : Frédéric COUPAYE.",
+        "Le bon signalement date de 2012 ET concerne les BONS DE COMMANDE (pas le parking, ni la cantine…).",
+        "Dans le registre, une seule ligne coche les deux cases : 2012 + bons de commande.",
+        "Réponse : COUPAYE.",
       ],
       humor:
-        "Note de l'inspecteur : Coupaye a alerté 7 fois. La hiérarchie lui a offert un mug et un " +
-        "pot de départ. Sans le pot.",
+        "Note de l'inspecteur : Coupaye a alerté, on lui a répondu par un mug et un pot de départ. " +
+        "Sans le pot.",
       reveal:
-        "ACTE 3 — Piège déjoué : Frédéric COUPAYE n'a jamais trempé. Agent de la DSI, il avait " +
-        "ALERTÉ en interne dès 2012 sur les bons réécrits — on l'a fait taire, muté, oublié. " +
-        "C'est même lui qui a laissé la trace qui vous guide. Mais avant le tueur, il reste un " +
-        "VRAI complice à débusquer : celui qui a ouvert le système financier à Erzen…",
+        "ACTE 3 — Le chevalier blanc est Frédéric COUPAYE : agent DSI, il a signalé dès 2012 les " +
+        "bons réécrits, sa signature a été imitée, on l'a muté puis oublié. Innocent. Reste le VRAI " +
+        "complice technique d'Erzen — celui qui a ouvert le système et effacé les traces.",
       fragments: [
-        { label: "Pièce C1 — amalgame", text: "Sur un brouillon : « Frédéric, DSI ». Mais DEUX Frédéric y bossaient : Erzen (DGS) et Coupaye (agent). Ne pas confondre !" },
-        { label: "Pièce C2 — fausse piste", text: "Le nom de COUPAYE apparaît au bas de plusieurs bons → il semble complice. (mais voir C4 et C5…)" },
-        { label: "Pièce C3 — RH", text: "Frédéric COUPAYE : agent DSI, muté brutalement fin 2012, puis « placardisé » sans explication." },
-        { label: "Pièce C4 — signalement", text: "Registre interne : COUPAYE a déposé une ALERTE en 2012 — « montants des bons modifiés après signature ». Restée sans suite." },
-        { label: "Pièce C5 — graphologie", text: "La signature de Coupaye sur les bons est IMITÉE : ce n'est pas sa main. On s'est servi de son nom." },
-        { label: "Pièce C6 — témoin", text: "« Coupaye ? Le seul honnête de l'étage. Il a voulu parler, ça lui a coûté sa carrière. »" },
+        { label: "Pièce C1 — la date", text: "Le chevalier blanc a déposé son alerte en 2012." },
+        { label: "Pièce C2 — l'objet", text: "Son alerte portait précisément sur les BONS DE COMMANDE réécrits — pas sur le parking, la cantine ou l'éclairage." },
+        { label: "Pièce C3 — la preuve", text: "Sa signature sur les bons est IMITÉE : ce n'est donc pas un complice mais une victime." },
+        { label: "Pièce C4 — anti-amalgame", text: "Erzen aussi se prénomme Frédéric. Le chevalier blanc est un simple AGENT de la DSI, pas le DGS." },
+        { label: "Pièce C5 — tri", text: "Deux lignes sont datées de 2012 dans le registre : ne gardez que celle qui parle des BONS." },
+        { label: "Pièce C6 — témoin", text: "« Le seul honnête de l'étage. Il a voulu parler, ça lui a coûté sa carrière. »" },
       ],
     },
 
     // ===============================================================
-    //  ACTE 4 — LE FALSIFICATEUR EN CHEF (Camus Lejarre, en cavale)
+    //  ACTE 4 — LA TABLE DES COMPTES → ÉLIMINER les homonymes (LEJARRE)
     // ===============================================================
     {
       num: 4,
-      key: 'a4l',
+      key: 'a4',
       kind: 'logic',
       title: 'LE FALSIFICATEUR EN CHEF',
       place: "Direction des Finances — régie comptable & salle des serveurs",
       article: {
-        source: "JOURNAL DES CONNEXIONS — extrait restauré",
+        source: "TABLE DES COMPTES ADMIN & PRESTATAIRES — restaurée",
         date: "—",
         body:
-          "Erzen savait gonfler des montants, pas pirater un logiciel comptable. Quelqu'un lui a " +
-          "OUVERT les portes du système financier et EFFACÉ les traces : un prestataire fantôme, " +
-          "compte admin « C.L. », créé hors marché. Puis, quand la police a commencé à roder, " +
-          "l'homme a disparu du jour au lendemain — parti « se mettre au vert ».",
+          "Carla LENOIR ...... comptable titulaire ... compte AD-114 (marché régulier) ... EN POSTE\n" +
+          "Kevin LARENNE ..... stagiaire BTS ......... compte AD-207 (temporaire) ........ parti en fin de stage\n" +
+          "Camus LEJARRE ..... prestataire info ...... compte AD-666 (HORS MARCHÉ) ....... PARTI sans préavis\n" +
+          "Sté NOVERIA ....... maintenance ........... compte AD-300 (marché régulier) ... actif\n" +
+          "Indice serveur : les journaux d'audit ont été PURGÉS la nuit du 24 par le compte AD-666.",
       },
       scene:
-        "Voici le cerveau technique : le FALSIFICATEUR EN CHEF. C'est lui qui a injecté les faux " +
-        "dans la compta et nettoyé les logs pour couvrir Erzen. Il a filé à la campagne avant " +
-        "l'interpellation. Recoupez vos pièces et donnez son NOM de famille.",
+        "Erzen savait gonfler des montants, pas pirater un logiciel. Un « falsificateur en chef » " +
+        "a ouvert la compta et effacé les logs, puis a filé se mettre au vert. Plusieurs noms " +
+        "partagent les initiales C.L. dans la TABLE : démêlez avec vos pièces.",
       riddle:
-        "Qui a ouvert le système financier à Erzen, effacé les traces, puis fui se mettre au vert ? " +
-        "(nom de famille du falsificateur en chef)",
+        "Qui est le falsificateur en chef ? Trois personnes ont les initiales C.L. : éliminez les " +
+        "innocents grâce à vos pièces et à la table. (nom de famille)",
       answer: 'LEJARRE',
       hints: [
-        "Initiales du compte admin pirate : « C.L. ». Le C, c'est Camus.",
-        "Il a quitté la mairie en catastrophe quand la police a rôdé — adresse de réexpédition : un hameau perdu.",
-        "Le falsificateur en chef : Camus LEJARRE.",
+        "Cherchez le compte HORS MARCHÉ qui a PURGÉ les logs la nuit du 24 (c'est dans la table).",
+        "Lenoir est en poste, Larenne (stagiaire) est parti normalement. Reste le prestataire hors marché qui a fui.",
+        "Réponse : LEJARRE.",
       ],
       humor:
         "Note de l'inspecteur : Lejarre a fui si vite qu'il a laissé son mug « World's Best " +
         "Falsificateur » encore tiède, et 14 pizzas facturées au budget « fournitures de bureau ».",
       reveal:
-        "ACTE 4 — Le falsificateur en chef est Camus LEJARRE. Prestataire fantôme, il a ouvert la " +
-        "compta à Erzen et effacé les logs, avant de se volatiliser à la campagne dès que la PJ a " +
-        "approché. Le réseau est complet : ERZEN (DGS) + VASSEUR (finances) + LEJARRE (technique). " +
-        "Reste le tueur. Suivez la dernière tournée de la directrice dans la ville…",
+        "ACTE 4 — Le falsificateur en chef est Camus LEJARRE : prestataire fantôme (compte AD-666, " +
+        "hors marché), il a purgé les logs la nuit du 24 puis s'est volatilisé à la campagne. Le " +
+        "réseau est complet : ERZEN + VASSEUR + LEJARRE. Reste le tueur. Suivez la ville.",
       fragments: [
-        { label: "Pièce D1 — log admin", text: "Compte admin hors marché « C.L. » créé en 2010, accès TOTAL à la compta. Prénom au dossier : Camus." },
-        { label: "Pièce D2 — RH fantôme", text: "Camus LEJARRE : « prestataire » jamais passé en commission de marché. Payé en liquide." },
-        { label: "Pièce D3 — effacement", text: "Les journaux d'audit ont été PURGÉS la nuit du 24 — par le compte C.L." },
-        { label: "Pièce D4 — cavale", text: "Lejarre a rendu son badge un vendredi soir et n'est jamais revenu. Voisins : « parti se mettre au vert »." },
-        { label: "Pièce D5 — leurre", text: "Un stagiaire, Kevin LARENNE, a les mêmes initiales inversées. Il était en cours de BTS. (fausse piste)" },
-        { label: "Pièce D6 — témoin", text: "« Lejarre ? Le magicien des chiffres. Il faisait disparaître une ligne comptable comme un lapin. »" },
+        { label: "Pièce D1 — le compte", text: "Le falsificateur opérait depuis un compte admin créé HORS marché public. (Lequel, dans la table ?)" },
+        { label: "Pièce D2 — la purge", text: "C'est CE compte qui a purgé les journaux d'audit la nuit du 24." },
+        { label: "Pièce D3 — la cavale", text: "L'homme a quitté la mairie sans préavis et est « parti se mettre au vert »." },
+        { label: "Pièce D4 — homonyme 1", text: "Carla LENOIR a aussi les initiales C.L. … mais elle est TOUJOURS en poste. Écartez-la." },
+        { label: "Pièce D5 — homonyme 2", text: "Kevin LARENNE (initiales inversées) n'était qu'un stagiaire BTS, parti normalement. Écartez-le." },
+        { label: "Pièce D6 — témoin", text: "« Le magicien des chiffres : il faisait disparaître une ligne comptable comme un lapin. »" },
       ],
     },
 
     // ===============================================================
-    //  ACTE 5 — LE PLAN DE LA VILLE (le tracé dessine une lettre = clé)
+    //  ACTE 5 — LE PLAN → ORDONNER puis LIRE la lettre (G)
     // ===============================================================
     {
       num: 5,
@@ -264,18 +252,14 @@ export const ENQUETE = {
       title: 'LE PARCOURS DANS LA VILLE',
       place: "Boucle de la Marne — sites remarquables de Saint-Maur",
       scene:
-        "Dans le carnet de la directrice, une dernière tournée d'inspection, sept sites publics " +
-        "de Saint-Maur, sans numéros. Reliez-les DANS L'ORDRE de vos indices sur le plan : le " +
-        "tracé du parcours dessine une LETTRE. Cette lettre est une CLÉ — gardez-la, elle " +
-        "servira plus tard.",
-      // Plan stylisé : sites RÉELS placés pour que le parcours 1→7 dessine un « G ».
-      // (Géographie volontairement schématique — c'est un plan d'arcade.)
+        "Dernière tournée de la directrice : sept sites publics, SANS numéros. Vos pièces ne " +
+        "donnent pas l'ordre tout cuit — elles donnent des contraintes (« X précède Y », « Z est " +
+        "le dernier »…). Reconstituez l'ordre, tracez le parcours : il dessine une LETTRE, votre CLÉ.",
       map: {
-        instruction: "Reliez les 7 sites dans l'ordre de vos indices. Quelle lettre obtenez-vous ?",
+        instruction: "Déduisez l'ordre des 7 sites à partir des contraintes, puis tracez : quelle lettre ?",
         river: true,
-        // Ordre du parcours = index du tableau (1er site = index 0).
-        // lbl = côté de l'étiquette (r=droite, l=gauche, t=haut, b=bas)
-        // short = libellé compact pour le plan (le nom complet reste dans les indices)
+        // Ordre du parcours = index du tableau (1er site = index 0) → dessine un « G ».
+        // lbl = côté étiquette ; short = libellé compact (le nom complet reste dans les indices).
         landmarks: [
           { name: "Hôtel de Ville", short: "Hôtel de Ville", x: 72, y: 24, lbl: 'l' },
           { name: "Théâtre de Saint-Maur", short: "Théâtre", x: 40, y: 16, lbl: 't' },
@@ -288,127 +272,123 @@ export const ENQUETE = {
         letter: 'G',
       },
       riddle:
-        "Reliés dans le bon ordre, les 7 sites tracent une lettre. Tapez CETTE LETTRE.",
+        "Une fois l'ordre des 7 sites déduit, le tracé dessine une lettre. Tapez CETTE LETTRE.",
       answer: 'G',
       hints: [
-        "Départ Hôtel de Ville (en haut), puis Théâtre, Conservatoire… on descend par la gauche.",
-        "On remonte par la droite (la gare) puis on rentre vers le centre (Villa Médicis) : c'est un crochet.",
-        "Le tracé dessine un G — comme une certaine initiale. Réponse : G.",
+        "Placez d'abord les extrêmes : départ = siège du maire ; fin = Villa Médicis ; la gare juste avant la fin.",
+        "Au centre : Théâtre → Conservatoire en 2-3 ; puis Église → Abbaye en 4-5. Reliez : ça fait un crochet.",
+        "Le tracé dessine un G — une initiale qui revient. Réponse : G.",
       ],
       humor:
         "Note de l'inspecteur : la directrice notait ses tournées au dos de tickets de parking. " +
-        "L'un d'eux mène à un kebab. On a vérifié. Par conscience professionnelle.",
+        "L'un mène à un kebab. On a vérifié. Par conscience professionnelle.",
       reveal:
-        "ACTE 5 — Le parcours dessine un G. Une initiale qui revient… La lettre G est votre CLÉ : " +
-        "notez-la, elle décodera le dernier message. Et elle pointe déjà un suspect.",
+        "ACTE 5 — Le parcours dessine un G. Gardez cette lettre : elle décodera le dernier message. " +
+        "Et elle pointe déjà une initiale parmi les suspects…",
       fragments: [
-        { label: "Étape 1", text: "Le parcours DÉMARRE à l'Hôtel de Ville (en haut à droite du plan)." },
-        { label: "Étape 2", text: "2ᵉ arrêt : le Théâtre de Saint-Maur (en haut, vers la gauche)." },
-        { label: "Étape 3", text: "3ᵉ arrêt : le Conservatoire à rayonnement régional (à gauche)." },
-        { label: "Étape 4", text: "4ᵉ arrêt : l'Église Saint-Nicolas, dans le Vieux Saint-Maur (en bas à gauche)." },
-        { label: "Étape 5", text: "5ᵉ arrêt : l'Abbaye / Tour Rabelais (en bas à droite)." },
-        { label: "Étape 6", text: "6ᵉ arrêt : la Gare de Saint-Maur–Créteil, RER A (on remonte par la droite)." },
-        { label: "Étape 7", text: "DERNIER arrêt : la Villa Médicis à La Varenne (on rentre vers le centre)." },
+        { label: "Contrainte 1", text: "Le parcours COMMENCE au siège du maire (en haut à droite du plan)." },
+        { label: "Contrainte 2", text: "La Villa Médicis est le tout DERNIER arrêt." },
+        { label: "Contrainte 3", text: "La Gare RER vient JUSTE AVANT la Villa Médicis." },
+        { label: "Contrainte 4", text: "Le Théâtre est le 2ᵉ arrêt, et le Conservatoire le suit IMMÉDIATEMENT." },
+        { label: "Contrainte 5", text: "L'Abbaye (Tour Rabelais) est l'AVANT-AVANT-DERNIER arrêt (5ᵉ sur 7)." },
+        { label: "Contrainte 6", text: "L'Église Saint-Nicolas vient JUSTE AVANT l'Abbaye." },
       ],
     },
 
     // ===============================================================
-    //  ACTE 6 — LES QUATRE DSI (et l'adjoint Vincent)
+    //  ACTE 6 — LES SUSPECTS → ÉLIMINER les alibis (GUILLAUME)
     // ===============================================================
     {
       num: 6,
-      key: 'a6d',
+      key: 'a6',
       kind: 'logic',
       title: 'LES QUATRE DSI (ET L\'ADJOINT)',
       place: "Boucle de la Marne — nuit du crime",
       article: {
-        source: "FICHE SUSPECTS — service enquête",
+        source: "TABLEAU DES ALIBIS — nuit du crime",
         date: "Nuit du crime",
         body:
-          "Cinq personnes avaient un mobile. Quatre anciens DSI — BLAISE, GUILLAUME, MARC, " +
-          "DJALAL — et l'adjoint VINCENT, « celui qui a les dents qui rayent le parquet », qui " +
-          "convoitait le pouvoir. Un seul n'a PAS d'alibi. Et le plan a déjà soufflé son initiale…",
+          "Cinq mobiles : quatre anciens DSI (BLAISE, GUILLAUME, MARC, DJALAL) et l'adjoint VINCENT, " +
+          "« celui qui a les dents qui rayent le parquet ».\n" +
+          "Contrainte clé : le tueur est entré dans le local d'archives SANS effraction — il en " +
+          "connaissait le code. Donc un ANCIEN DSI dont le badge n'a jamais été désactivé.",
       },
       scene:
-        "Le tueur connaissait le code du local d'archives où dormaient les vieux parapheurs : " +
-        "forcément un ancien DSI. Croisez vos alibis (chacun en détient un) et éliminez. " +
-        "Souvenez-vous de la lettre du parcours.",
+        "Un seul n'a pas d'alibi. Chacun de vous tient l'alibi de quelqu'un. Éliminez ceux qui " +
+        "sont couverts ; celui qui reste, et qui pouvait ouvrir les archives, est le tueur. " +
+        "(La lettre du plan vous a déjà soufflé son initiale.)",
       riddle:
-        "Après élimination : qui est le seul suspect sans alibi, ancien DSI, badge d'archives " +
+        "Après élimination des alibis : qui est le seul ancien DSI sans alibi, au badge d'archives " +
         "encore actif ? (son prénom)",
       answer: 'GUILLAUME',
       hints: [
-        "L'adjoint Vincent est un mobile parfait… mais il était filmé sur les marchés de Noël. Trop voyant.",
-        "Blaise (retraité à La Rochelle), Marc (au Théâtre de Saint-Maur), Djalal (muté à l'étranger) : couverts.",
-        "Le parcours dessinait un G. Réponse : GUILLAUME.",
+        "Barrez ceux qui ont un alibi solide : Blaise, Marc, Djalal, Vincent. Que reste-t-il ?",
+        "L'adjoint Vincent a le mobile parfait mais était filmé sur les marchés : couvert. Le tueur est ancien DSI.",
+        "Le plan dessinait un G. Réponse : GUILLAUME.",
       ],
       humor:
         "Note de l'inspecteur : Vincent l'adjoint a un alibi béton ET un sourire à 32 dents qui " +
         "rayent le parquet. Les deux sont suspects, un seul est puni par la loi.",
       reveal:
-        "ACTE 6 — GUILLAUME. Ancien DSI, parti sans bruit après le « ménage » dans les archives. " +
-        "Pas d'alibi, badge actif, et l'initiale que la ville elle-même dessinait. Reste à " +
-        "comprendre POURQUOI il a brisé exactement 50 verres.",
+        "ACTE 6 — Par élimination : GUILLAUME. Ancien DSI parti sans bruit après le « ménage » des " +
+        "archives, sans alibi, badge actif, initiale G. C'est lui. Reste à comprendre les 50 verres.",
       fragments: [
-        { label: "Alibi — BLAISE", text: "BLAISE : retraité à La Rochelle depuis 2019. À 450 km la nuit du crime. ✅ hors de cause." },
-        { label: "Alibi — MARC", text: "MARC : animait une soirée au Théâtre de Saint-Maur. 200 témoins. ✅ hors de cause." },
-        { label: "Alibi — DJALAL", text: "DJALAL : muté à la DSI d'une ville étrangère, à l'étranger ce soir-là. ✅ hors de cause." },
-        { label: "Suspect — VINCENT (adjoint)", text: "VINCENT « les dents qui rayent le parquet » : voulait le poste. MAIS filmé toute la soirée sur les marchés de Noël (La Varenne, Adamville). Mobile énorme, alibi béton. 🟠 fausse piste." },
-        { label: "Faille — GUILLAUME", text: "GUILLAUME : ancien DSI parti discrètement. AUCUN alibi. Badge du local d'archives JAMAIS désactivé. 🔴" },
-        { label: "Recoupement", text: "Le tueur a ouvert le local sans effraction → il connaissait le code → un ancien DSI. Et le plan disait : G." },
+        { label: "Alibi — BLAISE", text: "BLAISE : retraité à La Rochelle (450 km) la nuit du crime. Couvert." },
+        { label: "Alibi — MARC", text: "MARC : animait une soirée au Théâtre de Saint-Maur, 200 témoins. Couvert." },
+        { label: "Alibi — DJALAL", text: "DJALAL : en mission à l'étranger, muté. Couvert." },
+        { label: "Alibi — VINCENT", text: "VINCENT (adjoint) : filmé toute la soirée sur les marchés de Noël (La Varenne, Adamville). Mobile énorme, mais couvert." },
+        { label: "Fiche — GUILLAUME", text: "GUILLAUME : ancien DSI parti discrètement. Pas d'alibi connu. (Fait neutre — à recouper avec la contrainte.)" },
+        { label: "Contrainte d'accès", text: "Le tueur connaissait le CODE du local d'archives → forcément un ancien DSI au badge actif." },
       ],
     },
 
     // ===============================================================
-    //  ACTE 7 — CINQUANTE BONS, CINQUANTE VERRES
+    //  ACTE 7 — LES LIASSES → ADDITIONNER (50)
     // ===============================================================
     {
       num: 7,
-      key: 'a7c',
+      key: 'a7',
       kind: 'count',
       title: 'CINQUANTE BONS, CINQUANTE VERRES',
       place: "Quartier de La Varenne — bennes, rue Saint-Hilaire",
       article: {
-        source: "CARNET DE GUILLAUME — saisi",
+        source: "RAPPORT DU LÉGISTE — éclats de verre",
         date: "—",
         body:
-          "« Je l'ai retrouvé dans une benne, près du marché de la rue Saint-Hilaire. Un vieux " +
-          "parapheur jeté avec les encombrants. Dedans, MES bons de commande — ceux que J'AVAIS " +
-          "rédigés. Sauf que les montants n'étaient plus les miens. On s'est servi de ma " +
-          "signature pour couvrir leurs vols. Bon après bon. Je les ai comptés. »",
+          "« Retrouvé dans une benne, près du marché rue Saint-Hilaire : un parapheur jeté avec " +
+          "les encombrants, plein de bons signés Guillaume mais aux montants réécrits. »\n" +
+          "Le légiste a compté les éclats : un nombre ROND, MULTIPLE DE 10. Autant que de bons " +
+          "falsifiés. Chacun de vous détient une liasse — additionnez-les TOUTES.",
       },
       scene:
-        "Guillaume a gardé chaque bon falsifié à son nom. Chacun de vous tient une liasse. " +
-        "Additionnez-les TOUTES. Le total dira combien de fois sa signature a été salie — et " +
-        "pourquoi il y avait exactement ce nombre de verres brisés autour du corps.",
+        "Chaque bon falsifié à son nom = un verre brisé. Personne n'a le total : il est réparti " +
+        "en liasses sur vos téléphones. Faites la somme, vérifiez que c'est bien un multiple de 10.",
       riddle:
-        "Faites la SOMME de toutes les liasses de bons falsifiés détenues par la table. Combien " +
-        "de bons au total ?",
+        "Additionnez toutes les liasses de la table. Combien de bons (= de verres brisés) au total ?",
       answer: '50',
       hints: [
-        "Chaque joueur a une liasse (12, 9, 11, 8, 10…). Additionnez-les toutes.",
-        "Le total est rond, et correspond EXACTEMENT au nombre de verres brisés.",
+        "Liasses : une douzaine (12), 9, 11, 8 et 10. Faites la somme.",
+        "12 + 9 + 11 + 8 + 10 — et ça doit tomber sur un multiple de 10.",
         "Réponse : 50.",
       ],
       humor:
         "Note de l'inspecteur : le légiste a recompté trois fois. À 49 il s'est ouvert une bière, " +
         "à 50 il a compris le message. Corrélation troublante.",
       reveal:
-        "ACTE 7 — 50 bons falsifiés à la signature de Guillaume. 50 trahisons. 50 verres brisés " +
-        "autour de la directrice : un éclat pour chaque bon maquillé en son nom. Le compte est un " +
-        "message. Reste à le décoder.",
+        "ACTE 7 — 50 bons falsifiés à la signature de Guillaume = 50 verres brisés. Un éclat par " +
+        "trahison. Le compte est un message. Reste à le décoder avec la lettre du plan.",
       fragments: [
-        { label: "Liasse A", text: "Tu détiens une liasse de 12 bons de commande falsifiés." },
-        { label: "Liasse B", text: "Tu détiens une liasse de 9 bons de commande falsifiés." },
-        { label: "Liasse C", text: "Tu détiens une liasse de 11 bons de commande falsifiés." },
-        { label: "Liasse D", text: "Tu détiens une liasse de 8 bons de commande falsifiés." },
-        { label: "Liasse E", text: "Tu détiens une liasse de 10 bons de commande falsifiés." },
-        { label: "Indice scène", text: "Le légiste a compté les éclats : autant de verres brisés que de bons falsifiés." },
+        { label: "Liasse A", text: "Ta liasse : une DOUZAINE de bons falsifiés." },
+        { label: "Liasse B", text: "Ta liasse : 9 bons falsifiés." },
+        { label: "Liasse C", text: "Ta liasse : 11 bons falsifiés." },
+        { label: "Liasse D", text: "Ta liasse : 8 bons falsifiés." },
+        { label: "Liasse E", text: "Ta liasse : 10 bons falsifiés." },
+        { label: "Vérification", text: "Le total doit être un MULTIPLE DE 10 (rapport du légiste). Si ce n'est pas le cas, recomptez." },
       ],
     },
 
     // ===============================================================
-    //  ACTE 8 — LE MESSAGE CODÉ (clé = la lettre du parcours, G)
+    //  ACTE 8 — LE MESSAGE CODÉ → CÉSAR, clé = G (PARAPHEUR)
     // ===============================================================
     {
       num: 8,
@@ -420,45 +400,45 @@ export const ENQUETE = {
         source: "DERNIER MESSAGE DE GUILLAUME — chiffré",
         date: "Soir du crime",
         body:
-          "Sur le miroir de la salle, Guillaume a laissé un seul mot, chiffré. Il faut une clé " +
-          "pour le lire. La clé, c'est la lettre que la ville vous a dessinée.",
+          "Sur le miroir, un seul mot chiffré. La clé n'est pas écrite : c'est la LETTRE que la " +
+          "ville vous a dessinée (acte 5). Sa position dans l'alphabet donne le décalage de César.",
       },
-      // Chiffre de César : texte = plain décalé de +shift. La clé G = 7ᵉ lettre → reculer de 7.
+      // César : texte = clair décalé de +shift. Clé G = 7ᵉ lettre → reculer de 7.
       cipher: {
         ciphertext: 'WHYHWOLBY',
         keyLetter: 'G',
         shift: 7,
         plain: 'PARAPHEUR',
-        help: "Clé = G, la 7ᵉ lettre de l'alphabet. Recule CHAQUE lettre de 7 rangs (W→P, H→A…).",
+        help: "Clé = la lettre du plan. Trouvez son rang dans l'alphabet, puis reculez CHAQUE lettre d'autant.",
       },
       scene:
-        "Vous tenez le coupable (Guillaume), les complices (Erzen, la directrice et Lejarre le " +
-        "falsificateur en chef), le compte (50) et la date (2013). Décodez le dernier mot avec la " +
-        "clé G : il nomme l'objet qui a tout déclenché, et clôt le dossier.",
+        "Vous tenez le coupable (Guillaume), les complices (Erzen, Vasseur, Lejarre), le compte (50) " +
+        "et la date (2013). Le décalage n'est pas donné : c'est le rang de la lettre du plan. " +
+        "Décodez le mot — il nomme l'objet du mobile et clôt le dossier.",
       riddle:
-        "Décodez « WHYHWOLBY » avec la clé G (recul de 7 lettres). Quel mot obtenez-vous ?",
+        "Décodez « WHYHWOLBY ». La clé est la lettre du plan (acte 5) ; son rang dans l'alphabet = " +
+        "le décalage à reculer. Quel mot obtenez-vous ?",
       answer: 'PARAPHEUR',
       hints: [
-        "W reculé de 7 → P. H reculé de 7 → A. Continuez…",
-        "C'est un classeur rigide où l'on range les documents À SIGNER. Relis le titre du dossier.",
+        "La lettre du plan était G. G est la 7ᵉ lettre → reculez chaque lettre de 7 rangs.",
+        "W − 7 = P ; H − 7 = A ; Y − 7 = R … continuez.",
         "Réponse : PARAPHEUR.",
       ],
       humor:
-        "Note de l'inspecteur : Guillaume chiffre ses messages au poil… mais son mot de passe " +
-        "wifi reste « azerty1234 ». Le génie a ses angles morts.",
+        "Note de l'inspecteur : Guillaume chiffre ses messages au poil… mais son mot de passe wifi " +
+        "reste « azerty1234 ». Le génie a ses angles morts.",
       reveal:
-        "DOSSIER CLOS — Le meurtrier est GUILLAUME, ancien DSI. Mobile : la VENGEANCE des " +
-        "parapheurs perdus. Il avait retrouvé dans une benne le parapheur contenant les bons de " +
-        "commande qu'il avait rédigés, falsifiés par le DGS Frédéric ERZEN — épaulé par le " +
-        "falsificateur en chef Camus LEJARRE (en cavale) — et payés par la directrice Solène " +
-        "VASSEUR. 50 bons salis, 50 verres brisés. L'affaire Idéepôle aura fait une victime de " +
-        "plus — des années après.",
+        "DOSSIER CLOS — Le meurtrier est GUILLAUME, ancien DSI. Mobile : la VENGEANCE des parapheurs " +
+        "perdus. Il avait retrouvé dans une benne le parapheur contenant les bons qu'il avait " +
+        "rédigés, falsifiés par le DGS Frédéric ERZEN — épaulé par le falsificateur en chef Camus " +
+        "LEJARRE (en cavale) — et payés par la directrice Solène VASSEUR. 50 bons salis, 50 verres " +
+        "brisés. L'affaire Idéepôle aura fait une victime de plus.",
       fragments: [
-        { label: "Rappel clé", text: "La clé est la lettre du parcours sur le plan : G (7ᵉ lettre de l'alphabet)." },
-        { label: "Décodeur", text: "César : pour lire, recule chaque lettre de 7 rangs. Ex : W(23) → P(16)." },
+        { label: "Rappel clé", text: "La clé du chiffre est la LETTRE obtenue sur le plan (acte 5). Retrouvez-la." },
+        { label: "Le décalage", text: "Le décalage de César = le RANG de cette lettre dans l'alphabet (A=1, B=2, …)." },
+        { label: "Méthode", text: "Pour LIRE, on RECULE chaque lettre du cryptogramme du nombre de rangs trouvé." },
         { label: "Amorce", text: "Les 3 premières lettres décodées donnent : P - A - R …" },
         { label: "Indice titre", text: "Relis le titre du dossier : « L'affaire des ___________ perdus »." },
-        { label: "Synthèse", text: "Coupable : Guillaume · Complices : Erzen + Vasseur · Compte : 50 · Année : 2013." },
       ],
     },
   ],

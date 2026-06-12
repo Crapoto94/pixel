@@ -465,9 +465,11 @@ function quizController(act) {
   if (act.sub === 'final') {
     const board = act.finalBoard || [];
     const losers = act.loserNames || [];
+    const winners = act.winnerNames || [];
     const iLost = losers.length && board.some(b=>b.id===STATE.me.id && losers.includes(b.name));
     return `<div class="card glow-box">
       <div class="pill neon-yellow">🏁 BLIND-TEST TERMINÉ</div>
+      ${winners.length ? `<p class="center neon-cyan mt">🏆 Vainqueur : ${winners.map(esc).join(' & ')}</p>` : ''}
       <div class="leaderboard mt">
         ${board.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join('')}
       </div>

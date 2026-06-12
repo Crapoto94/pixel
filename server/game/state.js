@@ -373,6 +373,8 @@ export class GameState {
   // ---- Démarrage de partie -----------------------------------------
   startGame() {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
+    // On quitte le briefing : on vide l'activité pour que la borne affiche le monde.
+    if (this.activity && this.activity.type === 'briefing') this.activity = null;
     // Le Glitch n'est PAS désigné ici : il s'infiltre à la fin du Monde 1.
     this.phase = 'world';
     this.worldIndex = 0;

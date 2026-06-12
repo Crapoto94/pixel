@@ -27,7 +27,7 @@
   .ticker { position: fixed; bottom: 0; left: 0; right: 0; background:#000; border-top:3px solid var(--neon);
             white-space: nowrap; overflow: hidden; }
   .ticker span { display: inline-block; padding: 10px 0; font-family: var(--pixel); font-size: 16px;
-            color: var(--neon3); animation: scroll 24s linear infinite; }
+            color: var(--neon3); animation: scroll 45s linear infinite; }
   @keyframes scroll { from { transform: translateX(100%);} to { transform: translateX(-100%);} }
   @keyframes spin { from { transform: rotate(0);} to { transform: rotate(360deg);} }
   .leaderboard div { font-size: clamp(16px, 2.6vh, 28px); padding: clamp(3px,0.7vh,8px); border-bottom: 1px solid #fff2; }
@@ -116,8 +116,10 @@ let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
   if(!STATE) return;
-  // Nettoyage du briefing si on en sort (+ coupe la musique de fond)
-  if (briefTimer && !(STATE.activity && STATE.activity.type==='briefing')){
+  // Nettoyage du briefing dès qu'on ne l'affiche PLUS (passage au monde, stop…)
+  const _inBrief = STATE.phase==='activity' && STATE.activity
+    && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
+  if (briefTimer && !_inBrief){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
     if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
   }

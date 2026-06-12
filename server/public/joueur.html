@@ -880,7 +880,9 @@ function enqueteController(act) {
     <p style="font-size:15px"><b class="neon-pink">Énigme :</b> ${esc(a.riddle||'')}</p>
     ${frags ? `<div class="pill neon-cyan mt">🔍 TES PIÈCES À CONVICTION</div>${frags}
       <p class="muted" style="font-size:12px">Partage-les à voix haute avec la table : seule l'addition de toutes les pièces donne le code.</p>`
-      : `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`}
+      : (act.fragVisible
+          ? `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`
+          : `<p class="muted mt">🔒 Les pièces à conviction ne sont pas encore distribuées — attends le signal du maître du jeu.</p>`)}
     <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase"
       value="${esc(_enqDraft)}" oninput="_enqDraft=this.value" onkeydown="if(event.key==='Enter')enqueteCode()" autocomplete="off" />
     <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>

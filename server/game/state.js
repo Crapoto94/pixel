@@ -661,6 +661,7 @@ export class GameState {
       this.activity.actIndex = 0;
       this.activity.hints = {};   // { actIndex: nbIndicesRévélés }
       this.activity.frag = {};    // { playerId: [pièces à conviction de l'acte courant] }
+      this.activity.fragVisible = false; // les pièces ne s'affichent QUE si le GM le décide
       this.activity.attempts = 0;
       this.activity.lastWrong = 0;
       this.activity.done = false;
@@ -982,6 +983,7 @@ export class GameState {
     if (!a || a.type !== 'enquete') return;
     const act = ENQUETE.acts[a.actIndex];
     a.frag = {};
+    a.fragVisible = false; // nouvel acte → pièces re-masquées jusqu'à décision du GM
     if (!act) return;
     const players = this.players.filter((p) => p.connected);
     if (!players.length) return;
@@ -1080,9 +1082,22 @@ export class GameState {
       // Le « mur d'enquête » : révélations des actes déjà résolus
       wall: acts.slice(0, idx).map((x) => ({ num: x.num, title: x.title, reveal: x.reveal })),
       lastWrong: a.lastWrong || 0,
-      myFragments: forPlayerId ? (a.frag?.[forPlayerId] || []) : [],
+      fragVisible: !!a.fragVisible,
+      // Les pièces à conviction ne sont envoyées QUE si le GM les a révélées.
+      myFragments: (forPlayerId && a.fragVisible) ? (a.frag?.[forPlayerId] || []) : [],
       finale: a.done ? ENQUETE.finale : null,
     };
+  }
+
+  // Le GM affiche / masque les pièces à conviction sur les téléphones.
+  enqueteRevealFrags(on) {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete') return;
+    a.fragVisible = (on === undefined) ? !a.fragVisible : !!on;
+    this.addLog(a.fragVisible
+      ? '🟨 Pièces à conviction RÉVÉLÉES sur les téléphones.'
+      : '⬛ Pièces à conviction masquées.');
+    this.touch();
   }
 
   // Bloc réservé GM : la solution de l'acte courant.

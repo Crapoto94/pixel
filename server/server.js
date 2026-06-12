@@ -408,6 +408,7 @@ app.post('/api/gm/action', (req, res) => {
     case 'mosaicReveal': game.mosaicReveal(payload.on !== false); break;
     case 'enqueteHint': game.enqueteHint(); break;
     case 'enqueteSkip': game.enqueteSkip(); break;
+    case 'enqueteRevealFrags': game.enqueteRevealFrags(payload.on); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });

@@ -242,6 +242,10 @@ function render(){
         <button class="btn warn" ${em.hintsShown>=em.hintsTotal?'disabled':''} onclick="act('enqueteHint')">💡 Donner un indice</button>
         <button class="btn secondary" onclick="if(confirm('Débloquer cet acte sans le résoudre ?'))act('enqueteSkip')">⏭ Forcer l'acte</button>
       </div>
+      <button class="btn ${S.activity.fragVisible?'danger':'warn'} mt" onclick="act('enqueteRevealFrags',{on:${S.activity.fragVisible?'false':'true'}})">
+        ${S.activity.fragVisible?'⬛ Masquer les pièces à conviction':'🟨 Afficher les pièces à conviction'}
+      </button>
+      <div class="muted mt" style="font-size:12px">${S.activity.fragVisible?'Les joueurs voient leurs pièces sur leur téléphone.':'Les pièces sont cachées tant que tu ne les affiches pas.'}</div>
     </div>`;
   })() : ''}
 

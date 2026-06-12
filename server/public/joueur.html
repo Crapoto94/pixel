@@ -199,10 +199,18 @@ function render() {
     }
 
     if (!w.resoluParVote) {
-      html += `
-      <input id="codeInput" type="text" placeholder="CODE" />
-      <button class="btn secondary mt" onclick="submitCode()">VALIDER LE CODE</button>
-      <div id="codeMsg" class="center mt"></div>`;
+      if (w.heroOnly && !me.isHero) {
+        // Énigme réservée au PLAYER ONE : les autres transmettent leurs touches.
+        html += `<div class="card" style="border-color:var(--neon3);background:#1a1400">
+          <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE</div>
+          <p>Donne tes touches à <b>VINCENT (Player One)</b> — lui seul peut valider la séquence sur la borne.</p>
+        </div>`;
+      } else {
+        html += `
+        <input id="codeInput" type="text" placeholder="CODE" ${w.heroOnly?'autocomplete="off"':''} />
+        <button class="btn secondary mt" onclick="submitCode()">${w.heroOnly?'👑 VALIDER LA SÉQUENCE':'VALIDER LE CODE'}</button>
+        <div id="codeMsg" class="center mt"></div>`;
+      }
     }
     html += `</div>`;
   }

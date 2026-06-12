@@ -371,6 +371,9 @@ export class GameState {
     this.phase = 'world';
     this.worldIndex = 0;
     this.addLog('🕹️ INSERT COIN — la partie commence !');
+    // Le 1er colis n'était jamais réclamé : la borne le demande au lancement.
+    const w1 = this.currentWorld();
+    if (w1) this.addLog(`📦 COLIS ${w1.colis} — PIXELS, livrez le premier colis !`);
     this.touch();
   }
 
@@ -383,8 +386,12 @@ export class GameState {
     if (world.resoluParVote) {
       return { ok: false, reason: 'Ce monde se résout par un VOTE, pas un code.' };
     }
-    const ok = normalize(code) === world.codeNormalise;
     const p = this.player(playerId);
+    // Énigme réservée au PLAYER ONE : seul le héros (Vincent) peut valider.
+    if (world.heroOnly && !(p && p.isHero)) {
+      return { ok: false, reason: 'Seul le PLAYER ONE peut valider cette séquence. Donne-lui tes touches !' };
+    }
+    const ok = normalize(code) === world.codeNormalise;
     if (ok) {
       this.addLog(`✅ ${p ? p.name : '?'} a validé le code du Monde ${world.num} !`);
       this.completeWorld();
@@ -1348,7 +1355,7 @@ export class GameState {
         id: world.id, num: world.num, titre: world.titre, colis: world.colis,
         intro: world.intro, enigme: world.enigme, activite: world.activite,
         isTwist: !!world.isTwist, isFinale: !!world.isFinale,
-        resoluParVote: !!world.resoluParVote,
+        resoluParVote: !!world.resoluParVote, heroOnly: !!world.heroOnly,
       },
       worldCount: WORLDS.length,
       heroAwakened: this.heroAwakened,

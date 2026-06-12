@@ -20,6 +20,7 @@ export const WORLDS = [
     num: 1,
     titre: 'TUTORIEL CORROMPU',
     colis: 1,
+    heroOnly: true, // seul le PLAYER ONE (Vincent) peut VALIDER la séquence Konami
     intro:
       "La BORNE s'allume dans un grésillement. « SYSTÈME CORROMPU. Avatars détectés. " +
       "Pour réveiller la réalité, reconstituez la SÉQUENCE LÉGENDAIRE. »",

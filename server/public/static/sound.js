@@ -118,9 +118,30 @@ window.SFX = (function () {
     lose() { pacPlay('lose', () => seq([[392,0.14],[330,0.14],[262,0.14],[196,0.36]], 'sawtooth', 0.24)); },
   };
 
+  // ===================================================================
+  //  Boucle musicale chiptune (style plateforme 8-bit) — pour le briefing.
+  //  Mélodie ORIGINALE, jouée en boucle ; vol bas pour rester en fond.
+  // ===================================================================
+  const BRIEF_TUNE = [ // [freq Hz, durée s]  (sib/do/mi/sol… arpèges sautillants)
+    [392,0.16],[523,0.16],[659,0.16],[784,0.24],[659,0.16],[784,0.16],[880,0.30],
+    [784,0.16],[659,0.16],[587,0.16],[659,0.16],[523,0.30],[0,0.18],
+    [440,0.16],[523,0.16],[659,0.16],[698,0.24],[659,0.16],[523,0.16],[587,0.30],[0,0.24],
+  ];
+  let _loopTimer = null;
+  function loopStop() { if (_loopTimer) { clearTimeout(_loopTimer); _loopTimer = null; } }
+  function loopStart(notes, vol = 0.12) {
+    loopStop();
+    const tune = notes || BRIEF_TUNE;
+    const total = tune.reduce((s, n) => s + n[1], 0);
+    const run = () => { seq(tune, 'square', vol); _loopTimer = setTimeout(run, total * 1000); };
+    run();
+  }
+
   return {
     unlock,
     pac, pacPreload,
+    briefMusic(v) { loopStart(null, v); }, // démarre la boucle du briefing
+    briefMusicStop: loopStop,
     coin()   { seq([[988, 0.08], [1319, 0.18]], 'square', 0.22); },
     // cliquet de la roue des gages (clic sec et bref)
     tick()   { tone(2000, 0, 0.015, 'square', 0.12); },

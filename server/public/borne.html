@@ -115,9 +115,10 @@ let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
   if(!STATE) return;
-  // Nettoyage du briefing si on en sort
+  // Nettoyage du briefing si on en sort (+ coupe la musique de fond)
   if (briefTimer && !(STATE.activity && STATE.activity.type==='briefing')){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
+    if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
   }
   // --- BRIEFING : déroulé scénario + attendus par joueur ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='briefing'){
@@ -418,6 +419,7 @@ function setupBriefing(){
   if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
   briefKey = STATE.activity.startedAt;
   briefSlides = null; briefIdx = 0;
+  if (SOUND_ON && window.SFX && SFX.briefMusic) SFX.briefMusic(); // musique chiptune de fond
   stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
   tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
   fetch('/api/briefing').then(r=>r.json()).then(d=>{

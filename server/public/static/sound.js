@@ -122,6 +122,8 @@ window.SFX = (function () {
     unlock,
     pac, pacPreload,
     coin()   { seq([[988, 0.08], [1319, 0.18]], 'square', 0.22); },
+    // cliquet de la roue des gages (clic sec et bref)
+    tick()   { tone(2000, 0, 0.015, 'square', 0.12); },
     start()  { seq([[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.28]], 'square', 0.22); },
     level()  { seq([[392, 0.08], [523, 0.08], [659, 0.2]], 'square', 0.22); },
     correct(){ seq([[659, 0.09], [988, 0.18]], 'square', 0.22); },

@@ -465,24 +465,30 @@ function renderMusicBorne(a){
 
 // =================== ROUE DES GAGES (affichage borne) ===================
 let roueCountTimer = null;
+let roueSpinKey = null; // évite de relancer l'animation/les sons à chaque SSE
 function renderRoueBorne(a){
   if (roueCountTimer){ clearInterval(roueCountTimer); roueCountTimer = null; }
+  if (a.sub !== 'spin') roueSpinKey = null;
   const opts = a.options || [];
   const n = Math.max(1, opts.length);
   const COLORS = ['#ff2e88','#2effd5','#ffe600','#7a5cff','#38ff9c','#ff6b3c','#3c9cff','#c45cff'];
 
   // --- Phase 1 : la roue tourne et tombe sur le gage choisi ---
   if (a.sub === 'spin'){
-    const R=140, cx=160, cy=160, seg=360/n;
+    if (roueSpinKey === a.spinAt) return; // animation déjà en cours : ne pas la redémarrer
+    roueSpinKey = a.spinAt;
+    const R=140, cx=160, cy=160, seg=360/n, SPINMS=3400; // < 5 s serveur → ~1,5 s de mise en valeur du gagnant
     let paths='';
     for (let i=0;i<n;i++){
       const a0=((i)*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
       const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
       const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
-      paths+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${COLORS[i%COLORS.length]}" stroke="#03010a" stroke-width="2"/>`;
+      paths+=`<path id="rseg${i}" d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${COLORS[i%COLORS.length]}" stroke="#03010a" stroke-width="2"/>`;
+      // étiquette : retournée si elle se retrouverait à l'envers (lisibilité)
+      let rot=(i+0.5)*seg; if (rot>90 && rot<270) rot+=180;
       const am=((i+0.5)*seg-90)*Math.PI/180, lx=cx+R*0.6*Math.cos(am), ly=cy+R*0.6*Math.sin(am);
       const t=(opts[i].titre||'').slice(0,13);
-      paths+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="11" fill="#03010a" text-anchor="middle" transform="rotate(${((i+0.5)*seg).toFixed(1)} ${lx.toFixed(1)} ${ly.toFixed(1)})" style="font-family:var(--term);font-weight:bold">${esc(t)}</text>`;
+      paths+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="11" fill="#03010a" text-anchor="middle" transform="rotate(${rot.toFixed(1)} ${lx.toFixed(1)} ${ly.toFixed(1)})" style="font-family:var(--term);font-weight:bold">${esc(t)}</text>`;
     }
     stage.innerHTML = `<div class="center">
       <h1 class="big neon-pink">🎰 LA ROUE DES GAGES</h1>
@@ -490,15 +496,30 @@ function renderRoueBorne(a){
         <g id="rouewheel" style="transform-origin:160px 160px">${paths}<circle cx="160" cy="160" r="14" fill="#03010a"/></g>
         <polygon points="160,6 148,32 172,32" fill="#ffe600" stroke="#03010a" stroke-width="2"/>
       </svg>
-      <p class="big neon-yellow blink">La roue tourne…</p>`;
+      <p class="big neon-yellow blink" id="rouemsg">La roue tourne…</p>`;
     tickerEl.textContent = 'LA ROUE DES GAGES — qui va s\'y coller ?';
     const g=document.getElementById('rouewheel');
     if(g && g.animate){
       const center=(a.chosenIndex+0.5)*seg;
       const final=360*4 - center;
       g.animate([{transform:'rotate(0deg)'},{transform:`rotate(${final}deg)`}],
-        {duration:4500, easing:'cubic-bezier(.15,.7,.12,1)', fill:'forwards'});
-      if (SOUND_ON && window.SFX){ let k=0; const iv=setInterval(()=>{ if(k++>16){clearInterval(iv); try{SFX.coin();}catch(_){}; return;} try{SFX.pad(k%4);}catch(_){} }, 250); }
+        {duration:SPINMS, easing:'cubic-bezier(.15,.7,.12,1)', fill:'forwards'});
+      // cliquet : ticks de plus en plus espacés (la roue ralentit)
+      if (SOUND_ON && window.SFX && SFX.tick){
+        const TICKS=28;
+        for (let i=0;i<TICKS;i++){
+          const t = SPINMS * (1 - Math.pow(1 - i/TICKS, 2)); // ease-out
+          setTimeout(()=>{ try{ SFX.tick(); }catch(_){} }, t);
+        }
+      }
+      // atterrissage : on illumine le segment gagnant + petit « ding »
+      setTimeout(()=>{
+        const seg=document.getElementById('rseg'+a.chosenIndex);
+        if (seg){ seg.setAttribute('stroke','#ffe600'); seg.setAttribute('stroke-width','5');
+          seg.style.filter='brightness(1.7) drop-shadow(0 0 6px #ffe600)'; }
+        const msg=document.getElementById('rouemsg'); if (msg){ msg.classList.remove('blink'); msg.textContent='🎯 '+((opts[a.chosenIndex]||{}).titre||''); }
+        try{ if (SOUND_ON && window.SFX) SFX.coin(); }catch(_){}
+      }, SPINMS + 60);
     }
     return;
   }

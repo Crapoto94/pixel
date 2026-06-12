@@ -53,6 +53,20 @@ function act(action, payload={}){
 
 function render(){
   if(!S) return;
+
+  // Don't re-render while user is interacting with a dropdown (avoids closing it mid-selection)
+  const ae = document.activeElement;
+  if (ae && (ae.id === 'spotTarget' || ae.id === 'spotDefi' || ae.id === 'gagePool' || ae.id === 'gageTarget')) {
+    return;
+  }
+
+  // Persist select values across re-renders
+  const _saved = {};
+  ['spotTarget','spotDefi','gagePool','gageTarget'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) _saved[id] = el.value;
+  });
+
   const w = S.world;
   const targets = S.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
   app.innerHTML = `
@@ -304,11 +318,15 @@ function render(){
     ${(S.log||[]).map(l=>`<div>${esc(l.msg)}</div>`).join('')}
   </div>`;
 
-  // Restaure les sélections Spotlight après le rafraîchissement (1,5 s)
-  const st = document.getElementById('spotTarget');
-  if (st && _spotSel.target && [...st.options].some(o=>o.value===_spotSel.target)) st.value = _spotSel.target;
-  const sd = document.getElementById('spotDefi');
-  if (sd && _spotSel.defi) sd.value = _spotSel.defi;
+  // Restore select values after re-render
+  Object.keys(_saved).forEach(id => {
+    const el = document.getElementById(id);
+    if (el && _saved[id] !== undefined && _saved[id] !== '') {
+      if (el.querySelector(`option[value="${_saved[id]}"]`)) el.value = _saved[id];
+    }
+  });
+  if (_saved.spotTarget !== undefined) _spotSel.target = _saved.spotTarget;
+  if (_saved.spotDefi !== undefined) _spotSel.defi = _saved.spotDefi;
 }
 
 function startAct(type, opts={}){ act('startActivity',{type,opts}); }

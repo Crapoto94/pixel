@@ -216,6 +216,10 @@ function render() {
       </div>`;
     }
 
+    if (w.id === 'w1' && !(w.heroOnly && me.isHero)) {
+      html += `<button class="btn secondary mt" onclick="api('/api/hint',{})" style="background:var(--neon4);color:#fff">💡 Demander un indice</button>`;
+    }
+
     if (!w.resoluParVote) {
       if (w.heroOnly && !me.isHero) {
         // Énigme réservée au PLAYER ONE : les autres transmettent leurs touches.

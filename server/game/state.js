@@ -403,6 +403,16 @@ export class GameState {
     if (ok) {
       this.addLog(`✅ ${p ? p.name : '?'} a validé le code du Monde ${world.num} !`);
       this.completeWorld();
+      if (world.id === 'w1') {
+        this.startActivity('videoshow', {
+          video: 'hIovAaitgsI',
+          startAt: 0,
+          skipIntro: true,
+          topLabel: '🎉 BRAVO !',
+          chyron: 'Tu as trouvé le Konami Code !',
+          footer: 'Préparez-vous pour la suite…',
+        });
+      }
       return { ok: true };
     }
     this.addLog(`❌ Code refusé pour le Monde ${world.num}.`);
@@ -434,6 +444,19 @@ export class GameState {
       }
     }
     this.touch();
+  }
+
+  // Un joueur demande un indice : la borne diffuse une vidéo d'aide.
+  requestHint(playerId) {
+    const p = this.player(playerId);
+    this.addLog(`💡 ${p ? p.name : '?'} demande un indice !`);
+    this.startActivity('videoshow', {
+      video: 'hIovAaitgsI',
+      startAt: 56,
+      skipIntro: true,
+      topLabel: '💡 INDICE',
+      chyron: 'Un indice pour vous aider…',
+    });
   }
 
   awakenHero() {
@@ -667,6 +690,8 @@ export class GameState {
       this.activity.topLabel = opts.topLabel || '📺 VIDÉO';
       this.activity.chyron = opts.chyron || '';
       this.activity.footer = opts.footer || '';
+      this.activity.skipIntro = opts.skipIntro || false;
+      this.activity.startAt = opts.startAt || 0;
     }
     // Briefing : le MJ clique « Passer au Monde 1 » pour démarrer la partie.
     this.phase = 'activity';

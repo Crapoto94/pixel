@@ -167,6 +167,12 @@ app.post('/api/code', (req, res) => {
   res.json(game.submitCode(p.id, req.body.code || ''));
 });
 
+app.post('/api/hint', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.requestHint(p.id);
+  res.json({ ok: true });
+});
+
 app.post('/api/buzz', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.buzz(p.id);

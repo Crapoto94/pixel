@@ -546,6 +546,10 @@ export class GameState {
     }
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
+    // Roue des gages : on tire tout de suite un gage pour que la roue "tombe" dessus.
+    if (type === 'roue_des_gages') {
+      this.drawGage(opts.pool || null, opts.targetId || null);
+    }
     this.touch();
   }
 
@@ -686,15 +690,25 @@ export class GameState {
     if (this.activity.buzzes.find((b) => b.id === playerId)) return;
     const p = this.player(playerId);
     this.activity.buzzes.push({ id: playerId, name: p?.name, t: Date.now() });
-    // Reaction Race : quand tous les joueurs connectés ont buzzé, le dernier perd une vie
+    // Reaction Race : quand tous les joueurs connectés ont réagi,
+    //  - le PREMIER regagne une vie (max 3)
+    //  - le DERNIER perd une vie ; les deux sont affichés sur la BORNE.
     if (this.activity.type === 'reaction_race') {
       const connected = this.players.filter(pl => pl.connected);
-      if (this.activity.buzzes.length >= connected.length) {
-        const last = [...this.activity.buzzes].sort((a, b) => b.t - a.t)[0];
-        const loser = this.player(last.id);
-        if (loser && loser.lives > 0) {
-          loser.lives -= 1;
-          this.addLog(`💔 ${loser.name} a buzzé EN DERNIER — vie perdue (${loser.lives} restante(s)) !`);
+      if (connected.length >= 2 && this.activity.buzzes.length >= connected.length && !this.activity.resolved) {
+        this.activity.resolved = true;
+        const sorted = [...this.activity.buzzes].sort((a, b) => a.t - b.t);
+        const first = this.player(sorted[0].id);
+        const last = this.player(sorted[sorted.length - 1].id);
+        this.activity.firstName = first?.name || null;
+        this.activity.lastName = last?.name || null;
+        if (last && last.lives > 0) {
+          last.lives -= 1;
+          this.addLog(`🐢 ${last.name} a réagi EN DERNIER — −1 vie (${last.lives} restante(s)).`);
+        }
+        if (first) {
+          if (first.lives < 3) { first.lives += 1; this.addLog(`⚡ ${first.name} le plus RAPIDE — +1 vie (${first.lives}) !`); }
+          else this.addLog(`⚡ ${first.name} le plus RAPIDE ! (déjà au max de vies)`);
         }
       }
     }

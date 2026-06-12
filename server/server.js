@@ -291,6 +291,7 @@ app.get('/api/gm/state', (req, res) => {
     play: q.play || null,
     bonneReponse: q.choices[q.answer],
   } : null;
+  const cw = game.currentWorld();
   res.json({
     ...game.publicState(),
     glitchId: game.glitchId, // l'hôte a le droit de savoir
@@ -299,6 +300,10 @@ app.get('/api/gm/state', (req, res) => {
     quizMaster,
     enqueteMaster: game.enqueteMaster(),
     playlistTrackCount: game.playlistTracks.length,
+    // Solution du monde courant (l'hôte doit pouvoir débloquer/aider)
+    worldCode: cw ? cw.code : null,
+    worldResoluParVote: cw ? !!cw.resoluParVote : false,
+    worldIndices: cw ? cw.indices || null : null,
   });
 });
 

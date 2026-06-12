@@ -61,6 +61,13 @@ function render(){
       <div><b>Phase</b><br><code>${S.phase}</code></div>
       <div><b>Monde</b><br><code>${w?('#'+w.num+' '+esc(w.titre)):'—'}</code></div>
     </div>
+    ${w ? `<div class="mt" style="background:#021a16;border:1px solid var(--neon2);border-radius:6px;padding:8px">
+      <b class="neon-cyan">🔑 SOLUTION (réservé hôte) :</b>
+      ${S.worldResoluParVote
+        ? '<code>— se résout par un VOTE —</code>'
+        : `<code style="color:var(--neon3);font-size:20px">${esc(S.worldCode||'?')}</code>`}
+      <div class="muted" style="font-size:12px;margin-top:4px">Un joueur tape ce code sur son téléphone → le monde se valide. (Ou « ✅ Valider monde » pour forcer.)</div>
+    </div>`:''}
     <div class="mt"><b>🐛 GLITCH :</b> <code>${esc(S.glitchName||'(non assigné)')}</code>
       ${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé</span>':''}</div>
   </div>
@@ -83,7 +90,7 @@ function render(){
       <button class="btn secondary" onclick="startAct('blindtest')">🎵 Blind-test</button>
       <button class="btn secondary" onclick="startAct('roue_des_gages')">🎰 Roue</button>
       <button class="btn secondary" onclick="startAct('boss_final',{hp:100})">👾 Boss</button>
-      <button class="btn warn" onclick="startAct('pixel_pad',{len:3})">🧒 Défi Pixels</button>
+      <button class="btn warn" onclick="startAct('pixel_pad',{len:4,target:7})">🧒 Défi Pixels</button>
       <button class="btn warn" onclick="startAct('pacman',{seconds:120})">🟡 Pac-Man</button>
       <button class="btn warn" onclick="startAct('music_seq')">🎵 Séquence</button>
       <button class="btn warn" onclick="mosaic()">🧩 Mosaïque</button>

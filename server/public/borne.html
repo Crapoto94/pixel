@@ -22,6 +22,7 @@
   .ticker span { display: inline-block; padding: 10px 0; font-family: var(--pixel); font-size: 16px;
             color: var(--neon3); animation: scroll 24s linear infinite; }
   @keyframes scroll { from { transform: translateX(100%);} to { transform: translateX(-100%);} }
+  @keyframes spin { from { transform: rotate(0);} to { transform: rotate(360deg);} }
   .leaderboard div { font-size: 30px; padding: 8px; border-bottom: 1px solid #fff2; }
   .hpbar { height: 34px; background:#300; border:3px solid #000; border-radius:6px; overflow:hidden; }
   .hpbar > div { height:100%; background:linear-gradient(90deg,var(--danger),var(--neon3)); transition:width .3s; }
@@ -212,11 +213,19 @@ function activityView(act){
   if (act.type==='reaction_race'){
     const board = (act.buzzes||[]).slice().sort((a,b)=>a.t-b.t);
     const t0 = board.length ? board[0].t : 0;
+    const done = act.resolved;
     return `<div class="center">
       <h1 class="huge neon-cyan">⚡ REACTION RACE</h1>
-      <p class="big">BUZZEZ sur vos téléphones !</p>
+      <p class="big">${done ? 'TERMINÉ !' : 'BUZZEZ sur vos téléphones !'}</p>
+      ${done ? `<div class="card glow-box" style="max-width:640px;margin:0 auto 12px">
+          <p class="big neon-yellow">⚡ ${esc(act.firstName||'?')} — LE PLUS RAPIDE (+1 vie ❤️)</p>
+          <p class="big neon-pink">🐢 ${esc(act.lastName||'?')} — LE PLUS LENT (−1 vie 💔)</p>
+        </div>` : ''}
       <div class="card leaderboard" style="max-width:600px;margin:auto;text-align:left">
-        ${board.length? board.map((b,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(b.name)} <span class="muted">+${b.t-t0}ms</span></div>`).join('')
+        ${board.length? board.map((b,i)=>{
+          const tag = i===0?'⚡':(i===board.length-1&&done?'🐢':(['','🥈','🥉'][i]||(i+1+'.')));
+          return `<div>${tag} ${esc(b.name)} <span class="muted">+${b.t-t0}ms</span></div>`;
+        }).join('')
                        : '<div class="muted center">En attente des buzz…</div>'}
       </div>
     </div>`;
@@ -254,10 +263,21 @@ function activityView(act){
     </div>`;
   }
   if (act.type==='roue_des_gages'){
+    const g = STATE.currentGage;
+    // L'horodatage du gage sert de clé : la roue "tourne" 1,2 s à chaque nouveau tirage.
+    const spinning = g && (Date.now() - (g.at||0) < 1200);
     return `<div class="center glow-box">
       <h1 class="huge neon-pink">🎰 LA ROUE DES GAGES</h1>
-      <div class="wheel">🎡</div>
-      <p class="big">${STATE.currentGage? esc(STATE.currentGage.titre): 'Ça tourne…'}</p>
+      <div class="wheel" style="display:inline-block;${spinning?'animation:spin .25s linear infinite':''}">🎡</div>
+      ${g ? (spinning
+          ? `<p class="big neon-yellow blink">La roue tourne…</p>`
+          : `<div class="card" style="border-color:var(--neon3);max-width:680px;margin:10px auto">
+              <div class="pill neon-yellow">🎲 ${esc(g.titre)}</div>
+              <p class="big">${esc(g.desc||'')}</p>
+              ${g.alt && g.alt!=='—' ? `<p class="muted">Alternative sans alcool : ${esc(g.alt)}</p>`:''}
+              ${g.targetName?`<p class="big neon-cyan">→ ${esc(g.targetName)}</p>`:'<p class="muted">Pour toute la table</p>'}
+            </div>`)
+        : `<p class="big">Le maître du jeu lance la roue…</p>`}
     </div>`;
   }
   if (act.type==='boss_final'){
@@ -618,16 +638,24 @@ function renderPacmanBorne(){
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================
+// Simon-says PROGRESSIF : la séquence s'allonge à chaque réussite et il faut
+// atteindre une longueur cible. Plus dur (mémoire + vitesse) pour les enfants.
 function buildKidsPad(){
-  const seqLen = (STATE.activity.data && STATE.activity.data.len) || 3;
-  let sequence = Array.from({length:seqLen}, ()=>Math.floor(Math.random()*4));
+  const d = STATE.activity.data || {};
+  const startLen = d.len || 4;     // longueur de départ
+  const target = d.target || 7;    // longueur à atteindre pour gagner
+  // Séquence cible complète ; on en révèle de plus en plus.
+  let full = Array.from({length:target}, ()=>Math.floor(Math.random()*4));
+  let round = startLen;            // longueur du tour courant
   let input = [];
   let accepting = false;
+  let flashDur = 360;              // plus rapide que l'ancienne version (450)
 
   stage.innerHTML = `
     <div class="center">
       <h1 class="big neon-yellow">👾 LE DÉFI DES PIXELS</h1>
       <p class="big" id="kidsmsg">Robin & Juliette : regardez bien les couleurs…</p>
+      <p class="neon-cyan" id="kidsprog"></p>
       <div class="padgrid">
         ${[0,1,2,3].map(i=>`<div class="pad pad${i}" id="pad${i}"></div>`).join('')}
       </div>
@@ -635,21 +663,26 @@ function buildKidsPad(){
     </div>`;
 
   const msg = document.getElementById('kidsmsg');
+  const prog = document.getElementById('kidsprog');
   const pads = [0,1,2,3].map(i=>document.getElementById('pad'+i));
 
-  function flash(i, dur=450){
+  function flash(i, dur){
     return new Promise(r=>{
       pads[i].classList.add('lit');
       if(window.SFX) SFX.pad(i);
-      setTimeout(()=>{ pads[i].classList.remove('lit'); setTimeout(r, 150); }, dur);
+      setTimeout(()=>{ pads[i].classList.remove('lit'); setTimeout(r, 120); }, dur);
     });
   }
+  function showProg(){ prog.textContent = `Niveau ${round - startLen + 1} — ${round} couleurs à retenir`; }
   async function playSequence(){
     accepting = false; input = [];
+    showProg();
     msg.textContent = 'Regardez bien…';
     await new Promise(r=>setTimeout(r, 600));
-    for(const i of sequence){ await flash(i); }
-    msg.textContent = 'À VOUS ! Tapez les couleurs dans l\'ordre 👆';
+    // accélère légèrement à mesure que ça s'allonge
+    const dur = Math.max(220, flashDur - (round - startLen) * 30);
+    for(let k=0;k<round;k++){ await flash(full[k], dur); }
+    msg.textContent = 'À VOUS ! Refaites la suite 👆';
     accepting = true;
   }
   function win(){
@@ -668,13 +701,21 @@ function buildKidsPad(){
     pads[i].classList.add('lit'); setTimeout(()=>pads[i].classList.remove('lit'),180);
     input.push(i);
     const idx = input.length-1;
-    if(input[idx]!==sequence[idx]){
+    if(input[idx]!==full[idx]){
+      // erreur : on recommence le MÊME tour (sans rallonger)
       accepting = false;
-      msg.textContent = 'Presque ! On recommence… 😊';
+      msg.textContent = 'Presque ! On recommence ce niveau… 😊';
       setTimeout(playSequence, 900);
       return;
     }
-    if(input.length===sequence.length) win();
+    if(input.length===round){
+      // tour réussi → on rallonge, ou victoire si on atteint la cible
+      if(round >= target){ win(); return; }
+      accepting = false;
+      round += 1;
+      msg.textContent = '👍 Bien joué ! Encore une couleur de plus…';
+      setTimeout(playSequence, 900);
+    }
   }
 
   pads.forEach((p,i)=>p.addEventListener('click', ()=>tap(i)));

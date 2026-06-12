@@ -411,6 +411,7 @@ export class GameState {
           topLabel: '🎉 BRAVO !',
           chyron: 'Tu as trouvé le Konami Code !',
           footer: 'Préparez-vous pour la suite…',
+          borneOnly: true,
         });
       }
       return { ok: true };
@@ -456,6 +457,7 @@ export class GameState {
       skipIntro: true,
       topLabel: '💡 INDICE',
       chyron: 'Un indice pour vous aider…',
+      borneOnly: true,
     });
   }
 
@@ -692,6 +694,7 @@ export class GameState {
       this.activity.footer = opts.footer || '';
       this.activity.skipIntro = opts.skipIntro || false;
       this.activity.startAt = opts.startAt || 0;
+      this.activity.borneOnly = opts.borneOnly || false;
     }
     // Briefing : le MJ clique « Passer au Monde 1 » pour démarrer la partie.
     this.phase = 'activity';

@@ -137,6 +137,11 @@ function render() {
   mosKey = null;
   // --- DIFFUSION VIDÉO : vidéo plein écran + bandeau ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'videoshow') {
+    if (STATE.activity.borneOnly) {
+      if (videoKey){ videoKey = null; destroyPhonePlayer(); }
+      app.innerHTML = `<div class="card center"><h2>${STATE.activity.topLabel||'📺 VIDÉO'}</h2><p class="muted">Regarde la BORNE.</p></div>` + footer();
+      return;
+    }
     renderVideoPlayer(me); return;
   }
   if (videoKey){ videoKey = null; destroyPhonePlayer(); } // quitté : coupe le son
@@ -216,8 +221,8 @@ function render() {
       </div>`;
     }
 
-    if (w.id === 'w1' && !(w.heroOnly && me.isHero)) {
-      html += `<button class="btn secondary mt" onclick="api('/api/hint',{})" style="background:var(--neon4);color:#fff">💡 Demander un indice</button>`;
+    if (w.id === 'w1' && me.isHero) {
+      html += `<button class="btn secondary mt" onclick="api('/api/hint',{})" style="background:var(--neon4);color:#fff">💡 Demander un indice (vidéo sur la BORNE)</button>`;
     }
 
     if (!w.resoluParVote) {

@@ -666,19 +666,7 @@ export class GameState {
       this.activity.chyron = opts.chyron || '';
       this.activity.footer = opts.footer || '';
     }
-    // Briefing : après le déroulé complet, on enchaîne AUTOMATIQUEMENT sur
-    // l'énigme 1 (lancement de la partie). La borne joue ~6,5 s par slide.
-    if (type === 'briefing') {
-      const slides = SCENARIO_SLIDES.length + 1 /* sep */ + PLAYERS.length + 1 /* PRÊTS ? */;
-      const ms = slides * 6500 + 1500;
-      this._briefTimer = setTimeout(() => {
-        this._briefTimer = null;
-        if (this.phase === 'activity' && this.activity && this.activity.type === 'briefing') {
-          this.addLog('🎬 Briefing terminé — lancement de l\'énigme 1 !');
-          this.startGame();
-        }
-      }, ms);
-    }
+    // Briefing : le MJ clique « Passer au Monde 1 » pour démarrer la partie.
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
     this.touch();

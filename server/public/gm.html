@@ -89,7 +89,7 @@ function render(){
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">DÉROULÉ</div>
     <div class="grid mt">
-      <button class="btn secondary" onclick="act('start')">▶ DÉMARRER</button>
+      <button class="btn secondary" onclick="startAct('briefing')">▶ BRIEFING DÉMARRAGE</button>
       <button class="btn" onclick="act('assignGlitch')">🎲 Tirer Glitch</button>
       <button class="btn warn" onclick="act('completeWorld')">✅ Valider monde →</button>
       <button class="btn danger" onclick="if(confirm('Tout réinitialiser ?'))act('reset')">⟲ RESET</button>
@@ -168,6 +168,14 @@ function render(){
       ${ctrl}
     </div>`;
   })()}
+
+  ${S.activity && S.activity.type === 'briefing' ? `
+  <div class="card" style="border-color:var(--neon3)">
+    <div class="pixel neon-yellow" style="font-size:11px">📖 BRIEFING</div>
+    <div class="muted mt" style="font-size:13px">Le briefing est diffusé sur la BORNE.</div>
+    <button class="btn warn mt" onclick="act('start')">▶ Passer au Monde 1</button>
+    <button class="btn mt" onclick="act('stopActivity')">⏹ Stop briefing</button>
+  </div>` : ''}
 
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">📸 DÉFIS PHOTO</div>

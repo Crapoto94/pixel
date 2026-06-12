@@ -353,44 +353,6 @@ function renderMosaicPlayer(me) {
     </div>`;
 }
 
-function drawMosaicSlice(cv, word, n, slice) {
-  const ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
-  const virtualW = n * W;
-  const barH = Math.max(10, H * 0.12);
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-
-  // bandeau de couleur continu en bas (aide à retrouver l'ordre)
-  ctx.save();
-  ctx.translate(-slice * W, 0);
-  for (let x = slice * W; x < (slice + 1) * W; x += 4) {
-    const hue = (x / virtualW) * 300;
-    ctx.fillStyle = `hsl(${hue},90%,55%)`;
-    ctx.fillRect(x, H - barH, 4, barH);
-  }
-  ctx.restore();
-
-  // le mot ÉTIRÉ pour remplir toute la largeur virtuelle (chaque tél a un bout)
-  ctx.save();
-  ctx.translate(-slice * W, 0);
-  const fs = Math.floor((H - barH) * 0.8);
-  ctx.font = `900 ${fs}px "Arial Black", Arial, sans-serif`;
-  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-  const tw = ctx.measureText(word).width || 1;
-  const margin = virtualW * 0.03;
-  const scaleX = (virtualW - 2 * margin) / tw;
-  ctx.translate(margin, (H - barH) / 2 + 2);
-  ctx.scale(scaleX, 1);
-  ctx.fillStyle = '#ffe600';
-  ctx.shadowColor = '#ff2e88'; ctx.shadowBlur = 10;
-  ctx.fillText(word, 0, 0);
-  ctx.restore();
-
-  // bords latéraux pour matérialiser la tranche
-  ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, W - 2, H - 2);
-}
-
 function renderPacmanPlayer(me) {
   const pm = STATE.pacman;
   if (pacKey !== STATE.activity.startedAt) {

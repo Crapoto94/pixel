@@ -1092,8 +1092,18 @@ export class GameState {
       this.tetris.tick();
       if (this.tetris.status !== 'playing') {
         clearInterval(this.tetrisTimer); this.tetrisTimer = null;
-        const win = this.tetris.ranking()[0];
-        this.addLog(win ? `🏆 TETRIS terminé ! Vainqueur : ${win.name} (${win.lines} lignes).` : '🧱 TETRIS terminé.');
+        const rank = this.tetris.ranking();
+        // Vies : le VAINQUEUR gagne une vie (max 3), tous les autres en perdent une.
+        rank.forEach((r, i) => {
+          const p = this.player(r.id);
+          if (!p) return;
+          if (i === 0) { if (p.lives < 3) p.lives += 1; }
+          else if (p.lives > 0) p.lives -= 1;
+        });
+        const win = rank[0];
+        this.addLog(win
+          ? `🏆 TETRIS : ${win.name} gagne (${win.lines} lignes) — +1 vie ❤️ ! Les autres −1 vie 💔.`
+          : '🧱 TETRIS terminé.');
         this.save();
       }
       this.broadcast();

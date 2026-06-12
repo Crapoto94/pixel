@@ -33,7 +33,7 @@ export class TetrisGame {
   constructor(players, opts = {}) {
     this.duration = (opts.seconds || 240) * 1000;
     this.tickMs = 110;
-    this.gravity = 7;           // nb de ticks entre deux descentes auto (~770 ms)
+    this.baseGravity = 10;      // ticks entre 2 descentes au DÉBUT (~1,1 s) — lent
     this.startTime = Date.now();
     this.status = 'playing';    // playing | done
     this.elimCount = 0;         // ordre d'élimination
@@ -121,13 +121,22 @@ export class TetrisGame {
     }
   }
 
+  // Gravité qui ACCÉLÈRE très progressivement : un cran plus rapide toutes
+  // les ~18 s, de 10 ticks (~1,1 s) jusqu'à 2 ticks (~0,22 s).
+  curGravity() {
+    const elapsed = (Date.now() - this.startTime) / 1000;
+    return Math.max(2, this.baseGravity - Math.floor(elapsed / 18));
+  }
+  level() { return this.baseGravity - this.curGravity() + 1; }
+
   // --- Boucle de gravité ---------------------------------------------
   tick() {
     if (this.status !== 'playing') return;
     if (Date.now() - this.startTime > this.duration) return this.end();
+    const g = this.curGravity();
     for (const pl of this.players) {
       if (pl.eliminated || !pl.piece) continue;
-      if (++pl.fall >= this.gravity) {
+      if (++pl.fall >= g) {
         pl.fall = 0;
         const p = pl.piece;
         if (!this.collide(pl.board, p.mat, p.r + 1, p.c)) p.r++;
@@ -161,13 +170,22 @@ export class TetrisGame {
     return g.map((row) => row.join(''));
   }
 
+  // Aperçu de la prochaine pièce d'un joueur (matrice + couleur).
+  nextPiece(pl) {
+    const type = this.seq[pl.idx % this.seq.length];
+    const def = PIECES[type];
+    return { color: def.color, mat: def.mat };
+  }
+
   publicState() {
     return {
       type: 'tetris', status: this.status, w: W, h: H,
       timeLeft: Math.max(0, Math.ceil((this.duration - (Date.now() - this.startTime)) / 1000)),
+      level: this.level(),
       players: this.players.map((p) => ({
         id: p.id, name: p.name, lines: p.lines, score: p.score,
         eliminated: p.eliminated, cells: this.bakeCells(p),
+        next: p.eliminated ? null : this.nextPiece(p),
       })),
       ranking: this.status !== 'playing' ? this.ranking() : null,
     };

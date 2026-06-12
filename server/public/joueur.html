@@ -426,6 +426,13 @@ function tetGrid(cells, cell){
   for(const row of (cells||[])){ for(const ch of row){ const v=+ch; html += `<div style="background:${TCOLORS[v]||'#15092e'};border-radius:2px"></div>`; } }
   return html + '</div>';
 }
+function tetMini(next, cell){
+  if(!next || !next.mat) return '<span class="muted">—</span>';
+  const cols = next.mat[0].length;
+  let html = `<div style="display:inline-grid;grid-template-columns:repeat(${cols},${cell}px);gap:1px;padding:3px;background:#0a0420;border-radius:6px">`;
+  for(const row of next.mat){ for(const v of row){ html += `<div style="width:${cell}px;height:${cell}px;background:${v?TCOLORS[next.color]:'transparent'};border-radius:2px"></div>`; } }
+  return html + '</div>';
+}
 function tetrisMove(dir){ if(window.SFX){SFX.unlock();} api('/api/tetris/move', { dir }); }
 function renderTetrisPlayer(me){
   const t = STATE.tetris;
@@ -436,7 +443,10 @@ function renderTetrisPlayer(me){
     app._tcell = cell;
     app.innerHTML = `
       <div class="center">
-        <div id="tetinfo" class="pixel" style="font-size:13px;margin:4px 0"></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:4px 0">
+          <div id="tetinfo" class="pixel" style="font-size:12px"></div>
+          <div style="text-align:center"><div class="muted" style="font-size:11px">SUIVANT</div><div id="tetnext"></div></div>
+        </div>
         <div id="tetgrid"></div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:340px;margin:10px auto 0">
           <button class="tbtn" data-d="left">◀</button>
@@ -455,6 +465,7 @@ function renderTetrisPlayer(me){
   const cell = app._tcell || 24;
   const info = document.getElementById('tetinfo');
   const grid = document.getElementById('tetgrid');
+  const nextEl = document.getElementById('tetnext');
   if (info){
     if (t.status!=='playing'){
       const w=(t.ranking||[])[0];
@@ -463,9 +474,10 @@ function renderTetrisPlayer(me){
     } else if (mine && mine.eliminated){
       info.innerHTML = '<span class="neon-pink">☠️ ÉLIMINÉ — regarde la borne !</span>';
     } else {
-      info.innerHTML = mine ? `<span class="neon-cyan">${mine.lines} lignes · ${mine.score} pts</span>` : '';
+      info.innerHTML = mine ? `<span class="neon-cyan">${mine.lines} lignes · ${mine.score} pts</span><br><span class="muted">Niveau ${t.level||1}</span>` : '';
     }
   }
+  if (nextEl) nextEl.innerHTML = (mine && !mine.eliminated && t.status==='playing') ? tetMini(mine.next, Math.max(8,Math.floor(cell*0.6))) : '';
   if (grid && mine) grid.innerHTML = tetGrid(mine.cells, cell);
 }
 

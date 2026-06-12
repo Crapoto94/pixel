@@ -752,28 +752,39 @@ function tetrisGrid(cells, cellPx){
   }
   return html + '</div>';
 }
+function tetMiniB(next, cell){
+  if(!next || !next.mat) return '';
+  const cols = next.mat[0].length;
+  let html = `<div style="display:inline-grid;grid-template-columns:repeat(${cols},${cell}px);gap:1px;padding:2px;background:#0a0420;border-radius:6px;vertical-align:middle">`;
+  for(const row of next.mat){ for(const v of row){ html += `<div style="width:${cell}px;height:${cell}px;background:${v?TCOLORS[next.color]:'transparent'};border-radius:2px"></div>`; } }
+  return html + '</div>';
+}
 function renderTetrisBorne(){
   const t = STATE.tetris;
   if (t.status!=='playing' && t.ranking){
     stage.innerHTML = `<div class="center">
       <h1 class="huge neon-yellow pixel">🧱 TETRIS TERMINÉ</h1>
-      ${t.ranking[0]?`<p class="big neon-cyan">🏆 ${esc(t.ranking[0].name)} — ${t.ranking[0].lines} lignes</p>`:''}
+      ${t.ranking[0]?`<p class="big neon-cyan">🏆 ${esc(t.ranking[0].name)} — ${t.ranking[0].lines} lignes (+1 vie ❤️)</p>`:''}
       <div class="card leaderboard" style="max-width:520px;margin:auto;text-align:left">
-        ${t.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.lines} lignes</span> ${p.eliminated?'☠️':''}</div>`).join('')}
+        ${t.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.lines} lignes</span> ${i===0?'❤️':'💔'} ${p.eliminated?'☠️':''}</div>`).join('')}
       </div></div>`;
     tickerEl.textContent='TETRIS — manche terminée !';
     return;
   }
+  // Les 2 MEILLEURES parties (lignes puis score) encore en vie, en temps réel.
   const alive = t.players.filter(p=>!p.eliminated).sort((a,b)=>b.lines-a.lines||b.score-a.score);
   const show = (alive.length?alive:t.players.slice().sort((a,b)=>b.lines-a.lines)).slice(0,2);
-  const board = (p)=>`<div style="text-align:center">
-    <div class="big" style="color:#fff">${esc(p.name)} ${p.eliminated?'☠️':''}</div>
-    <div class="muted" style="font-size:16px">${p.lines} lignes · ${p.score} pts</div>
-    ${tetrisGrid(p.cells, 22)}
+  const board = (p,i)=>`<div style="text-align:center">
+    <div class="big" style="color:#fff">${['🥇','🥈'][i]||''} ${esc(p.name)} ${p.eliminated?'☠️':''}</div>
+    <div class="muted" style="font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px">
+      <span>${p.lines} lignes · ${p.score} pts</span>
+      ${p.next?'<span style="font-size:11px">SUIVANT</span>'+tetMiniB(p.next,7):''}
+    </div>
+    ${tetrisGrid(p.cells, 20)}
   </div>`;
   const others = t.players.filter(p=>!show.includes(p));
   stage.innerHTML = `<div class="center">
-    <h1 class="big neon-cyan">🧱 TETRIS — DUEL DE TÊTE &nbsp;⏱ ${t.timeLeft}s</h1>
+    <h1 class="big neon-cyan">🧱 TETRIS — TOP 2 &nbsp;·&nbsp; ⚡ Niveau ${t.level||1} &nbsp;·&nbsp; ⏱ ${t.timeLeft}s</h1>
     <div class="row" style="gap:30px;justify-content:center;align-items:flex-start;flex-wrap:wrap">${show.map(board).join('')}</div>
     ${others.length?`<p class="muted mt">Autres : ${others.map(p=>`${esc(p.name)} ${p.eliminated?'☠️':'('+p.lines+'L)'}`).join(' · ')}</p>`:''}
   </div>`;

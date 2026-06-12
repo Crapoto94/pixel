@@ -223,10 +223,13 @@ function render() {
           <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE</div>
           <p>Donne tes touches à <b>VINCENT (Player One)</b> — lui seul peut valider la séquence sur la borne.</p>
         </div>`;
+      } else if (w.heroOnly && me.isHero) {
+        // PLAYER ONE : une vraie manette pour taper la séquence (Konami).
+        html += konamiPadView();
       } else {
         html += `
-        <input id="codeInput" type="text" placeholder="CODE" ${w.heroOnly?'autocomplete="off"':''} />
-        <button class="btn secondary mt" onclick="submitCode()">${w.heroOnly?'👑 VALIDER LA SÉQUENCE':'VALIDER LE CODE'}</button>
+        <input id="codeInput" type="text" placeholder="CODE" />
+        <button class="btn secondary mt" onclick="submitCode()">VALIDER LE CODE</button>
         <div id="codeMsg" class="center mt"></div>`;
       }
     }
@@ -358,22 +361,13 @@ function renderVideoPlayer(me) {
     <div class="center">
       <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
       <div style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
-        <div style="aspect-ratio:9/16"><div id="videoplayer" style="width:100%;height:100%"></div>
-          <div id="videotap" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);cursor:pointer">
-            <div style="text-align:center;color:#ffe600"><div style="font-size:48px">▶️</div>
-              <div class="pixel" style="font-size:11px;margin-top:6px">TOUCHE POUR LANCER<br>(son à fond)</div></div>
-          </div>
-        </div>
+        <div style="aspect-ratio:9/16"><div id="videoplayer" style="width:100%;height:100%"></div></div>
         ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
           font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}
       </div>
       ${a.footer?`<p class="muted" style="font-size:13px">${a.footer}</p>`:''}
     </div>`;
-  const tap = document.getElementById('videotap');
-  if (tap) tap.addEventListener('click', () => {
-    tap.style.display = 'none';
-    phoneShowStart(a.intro || PHONE_INTRO, a.video || '7kyY29BHTZs');
-  });
+  phoneShowStart(a.intro || PHONE_INTRO, a.video || '7kyY29BHTZs');
 }
 function destroyPhonePlayer(){ try { if (ytPhone) { ytPhone.destroy(); ytPhone = null; } } catch(_){ ytPhone = null; } }
 // Sting d'intro (son à fond) puis vidéo principale en boucle, sur le téléphone.
@@ -1053,6 +1047,53 @@ function submitCode(){
     const m = document.getElementById('codeMsg');
     if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ DÉBLOQUÉ !</span>'
                               : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
+  });
+}
+
+// --- Manette « séquence légendaire » (Konami) pour le PLAYER ONE ---
+let _konamiSeq = []; // [{sym, tok}]
+function konamiDisplay(){
+  return _konamiSeq.length
+    ? _konamiSeq.map(x=>`<span style="margin:0 3px">${esc(x.sym)}</span>`).join('')
+    : '<span class="muted" style="font-size:14px;letter-spacing:0">— séquence vide —</span>';
+}
+function konamiPadView(){
+  return `<div class="card glow-box" style="border-color:var(--neon3);background:#1a1400">
+    <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE — PLAYER ONE</div>
+    <p class="muted" style="font-size:13px">Rassemble les touches de tout le monde et tape la séquence. Toi seul peux valider.</p>
+    <div id="konamiDisplay" class="center" style="min-height:40px;font-size:30px;color:#ffe600;background:#03010a;border:2px solid var(--neon4);border-radius:8px;padding:6px;margin:8px 0">${konamiDisplay()}</div>
+    <div class="dpad" style="max-width:240px">
+      <div class="empty"></div><button onclick="konamiPress('↑','HAUT')">▲</button><div class="empty"></div>
+      <button onclick="konamiPress('←','GAUCHE')">◄</button><div class="empty"></div><button onclick="konamiPress('→','DROITE')">►</button>
+      <div class="empty"></div><button onclick="konamiPress('↓','BAS')">▼</button><div class="empty"></div>
+    </div>
+    <div class="row" style="gap:10px;justify-content:center;margin-top:10px">
+      <button class="btn" style="background:#ff2e88;color:#fff;max-width:90px" onclick="konamiPress('B','B')">B</button>
+      <button class="btn" style="background:#38ff9c;color:#03010a;max-width:90px" onclick="konamiPress('A','A')">A</button>
+    </div>
+    <div class="row mt" style="gap:8px">
+      <button class="btn" onclick="konamiBack()">⌫</button>
+      <button class="btn danger" onclick="konamiClear()">Effacer</button>
+      <button class="btn secondary" onclick="konamiSubmit()">👑 VALIDER</button>
+    </div>
+    <div id="codeMsg" class="center mt"></div>
+  </div>`;
+}
+function konamiRefresh(){ const el = document.getElementById('konamiDisplay'); if (el) el.innerHTML = konamiDisplay(); }
+function konamiPress(sym, tok){
+  _konamiSeq.push({ sym, tok });
+  if (window.SFX && SFX.pad) { try { SFX.unlock(); SFX.pad(_konamiSeq.length % 4); } catch(_){} }
+  konamiRefresh();
+}
+function konamiBack(){ _konamiSeq.pop(); konamiRefresh(); }
+function konamiClear(){ _konamiSeq = []; konamiRefresh(); }
+function konamiSubmit(){
+  const code = _konamiSeq.map(x=>x.tok).join(' ');
+  api('/api/code', { code }).then(r=>{
+    const m = document.getElementById('codeMsg');
+    if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ SÉQUENCE VALIDÉE !</span>'
+                              : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
+    if (r.ok) _konamiSeq = [];
   });
 }
 function gmGage(){

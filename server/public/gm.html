@@ -100,7 +100,8 @@ function render(){
       <button class="btn warn" onclick="mosaic()">🧩 Mosaïque</button>
       <button class="btn warn" onclick="startAct('enquete')">🕵️ Enquête</button>
       <button class="btn secondary" onclick="startAct('briefing')">📖 Briefing</button>
-      <button class="btn warn" onclick="startAct('duckdance')">🦆 Danse des canards</button>
+      <button class="btn warn" onclick="duckDance()">🦆 Danse des canards</button>
+      <button class="btn warn" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
     </div>
     <div class="pixel neon-cyan mt" style="font-size:11px">QUIZ — THÈMES</div>
     <div class="grid3 mt">
@@ -298,6 +299,16 @@ function render(){
 }
 
 function startAct(type, opts={}){ act('startActivity',{type,opts}); }
+function duckDance(){
+  startAct('videoshow',{video:'7kyY29BHTZs',topLabel:'🔴 BREAKING NEWS',
+    chyron:'CONCOURS DE DANSE 🦆<br>DANSEZ TOUS LA DANSE DES CANARDS !',
+    footer:'À VOS PLUMES — TOUT LE MONDE DANSE ! 🪿'});
+}
+function anecdote(n,video){
+  startAct('videoshow',{video,topLabel:'💡 ANECDOTE #'+n,
+    chyron:'ANECDOTE #'+n+' 🍿<br>OUVREZ GRAND LES OREILLES !',
+    footer:'Une petite histoire pour Vincent… 🎬'});
+}
 function mosaic(){
   // Vide = mot auto (lié au jeu vidéo, longueur selon le nb de joueurs). 1ʳᵉ manche = KONAMI.
   const w = prompt('Mot mosaïque (laisse VIDE = auto). 1ʳᵉ manche = KONAMI quoi qu\'il arrive :','');

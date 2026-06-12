@@ -58,7 +58,7 @@ function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>
 
 let pacKey = null;
 let mosKey = null;
-let duckKey = null;
+let videoKey = null;
 let tetKey = null;
 let tronKey = null;
 let g2048Key = null;
@@ -123,11 +123,11 @@ function render() {
     renderMosaicPlayer(me); return;
   }
   mosKey = null;
-  // --- DANSE DES CANARDS : vidéo plein écran + breaking news ---
-  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'duckdance') {
-    renderDuckPlayer(me); return;
+  // --- DIFFUSION VIDÉO : vidéo plein écran + bandeau ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'videoshow') {
+    renderVideoPlayer(me); return;
   }
-  duckKey = null;
+  videoKey = null;
 
   const av = me.avatarInfo;
   const hearts = '❤️'.repeat(me.lives) + '🖤'.repeat(Math.max(0,3-me.lives));
@@ -338,27 +338,27 @@ function controllerView(act) {
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
 }
 
-function renderDuckPlayer(me) {
-  if (duckKey === STATE.activity.startedAt) return; // une seule fois (sinon la vidéo redémarre)
-  duckKey = STATE.activity.startedAt;
-  const v = STATE.activity.video || '7kyY29BHTZs';
+function renderVideoPlayer(me) {
+  if (videoKey === STATE.activity.startedAt) return; // une seule fois (sinon la vidéo redémarre)
+  videoKey = STATE.activity.startedAt;
+  const a = STATE.activity;
+  const v = a.video || '7kyY29BHTZs';
   const src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';
   app.innerHTML = `
     <div class="center">
-      <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">🔴 BREAKING NEWS</div>
+      <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
       <div style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
-        <iframe id="duckframe" width="100%" style="aspect-ratio:9/16;display:block;border:0"
+        <iframe id="videoframe" width="100%" style="aspect-ratio:9/16;display:block;border:0"
           src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
-        <div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
-          font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">
-          CONCOURS DE DANSE 🦆<br>DANSEZ TOUS LA DANSE DES CANARDS !</div>
+        ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
+          font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}
       </div>
-      <button class="btn warn mt" onclick="duckPlay('${v}')">🔊 Touche ici pour lancer le son</button>
-      <p class="muted" style="font-size:13px">Lève-toi, et danse ! 🪿</p>
+      <button class="btn warn mt" onclick="videoPlay('${v}')">🔊 Touche ici pour lancer le son</button>
+      ${a.footer?`<p class="muted" style="font-size:13px">${a.footer}</p>`:''}
     </div>`;
 }
-function duckPlay(v){
-  const f = document.getElementById('duckframe');
+function videoPlay(v){
+  const f = document.getElementById('videoframe');
   if (f) f.src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';
 }
 

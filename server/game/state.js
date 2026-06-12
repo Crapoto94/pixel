@@ -640,10 +640,13 @@ export class GameState {
       this.activity.winnerIds = [];
       this._scheduleRoue();
     }
-    // Danse des canards : tout le monde (borne + téléphones) joue la vidéo,
-    // avec un bandeau « BREAKING NEWS — concours de danse ».
-    if (type === 'duckdance') {
+    // Diffusion vidéo : tout le monde (borne + téléphones) joue une vidéo
+    // YouTube avec un bandeau (danse des canards, anecdotes, etc.).
+    if (type === 'videoshow') {
       this.activity.video = opts.video || '7kyY29BHTZs';
+      this.activity.topLabel = opts.topLabel || '📺 VIDÉO';
+      this.activity.chyron = opts.chyron || '';
+      this.activity.footer = opts.footer || '';
     }
     // Briefing : après le déroulé complet, on enchaîne AUTOMATIQUEMENT sur
     // l'énigme 1 (lancement de la partie). La borne joue ~6,5 s par slide.

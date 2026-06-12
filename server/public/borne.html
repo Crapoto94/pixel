@@ -160,11 +160,11 @@ function render(){
     renderRoueBorne(STATE.activity); return;
   }
   if (roueCountTimer){ clearInterval(roueCountTimer); roueCountTimer = null; }
-  // --- Danse des canards (vidéo + breaking news) ---
-  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='duckdance'){
-    renderDuckBorne(STATE.activity); return;
+  // --- Diffusion vidéo (danse des canards, anecdotes…) ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='videoshow'){
+    renderVideoBorne(STATE.activity); return;
   }
-  duckKey = null;
+  videoKey = null;
   // --- Mosaïque de téléphones ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='mosaic'){
     const a = STATE.activity;
@@ -470,25 +470,24 @@ function renderMusicBorne(a){
   tickerEl.textContent = 'SÉQUENCE MUSICALE — coordonnez-vous !';
 }
 
-// =================== DANSE DES CANARDS (affichage borne) ===================
-let duckKey = null;
-function renderDuckBorne(a){
-  if (duckKey === a.startedAt) return; // construit une seule fois (sinon la vidéo redémarre)
-  duckKey = a.startedAt;
+// =================== DIFFUSION VIDÉO (affichage borne) ===================
+let videoKey = null;
+function renderVideoBorne(a){
+  if (videoKey === a.startedAt) return; // construit une seule fois (sinon la vidéo redémarre)
+  videoKey = a.startedAt;
   const v = a.video || '7kyY29BHTZs';
   const src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';
   stage.innerHTML = `<div class="center">
-    <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:20px;padding:8px 14px;border-radius:6px;display:inline-block;animation:blink 1s steps(1) infinite">🔴 BREAKING NEWS</div>
+    <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:20px;padding:8px 14px;border-radius:6px;display:inline-block;animation:blink 1s steps(1) infinite">${a.topLabel||'📺 VIDÉO'}</div>
     <div style="position:relative;max-width:430px;margin:12px auto;border:4px solid #ff2e88;border-radius:12px;overflow:hidden;background:#000">
       <iframe width="100%" style="aspect-ratio:9/16;display:block;border:0"
         src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
-      <div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
-        font-family:var(--pixel);font-size:14px;line-height:1.5;padding:10px 12px;text-align:center">
-        CONCOURS DE DANSE 🦆<br>DANSEZ TOUS LA DANSE DES CANARDS !</div>
+      ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
+        font-family:var(--pixel);font-size:14px;line-height:1.5;padding:10px 12px;text-align:center">${a.chyron}</div>`:''}
     </div>
-    <p class="big neon-yellow blink">À VOS PLUMES — TOUT LE MONDE DANSE ! 🪿</p>
+    ${a.footer?`<p class="big neon-yellow blink">${a.footer}</p>`:''}
   </div>`;
-  tickerEl.textContent = '🦆 CONCOURS DE DANSE — DANSEZ TOUS LA DANSE DES CANARDS !';
+  tickerEl.textContent = (a.topLabel||'VIDÉO').replace(/<[^>]+>/g,'') + ' — ' + (a.chyron||'').replace(/<[^>]+>/g,' ');
   try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); } catch(_){}
 }
 
@@ -1246,8 +1245,8 @@ function syncYT(s){
   const isPac = a && a.type === 'pacman';
   // Une chanson blind-test est posée uniquement quand le QCM est affiché.
   const songOn = isBT && a.sub === 'question' && !!a.playVideoId;
-  // Danse des canards : la vidéo (iframe) fournit le son → on coupe tout le reste.
-  if (a && a.type === 'duckdance') {
+  // Diffusion vidéo : l'iframe fournit le son → on coupe tout le reste.
+  if (a && a.type === 'videoshow') {
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }

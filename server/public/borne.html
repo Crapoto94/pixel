@@ -181,19 +181,38 @@ function render(){
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='mosaic'){
     const a = STATE.activity;
     const q = (a.rows||1) > 1;
+    if (a.solved){
+      stage.innerHTML = `<div class="center glow-box">
+        <h1 class="huge neon-cyan pixel">✅ RÉSOLU !</h1>
+        <p class="big">Mot reconstitué :</p>
+        <div class="huge pixel neon-yellow" style="letter-spacing:8px">${esc(a.answer||'')}</div>
+        ${a.solvedBy?`<p class="big neon-cyan">Trouvé par ${esc(a.solvedBy)} 🎉</p>`:''}
+      </div>`;
+      tickerEl.textContent = 'MOSAÏQUE — résolue !';
+      return;
+    }
+    if (a.failed){
+      stage.innerHTML = `<div class="center glow-box">
+        <h1 class="huge neon-pink pixel">⏱ TROP D'ERREURS</h1>
+        <p class="big">La réponse était :</p>
+        <div class="huge pixel neon-yellow" style="letter-spacing:8px">${esc(a.answer||'')}</div>
+      </div>`;
+      tickerEl.textContent = 'MOSAÏQUE — réponse révélée.';
+      return;
+    }
     stage.innerHTML = `<div class="center">
       <h1 class="big neon-cyan">🧩 MOSAÏQUE${a.round>1?` · MANCHE ${a.round}`:''}</h1>
       ${q ? `
         <p class="big">Chaque écran affiche <b>${a.rows} lignes</b>… mais <b>UNE SEULE est la bonne</b> (celle qui s'allume en COULEUR).</p>
         <div class="huge">📱↗️📱↘️📱</div>
-        <p class="big neon-yellow">Disposez vos <b>${a.n}</b> téléphones EN QUINCONCE (en escalier) pour aligner les lignes colorées en un seul mot.</p>
-        <p class="muted">Ordre gauche→droite : suivez l'arc-en-ciel des bandeaux (rouge → bleu).</p>`
+        <p class="big neon-yellow">Disposez vos <b>${a.n}</b> téléphones EN QUINCONCE (en escalier) pour aligner les lignes colorées en un seul mot.</p>`
       : `
         <p class="big">Posez vos <b>${a.n}</b> téléphones côte à côte, dans le BON ORDRE, pour reconstituer le mot secret.</p>
-        <div class="huge">📱📱📱</div>
-        <p class="muted">Indice : le bandeau de couleur doit former un dégradé continu (rouge → bleu).</p>`}
+        <div class="huge">📱📱📱</div>`}
+      <p class="big neon-yellow blink">Tapez la réponse sur un téléphone 👇</p>
+      <p class="muted">Erreurs : ${a.wrongCount||0}/${a.maxWrong||3} (réponse révélée au-delà).</p>
     </div>`;
-    tickerEl.textContent = q ? 'MOSAÏQUE — placez vos téléphones EN QUINCONCE !' : 'MOSAÏQUE — alignez vos téléphones !';
+    tickerEl.textContent = q ? 'MOSAÏQUE — placez vos téléphones EN QUINCONCE et devinez le mot !' : 'MOSAÏQUE — alignez vos téléphones et devinez le mot !';
     return;
   }
   // --- Défi des enfants : prend le contrôle de la borne (insensible au SSE) ---
@@ -1106,6 +1125,17 @@ function wordHint(a){
 }
 function renderDrawBorne(){
   const a = STATE.activity;
+  if (a.phase==='end'){
+    const lb=a.leaderboard||[];
+    stage.innerHTML = `<div class="center">
+      <h1 class="huge neon-yellow pixel">🎨 SESSION TERMINÉE</h1>
+      ${lb[0]?`<p class="big neon-cyan">🏆 ${esc(lb[0].name)} — ${lb[0].pts} pts</p>`:''}
+      <div class="card leaderboard" style="max-width:520px;margin:auto;text-align:left">
+        ${lb.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join('')||'<div class="muted center">Pas de score.</div>'}
+      </div></div>`;
+    tickerEl.textContent='DESSINE-MOI — session terminée !';
+    return;
+  }
   if (drawKey !== a.startedAt){
     drawKey = a.startedAt;
     stage.innerHTML = `<div class="center">

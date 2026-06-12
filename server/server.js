@@ -296,6 +296,12 @@ app.post('/api/bomb/drop', (req, res) => {
   res.json({ ok: true });
 });
 
+// Mosaïque : un joueur propose la réponse (le mot reconstitué)
+app.post('/api/mosaic/guess', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  res.json(game.mosaicGuess(p.id, req.body.text || ''));
+});
+
 // Dessine-moi : le dessinateur envoie ses traits ; les autres devinent
 app.post('/api/draw/update', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

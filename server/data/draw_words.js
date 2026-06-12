@@ -25,4 +25,14 @@ export const DRAW_WORDS = [
   { word: 'château', cat: 'Rigolo' }, { word: 'sorcière', cat: 'Rigolo' },
   { word: 'pirate', cat: 'Rigolo' }, { word: 'super-héros', cat: 'Rigolo' },
   { word: 'bonhomme de neige', cat: 'Rigolo' }, { word: 'arc-en-ciel', cat: 'Rigolo' },
+  // --- Gaming ---
+  { word: 'Mario', cat: 'Gaming' }, { word: 'Luigi', cat: 'Gaming' },
+  { word: 'Donkey Kong', cat: 'Gaming' }, { word: 'Pac-Man', cat: 'Gaming' },
+  { word: 'Sonic', cat: 'Gaming' }, { word: 'Pikachu', cat: 'Gaming' },
+  { word: 'Bowser', cat: 'Gaming' }, { word: 'Yoshi', cat: 'Gaming' },
+  { word: 'Kirby', cat: 'Gaming' }, { word: 'Link', cat: 'Gaming' },
+  { word: 'champignon 1-up', cat: 'Gaming' }, { word: 'manette', cat: 'Gaming' },
+  { word: 'tétromino', cat: 'Gaming' }, { word: 'fantôme de Pac-Man', cat: 'Gaming' },
+  { word: 'épée de Zelda', cat: 'Gaming' }, { word: 'créeper Minecraft', cat: 'Gaming' },
+  { word: 'borne d’arcade', cat: 'Gaming' }, { word: 'carapace bleue', cat: 'Gaming' },
 ];

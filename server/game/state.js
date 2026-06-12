@@ -63,6 +63,7 @@ export class GameState {
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
+    if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.tron = null;   // partie Tron en cours
@@ -115,7 +116,8 @@ export class GameState {
     //  - pacmanTimer / _autoAdvanceTimer (objets Timer)
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
-      g2048Timer, g2048, pongTimer, pong, bombTimer, bomb, _autoAdvanceTimer, _roueTimer, _briefTimer, ...data } = this;
+      g2048Timer, g2048, pongTimer, pong, bombTimer, bomb,
+      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -563,6 +565,11 @@ export class GameState {
       this.activity.bands = bands;
       this.activity.correctRow = correctRow;
       this.activity.reveal = false; // la ligne colorée n'apparaît que si le MJ le demande
+      this.activity.solved = false;
+      this.activity.solvedBy = null;
+      this.activity.failed = false;
+      this.activity.wrongCount = 0;
+      this.activity.maxWrong = 3; // après 3 erreurs, la borne révèle la réponse
     }
     // Séquence musicale collaborative : attribution des notes aux joueurs
     if (type === 'music_seq') {
@@ -597,6 +604,8 @@ export class GameState {
       this.activity.round = 0;
       this.activity.order = this.players.filter((p) => p.connected).map((p) => p.id);
       this.activity.drawerPos = -1;
+      this.activity.turns = 0;         // nb de tours déjà joués dans la session
+      this.activity.maxTurns = this.activity.order.length; // chacun dessine une fois
       this._drawNewRound();
     }
     // Spotlight : un joueur relève un défi, la salle vote ensuite.
@@ -1090,6 +1099,7 @@ export class GameState {
     if (this.pongTimer) { clearInterval(this.pongTimer); this.pongTimer = null; }
     if (this.bombTimer) { clearInterval(this.bombTimer); this.bombTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
+    if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;
@@ -1286,17 +1296,34 @@ export class GameState {
   _drawNewRound() {
     const a = this.activity;
     if (!a || a.type !== 'draw') return;
+    if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
     const connected = this.players.filter((p) => p.connected).map((p) => p.id);
     a.order = (a.order || []).filter((id) => connected.includes(id));
     connected.forEach((id) => { if (!a.order.includes(id)) a.order.push(id); });
+    a.maxTurns = a.order.length;
     if (!a.order.length) { a.drawerId = null; a.phase = 'draw'; return; }
+    // Session terminée : chacun a dessiné une fois → classement final
+    if ((a.turns || 0) >= a.maxTurns) {
+      a.phase = 'end'; a.drawerId = null; a.strokes = [];
+      const win = (this._drawPublic(null).leaderboard || [])[0];
+      this.addLog(win ? `🎨 Session Dessine-moi terminée ! Vainqueur : ${win.name} (${win.pts} pts).` : '🎨 Session Dessine-moi terminée.');
+      this.touch();
+      return;
+    }
     a.drawerPos = ((a.drawerPos ?? -1) + 1) % a.order.length;
     a.drawerId = a.order[a.drawerPos];
+    a.turns = (a.turns || 0) + 1;
     const w = DRAW_WORDS[Math.floor(Math.random() * DRAW_WORDS.length)];
     a.word = w.word; a.category = w.cat;
     a.strokes = []; a.guessed = {}; a.phase = 'draw'; a.winnerName = null; a.round = (a.round || 0) + 1;
-    this.addLog(`🎨 Dessine-moi : à ${this.player(a.drawerId)?.name || '?'} de dessiner (${w.cat}) !`);
+    this.addLog(`🎨 Dessine-moi (${a.turns}/${a.maxTurns}) : à ${this.player(a.drawerId)?.name || '?'} de dessiner (${w.cat}) !`);
     this.touch();
+  }
+
+  // Programme le passage AUTOMATIQUE au dessinateur suivant après la révélation.
+  _drawScheduleNext(ms = 7000) {
+    if (this._drawTimer) clearTimeout(this._drawTimer);
+    this._drawTimer = setTimeout(() => { this._drawTimer = null; this._drawNewRound(); }, ms);
   }
 
   drawUpdate(playerId, strokes) {
@@ -1318,6 +1345,7 @@ export class GameState {
       a.scores[playerId] = (a.scores[playerId] || 0) + 100;
       if (a.drawerId) a.scores[a.drawerId] = (a.scores[a.drawerId] || 0) + 50;
       this.addLog(`🎨 ${p?.name} a trouvé « ${a.word} » ! (+100, dessinateur +50)`);
+      this._drawScheduleNext();   // dessinateur suivant automatiquement
       this.touch();
       return { ok: true, correct: true };
     }
@@ -1325,12 +1353,16 @@ export class GameState {
     return { ok: true, correct: false };
   }
 
-  drawNext() { this._drawNewRound(); }
+  drawNext() {
+    if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
+    this._drawNewRound();
+  }
   drawReveal() {
     const a = this.activity;
-    if (!a || a.type !== 'draw') return;
+    if (!a || a.type !== 'draw' || a.phase !== 'draw') return;
     a.phase = 'reveal';
     this.addLog(`🎨 Mot révélé : « ${a.word} ».`);
+    this._drawScheduleNext();   // dessinateur suivant automatiquement
     this.touch();
   }
 
@@ -1340,6 +1372,7 @@ export class GameState {
     const isDrawer = !!(forPlayerId && forPlayerId === a.drawerId);
     return {
       type: 'draw', state: a.state, phase: a.phase, round: a.round,
+      turns: a.turns || 0, maxTurns: a.maxTurns || 0,
       drawerId: a.drawerId, drawerName: this.player(a.drawerId)?.name || '?',
       category: a.category, wordLen: (a.word || '').length,
       strokes: a.strokes || [], winnerName: a.winnerName || null,
@@ -1416,10 +1449,36 @@ export class GameState {
           hue: reveal ? Math.round((a.slices[forPlayerId] / Math.max(1, (a.n || 1) - 1)) * 300) : null,
         }
       : null;
+    const done = a.solved || a.failed;
     return {
       type: 'mosaic', n: a.n, rows: a.rows || 1, round: a.round || 1, reveal,
       assigned: Object.keys(a.slices || {}).length, mine,
+      solved: !!a.solved, solvedBy: a.solvedBy || null, failed: !!a.failed,
+      wrongCount: a.wrongCount || 0, maxWrong: a.maxWrong || 3,
+      answer: done ? (a.word || '') : null, // mot révélé seulement à la réussite/échec
     };
+  }
+
+  // Un joueur propose la réponse de la mosaïque.
+  mosaicGuess(playerId, text) {
+    const a = this.activity;
+    if (!a || a.type !== 'mosaic' || a.solved || a.failed) return { ok: false };
+    const p = this.player(playerId);
+    if (normalize(text) === normalize(a.word)) {
+      a.solved = true; a.solvedBy = p?.name || null;
+      this.addLog(`🧩 Mosaïque RÉSOLUE par ${p?.name || '?'} : « ${a.word} » !`);
+      this.touch();
+      return { ok: true, correct: true };
+    }
+    a.wrongCount = (a.wrongCount || 0) + 1;
+    if (a.wrongCount >= (a.maxWrong || 3)) {
+      a.failed = true; a.reveal = true;
+      this.addLog(`🧩 Mosaïque : ${a.wrongCount} erreurs — réponse révélée : « ${a.word} ».`);
+    } else {
+      this.addLog(`🧩 Mosaïque : mauvaise réponse (${a.wrongCount}/${a.maxWrong || 3}).`);
+    }
+    this.touch();
+    return { ok: true, correct: false, wrong: a.wrongCount };
   }
 
   // Le MJ révèle (ou masque) la ligne colorée d'aide sur les téléphones.

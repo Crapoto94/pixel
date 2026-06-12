@@ -377,12 +377,30 @@ function videoPlay(v){
   if (f) f.src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';
 }
 
+function mosaicGuessSend(){
+  const inp=document.getElementById('mosans'); if(!inp) return;
+  const txt=inp.value.trim(); if(!txt) return;
+  api('/api/mosaic/guess', { text: txt }).then(r=>{ const fb=document.getElementById('mosfb');
+    if(fb) fb.innerHTML = (r&&r.correct)?'<span class="neon-cyan">🎉 BONNE RÉPONSE !</span>':`<span class="neon-pink">Raté… ${r&&r.wrong?'('+r.wrong+' erreur(s))':''}</span>`;
+    if(!(r&&r.correct)) inp.value='';
+  });
+}
 function renderMosaicPlayer(me) {
   const a = STATE.activity;
   const mine = a.mine;
-  const key = (a.round||1) + '-' + (mine ? mine.slice : 'x') + '-' + (a.reveal?1:0);
+  const key = (a.round||1) + '-' + (mine ? mine.slice : 'x') + '-' + (a.reveal?1:0) + '-' + (a.solved?'s':'') + (a.failed?'f':'');
   if (mosKey === key) return; // statique : on ne redessine pas à chaque SSE
   mosKey = key;
+  // Résolu / échoué : on affiche le résultat (le mot)
+  if (a.solved || a.failed){
+    app.innerHTML = `<div class="card center glow-box">
+      <h2 class="${a.solved?'neon-cyan':'neon-pink'}">${a.solved?'✅ RÉSOLU !':'⏱ Réponse révélée'}</h2>
+      <div class="big pixel neon-yellow" style="letter-spacing:6px">${esc(a.answer||'')}</div>
+      ${a.solved&&a.solvedBy?`<p class="muted">Trouvé par ${esc(a.solvedBy)}</p>`:''}
+      <p class="muted">Regarde la BORNE 📺</p>
+    </div>`;
+    return;
+  }
   if (!mine) { app.innerHTML = `<div class="card center"><h2 class="neon-cyan">🧩 MOSAÏQUE</h2><p>En attente…</p></div>`; return; }
   const rows = mine.rows || 1;
   const bandH = Math.max(70, Math.min(150, Math.floor((window.innerHeight - 96) / rows)));
@@ -403,7 +421,17 @@ function renderMosaicPlayer(me) {
       <div class="pixel neon-cyan" style="font-size:12px;margin:4px">🧩 ${rows>1?'ALIGNE EN QUINCONCE':'ALIGNE TON ÉCRAN'}</div>
       <div style="border:2px solid #222;border-radius:8px;overflow:hidden;margin:0 auto;max-width:520px">${bands}</div>
       <p class="muted" style="font-size:14px;margin-top:8px">${hint}</p>
+      <div class="card" style="border-color:var(--neon3);margin-top:8px">
+        <div class="pill neon-yellow">🔤 VOTRE RÉPONSE</div>
+        <div class="row mt">
+          <input id="mosans" type="text" placeholder="Le mot reconstitué…" style="flex:1" />
+          <button class="btn secondary" onclick="mosaicGuessSend()">Valider</button>
+        </div>
+        <div id="mosfb" class="center mt"></div>
+      </div>
     </div>`;
+  const gi = document.getElementById('mosans');
+  if (gi) gi.addEventListener('keydown', (e)=>{ if(e.key==='Enter') mosaicGuessSend(); });
 }
 
 function renderPacmanPlayer(me) {
@@ -733,6 +761,18 @@ function drawGuessSend(){
 }
 function renderDrawPlayer(me){
   const a = STATE.activity;
+  if (a.phase==='end'){
+    const lb=a.leaderboard||[]; const w=lb[0];
+    if (drawKey !== 'end'){ drawKey='end';
+      app.innerHTML = `<div class="card center glow-box">
+        <div class="pill neon-yellow">🎨 SESSION TERMINÉE</div>
+        ${w?`<p class="center ${w.id===me.id?'neon-yellow':'neon-cyan'} mt">🏆 ${esc(w.name)} — ${w.pts} pts${w.id===me.id?' (toi !)':''}</p>`:''}
+        <div class="leaderboard mt">${lb.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.pts} pts</span></div>`).join('')}</div>
+        <p class="muted mt">Regarde la BORNE 📺</p>
+      </div>`;
+    }
+    return;
+  }
   const rkey = a.startedAt + '-' + (a.round||0) + '-' + (a.phase||'');
   if (drawKey !== rkey){
     drawKey = rkey;

@@ -258,6 +258,13 @@ app.post('/api/tetris/move', (req, res) => {
   res.json({ ok: true });
 });
 
+// Roue des gages : un joueur vote pour le meilleur
+app.post('/api/roue/vote', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.roueVote(p.id, req.body.targetId);
+  res.json({ ok: true });
+});
+
 // Enquête collaborative : un joueur propose un code pour l'acte courant
 app.post('/api/enquete/code', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
@@ -306,6 +313,7 @@ app.get('/api/gm/state', (req, res) => {
     votes: game.votes,
     quizMaster,
     enqueteMaster: game.enqueteMaster(),
+    mosaicWord: game.activity && game.activity.type === 'mosaic' ? game.activity.word : null,
     playlistTrackCount: game.playlistTracks.length,
     // Solution du monde courant (l'hôte doit pouvoir débloquer/aider)
     worldCode: cw ? cw.code : null,
@@ -337,6 +345,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'blindtestAsk': game.blindtestAsk(); break;
     case 'spotlightOpenVote': game.spotlightOpenVote(); break;
     case 'spotlightTally': game.spotlightTally(); break;
+    case 'roueOpenVote': game.roueOpenVote(); break;
+    case 'roueTally': game.roueTally(); break;
     case 'enqueteHint': game.enqueteHint(); break;
     case 'enqueteSkip': game.enqueteSkip(); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });

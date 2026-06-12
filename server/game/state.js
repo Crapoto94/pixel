@@ -11,11 +11,11 @@ import { fileURLToPath } from 'url';
 import { PLAYERS, NPCS, CONFIG } from '../config.js';
 import { AVATARS } from '../data/avatars.js';
 import { WORLDS, getWorld, normalize } from '../data/worlds.js';
-import { pickGage } from '../data/gages.js';
+import { pickGage, GAGES } from '../data/gages.js';
 import { QUESTIONS } from '../data/quiz.js';
 import { PacmanGame } from './pacman.js';
 import { TetrisGame } from './tetris.js';
-import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD } from '../data/collab.js';
+import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
@@ -23,6 +23,19 @@ import { ENQUETE } from '../data/enquete.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
+
+// Mosaïque : répartit L lettres en n parts entières aussi égales que possible.
+function mosaicSplit(L, n) {
+  const base = Math.floor(L / n), rem = L % n;
+  return Array.from({ length: n }, (_, i) => base + (i < rem ? 1 : 0));
+}
+// Lettres aléatoires (leurres des lignes incorrectes de la mosaïque).
+function randLetters(k) {
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let s = '';
+  for (let i = 0; i < k; i++) s += A[Math.floor(Math.random() * 26)];
+  return s;
+}
 
 export class GameState {
   constructor() {
@@ -38,9 +51,11 @@ export class GameState {
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
     if (this.tetrisTimer) { clearInterval(this.tetrisTimer); this.tetrisTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
+    if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.pacRotation = []; // historique des rôles Pac (rotation entre manches)
+    this.mosaicCount = 0; // manches de mosaïque jouées (difficulté croissante)
     this.phase = 'lobby'; // lobby | world | bonus | activity | finale | win
     this.worldIndex = 0; // index dans WORLDS
     this.activity = null; // activité BORNE en cours (objet)
@@ -84,7 +99,7 @@ export class GameState {
     //  - listeners (Set de callbacks SSE)
     //  - pacmanTimer / _autoAdvanceTimer (objets Timer)
     //  - pacman (partie en cours, recréée à chaque manche)
-    const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, _autoAdvanceTimer, ...data } = this;
+    const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, _autoAdvanceTimer, _roueTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -476,16 +491,47 @@ export class GameState {
       buzzes: [], // [{id, name, t}]
       scores: {},
     };
-    // Mosaïque de téléphones : chaque joueur reçoit un fragment (ordre mélangé)
+    // Mosaïque de téléphones : difficulté croissante.
+    //  1ʳᵉ manche → KONAMI, 1 ligne. Suivantes → mot vidéoludique, 2/3/4 lignes
+    //  dont UNE SEULE correcte (les autres = leurres) : il faut placer les
+    //  téléphones EN QUINCONCE pour aligner les lignes colorées.
     if (type === 'mosaic') {
       const players = this.players.filter((p) => p.connected);
       const n = Math.max(1, players.length);
-      const idxs = [...Array(n).keys()].sort(() => Math.random() - 0.5);
-      const slices = {};
-      players.forEach((p, i) => { slices[p.id] = idxs[i]; });
-      this.activity.word = (opts.word || MOSAIC_DEFAULT_WORD).toUpperCase();
+      this.mosaicCount = (this.mosaicCount || 0) + 1;
+      const round = this.mosaicCount;
+      let word, rows;
+      if (round === 1) { word = MOSAIC_DEFAULT_WORD; rows = 1; }
+      else {
+        rows = Math.min(round, 4); // 2, 3, 4, puis reste 4
+        word = (opts.word && opts.word.trim()) ? opts.word : pickMosaicWord(n);
+      }
+      word = (word || MOSAIC_DEFAULT_WORD).toUpperCase().replace(/[^A-Z]/g, '') || 'KONAMI';
+      // Découpe en n segments de LETTRES ENTIÈRES (jamais au milieu d'une lettre)
+      const sizes = mosaicSplit(word.length, n);
+      const segs = [];
+      let off = 0;
+      for (let k = 0; k < n; k++) { segs.push(word.slice(off, off + sizes[k])); off += sizes[k]; }
+      // Position horizontale (slice) mélangée + ligne correcte décalée (quinconce)
+      const orderIdx = [...Array(n).keys()].sort(() => Math.random() - 0.5);
+      const slices = {}, bands = {}, correctRow = {};
+      players.forEach((p, i) => {
+        const sl = orderIdx[i];
+        slices[p.id] = sl;
+        const seg = segs[sl] || '';
+        const cr = sl % rows;
+        correctRow[p.id] = cr;
+        const arr = [];
+        for (let r = 0; r < rows; r++) arr.push(r === cr ? seg : randLetters(seg.length || 2));
+        bands[p.id] = arr;
+      });
+      this.activity.word = word;
       this.activity.n = n;
+      this.activity.rows = rows;
+      this.activity.round = round;
       this.activity.slices = slices;
+      this.activity.bands = bands;
+      this.activity.correctRow = correctRow;
     }
     // Séquence musicale collaborative : attribution des notes aux joueurs
     if (type === 'music_seq') {
@@ -501,7 +547,8 @@ export class GameState {
       this.activity.owners = owners;
       this.activity.step = 0;
       this.activity.revealed = 0;
-      this.activity.demo = null;
+      // Auto-démo : la borne joue le thème Mario dès le lancement (on l'ENTEND).
+      this.activity.demo = { seq: [...MELODY], at: Date.now() };
       this.activity.wrongAt = 0;
       this.activity.status = 'playing';
     }
@@ -548,12 +595,94 @@ export class GameState {
       this.activity.done = false;
       this._enqueteDistribute();
     }
+    // Roue des gages : segments affichés, la roue tourne et tombe sur un gage,
+    // puis décompte, puis vote « meilleur » (+1 vie au gagnant, −1 aux autres).
+    if (type === 'roue_des_gages') {
+      const pool = opts.pool || null;
+      const filtered = pool ? GAGES.filter((g) => g.pool.includes(pool)) : GAGES;
+      const src = filtered.length >= 6 ? filtered : GAGES;
+      const shuffled = [...src].sort(() => Math.random() - 0.5);
+      const options = shuffled.slice(0, Math.min(8, shuffled.length));
+      const chosenIndex = Math.floor(Math.random() * options.length);
+      this.activity.options = options.map((g) => ({ id: g.id, titre: g.titre, desc: g.desc, alt: g.alt || null }));
+      this.activity.chosenIndex = chosenIndex;
+      this.activity.gage = this.activity.options[chosenIndex];
+      this.activity.sub = 'spin';               // spin | challenge | vote | result
+      this.activity.spinAt = Date.now();
+      this.activity.challengeSeconds = opts.seconds || 20;
+      this.activity.votes = {};                 // voterId -> targetId
+      this.activity.winnerIds = [];
+      this._scheduleRoue();
+    }
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
-    // Roue des gages : on tire tout de suite un gage pour que la roue "tombe" dessus.
-    if (type === 'roue_des_gages') {
-      this.drawGage(opts.pool || null, opts.targetId || null);
-    }
+    this.touch();
+  }
+
+  // ---- Roue des gages : déroulé minuté --------------------------------
+  _scheduleRoue() {
+    if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
+    // 1) La roue tourne ~5 s, puis tombe sur le gage → phase « challenge ».
+    this._roueTimer = setTimeout(() => {
+      const a = this.activity;
+      if (!a || a.type !== 'roue_des_gages') return;
+      a.sub = 'challenge';
+      a.challengeAt = Date.now();
+      this.addLog(`🎰 La roue est tombée sur « ${a.gage.titre} » ! ${a.challengeSeconds} s pour briller.`);
+      this.touch();
+      // 2) Décompte écoulé → ouverture du vote.
+      this._roueTimer = setTimeout(() => {
+        const b = this.activity;
+        if (!b || b.type !== 'roue_des_gages') return;
+        b.sub = 'vote';
+        b.votes = {};
+        this.addLog('🗳️ Roue : votez pour le MEILLEUR — il gagne une vie, les autres en perdent une !');
+        this.touch();
+      }, (a.challengeSeconds || 20) * 1000);
+    }, 5000);
+  }
+
+  roueVote(voterId, targetId) {
+    const a = this.activity;
+    if (!a || a.type !== 'roue_des_gages' || a.sub !== 'vote') return;
+    if (!this.player(targetId)) return;
+    a.votes[voterId] = targetId;
+    const connected = this.players.filter((p) => p.connected);
+    if (Object.keys(a.votes).length >= connected.length) this.roueTally();
+    else this.touch();
+  }
+
+  roueOpenVote() {
+    const a = this.activity;
+    if (!a || a.type !== 'roue_des_gages') return;
+    if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
+    a.sub = 'vote';
+    a.votes = {};
+    this.addLog('🗳️ Roue : vote ouvert (le meilleur gagne une vie) !');
+    this.touch();
+  }
+
+  roueTally() {
+    const a = this.activity;
+    if (!a || a.type !== 'roue_des_gages') return;
+    if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
+    const counts = {};
+    for (const t of Object.values(a.votes || {})) counts[t] = (counts[t] || 0) + 1;
+    let max = -1;
+    for (const n of Object.values(counts)) if (n > max) max = n;
+    const winners = max > 0 ? Object.keys(counts).filter((id) => counts[id] === max) : [];
+    a.winnerIds = winners;
+    a.voteCounts = counts;
+    a.sub = 'result';
+    const connected = this.players.filter((p) => p.connected);
+    connected.forEach((p) => {
+      if (winners.includes(p.id)) p.lives = Math.min(3, p.lives + 1);
+      else if (p.lives > 0) p.lives -= 1;
+    });
+    const wn = winners.map((id) => this.player(id)?.name).filter(Boolean);
+    this.addLog(wn.length
+      ? `🏆 Roue : ${wn.join(', ')} gagne(nt) une vie ❤️ ; les autres en perdent une 💔`
+      : '🎰 Roue : aucun vote — personne ne bouge.');
     this.touch();
   }
 
@@ -887,6 +1016,7 @@ export class GameState {
   }
 
   stopActivity() {
+    if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
     if (this.tetrisTimer) { clearInterval(this.tetrisTimer); this.tetrisTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
@@ -1014,10 +1144,21 @@ export class GameState {
   // pour le rendu local). La borne ne reçoit pas le mot (ce serait la solution).
   mosaicPublic(forPlayerId) {
     const a = this.activity;
-    const mine = (forPlayerId && a.slices[forPlayerId] != null)
-      ? { slice: a.slices[forPlayerId], n: a.n, word: a.word }
+    const mine = (forPlayerId && a.slices && a.slices[forPlayerId] != null)
+      ? {
+          slice: a.slices[forPlayerId],
+          n: a.n,
+          rows: a.rows || 1,
+          bands: (a.bands && a.bands[forPlayerId]) || [a.word || ''],
+          correctRow: (a.correctRow && a.correctRow[forPlayerId]) || 0,
+          // teinte du bandeau coloré : forme un arc-en-ciel de gauche à droite
+          hue: Math.round((a.slices[forPlayerId] / Math.max(1, (a.n || 1) - 1)) * 300),
+        }
       : null;
-    return { type: 'mosaic', n: a.n, assigned: Object.keys(a.slices).length, mine };
+    return {
+      type: 'mosaic', n: a.n, rows: a.rows || 1, round: a.round || 1,
+      assigned: Object.keys(a.slices || {}).length, mine,
+    };
   }
 
   musicPublic(forPlayerId) {

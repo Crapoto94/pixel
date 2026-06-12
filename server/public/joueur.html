@@ -249,6 +249,10 @@ function controllerView(act) {
   if (act.type === 'enquete') {
     return enqueteController(act);
   }
+  // ROUE DES GAGES : détail du défi puis vote du meilleur
+  if (act.type === 'roue_des_gages') {
+    return roueController(act);
+  }
   // REACTION RACE : gros buzzer
   if (act.type === 'reaction_race') {
     const buzzed = (act.buzzes||[]).find(b=>b.id===STATE.me.id);
@@ -303,20 +307,30 @@ function controllerView(act) {
 }
 
 function renderMosaicPlayer(me) {
-  const mine = STATE.activity.mine;
-  const key = STATE.activity.startedAt + '-' + (mine ? mine.slice : 'x');
+  const a = STATE.activity;
+  const mine = a.mine;
+  const key = (a.round||1) + '-' + (mine ? mine.slice : 'x');
   if (mosKey === key) return; // statique : on ne redessine pas à chaque SSE
   mosKey = key;
   if (!mine) { app.innerHTML = `<div class="card center"><h2 class="neon-cyan">🧩 MOSAÏQUE</h2><p>En attente…</p></div>`; return; }
-  const w = Math.min(window.innerWidth - 8, 520);
-  const h = Math.round(w * 0.62);
+  const rows = mine.rows || 1;
+  const bandH = Math.max(70, Math.min(150, Math.floor((window.innerHeight - 96) / rows)));
+  const bands = (mine.bands || []).map((s, r) => {
+    const ok = r === mine.correctRow;
+    const bg = ok ? `hsl(${mine.hue},85%,32%)` : '#0a0a14';
+    const col = ok ? '#ffe600' : '#3a3a52';
+    const sh = ok ? 'text-shadow:0 0 10px #000' : '';
+    return `<div style="height:${bandH}px;display:flex;align-items:center;justify-content:center;background:${bg};border-bottom:2px solid #000;font-family:var(--pixel);font-size:${Math.floor(bandH*0.42)}px;color:${col};letter-spacing:8px;${sh}">${esc(s)}</div>`;
+  }).join('');
+  const hint = rows > 1
+    ? `La ligne <b style="color:#ffe600">colorée</b> est la bonne. Décale ton téléphone (en escalier) pour l'aligner avec celles des voisins.`
+    : `Place-toi au bon endroit dans la rangée pour reconstituer le mot.`;
   app.innerHTML = `
     <div class="center">
-      <div class="pixel neon-cyan" style="font-size:12px;margin:6px">🧩 ALIGNE TON ÉCRAN</div>
-      <canvas id="moscv" width="${w}" height="${h}" style="width:${w}px;height:${h}px;border-radius:8px;background:#000"></canvas>
-      <p class="muted" style="font-size:15px">Place-toi au bon endroit dans la rangée pour reconstituer le mot.</p>
+      <div class="pixel neon-cyan" style="font-size:12px;margin:4px">🧩 ${rows>1?'ALIGNE EN QUINCONCE':'ALIGNE TON ÉCRAN'}</div>
+      <div style="border:2px solid #222;border-radius:8px;overflow:hidden;margin:0 auto;max-width:520px">${bands}</div>
+      <p class="muted" style="font-size:14px;margin-top:8px">${hint}</p>
     </div>`;
-  drawMosaicSlice(document.getElementById('moscv'), mine.word, mine.n, mine.slice);
 }
 
 function drawMosaicSlice(cv, word, n, slice) {
@@ -472,6 +486,48 @@ function musicController(act) {
   </div>`;
 }
 function musicPress(index, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/music/press', { index }); }
+
+function roueController(act){
+  const g = act.gage || {};
+  const me = STATE.me;
+  if (act.sub === 'spin'){
+    return `<div class="card center glow-box">
+      <h2 class="neon-pink">🎰 LA ROUE TOURNE…</h2>
+      <p class="big">Regarde la BORNE 📺</p>
+      <p class="muted">Un défi va être tiré au sort pour TOUTE la table.</p>
+    </div>`;
+  }
+  if (act.sub === 'challenge'){
+    return `<div class="card center glow-box" style="border-color:var(--neon3)">
+      <div class="pill neon-yellow">🎰 DÉFI À RELEVER</div>
+      <h2 class="neon-pink">${esc(g.titre||'')}</h2>
+      <p class="big">${esc(g.desc||'')}</p>
+      ${g.alt && g.alt!=='—' ? `<p class="muted">Variante sans alcool : ${esc(g.alt)}</p>`:''}
+      <p class="big neon-cyan blink">À toi de jouer ! Le meilleur gagne une vie ❤️</p>
+    </div>`;
+  }
+  if (act.sub === 'vote'){
+    const my = act.votes && act.votes[me.id];
+    const others = STATE.players.filter(p=>p.connected && p.id!==me.id);
+    return `<div class="card glow-box">
+      <div class="pill neon-yellow">🗳️ LE MEILLEUR SUR « ${esc(g.titre||'')} »</div>
+      <p class="muted">Vote pour celui/celle qui a le mieux relevé le défi (pas toi-même).</p>
+      <div class="grid-players mt">
+        ${others.map(p=>`<button class="btn ${my===p.id?'secondary':'warn'}" onclick="roueVote('${p.id}')">${esc(p.name)}${my===p.id?' ✔':''}</button>`).join('')}
+      </div>
+      ${my?'<p class="neon-cyan center mt">Vote enregistré (modifiable) ✔</p>':''}
+    </div>`;
+  }
+  // result
+  const winners=(act.winnerIds||[]);
+  const iWon = winners.includes(me.id);
+  return `<div class="card center glow-box">
+    <h2 class="${iWon?'neon-cyan':'neon-pink'}">${iWon?'🏆 TU GAGNES UNE VIE ❤️':'💔 −1 vie'}</h2>
+    <p class="big">${winners.length?esc(winners.map(id=>(STATE.players.find(p=>p.id===id)||{}).name).filter(Boolean).join(' & ')):'—'} : meilleur(s) sur « ${esc(g.titre||'')} »</p>
+    <p class="muted">Regarde la BORNE 📺</p>
+  </div>`;
+}
+function roueVote(t){ api('/api/roue/vote', { targetId: t }); }
 
 function enqueteController(act) {
   if (act.done) {

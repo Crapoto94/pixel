@@ -28,7 +28,7 @@ export const CONFIG = {
 
   // 🎸 Playlist blind-test CLASSIC ROCK (jouée sur la BORNE pendant le blind-test, shuffle).
   //    L'ID de playlist seul suffit (ou laisser vide '').
-  blindtestPlaylist: 'RDCLAK5uy_nZiG9ehz_MQoWQxY5yElsLHCcG0tv9PRg',
+  blindtestPlaylist: 'PLOds7NNqmx4n1SA599PbsgB3UIez9zRXK',
 
   // 🟡 Musique jouée pendant le mini-jeu PAC-MAN (vidéo unique, en boucle).
   pacmanYoutube: 'https://www.youtube.com/watch?v=OCsJ6nevK-A&t=10s',

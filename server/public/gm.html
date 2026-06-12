@@ -196,6 +196,32 @@ function render(){
     </div>`;
   })() : ''}
 
+  ${S.activity && S.activity.type === 'mosaic' ? `
+  <div class="card" style="border-color:var(--neon3)">
+    <div class="pixel neon-yellow" style="font-size:11px">🧩 MOSAÏQUE — manche ${S.activity.round||1} · ${S.activity.rows||1} ligne(s)</div>
+    <div class="mt">Mot à reconstituer : <code>${esc(S.mosaicWord||'?')}</code></div>
+    <div class="muted mt" style="font-size:13px">${(S.activity.rows||1)>1?'Les joueurs placent les téléphones EN QUINCONCE (1 seule ligne colorée par écran).':'Téléphones côte à côte, dans le bon ordre.'}</div>
+    <button class="btn warn mt" onclick="mosaic()">🔁 Relancer (manche suivante, +1 ligne)</button>
+  </div>`:''}
+
+  ${S.activity && S.activity.type === 'roue_des_gages' ? (()=>{
+    const a = S.activity; const g = a.gage||{};
+    const counts = {}; Object.values(a.votes||{}).forEach(t=>counts[t]=(counts[t]||0)+1);
+    let ctrl = '';
+    if (a.sub==='spin') ctrl = '<div class="muted mt">🎡 La roue tourne…</div>';
+    else if (a.sub==='challenge') ctrl = `<div class="mt">⏱ Défi en cours (${a.challengeSeconds||20}s).
+      <button class="btn warn mt" onclick="act('roueOpenVote')">🗳️ Ouvrir le vote maintenant</button></div>`;
+    else if (a.sub==='vote') ctrl = `<div class="mt">Votes : <code>${esc(JSON.stringify(counts))}</code>
+      <button class="btn warn mt" onclick="act('roueTally')">✅ Clôturer & attribuer les vies</button></div>`;
+    else if (a.sub==='result') ctrl = `<div class="mt">🏆 Gagnant(s) : <code>${(a.winnerIds||[]).map(id=>{const p=S.players.find(x=>x.id===id);return p?p.name:id;}).join(', ')||'—'}</code>
+      <button class="btn mt" onclick="act('stopActivity')">⏹ Terminer</button></div>`;
+    return `<div class="card" style="border-color:var(--neon3)">
+      <div class="pixel neon-yellow" style="font-size:11px">🎰 ROUE — ${esc((a.sub||'').toUpperCase())}</div>
+      <div class="mt">Gage tiré : <code>${esc(g.titre||'—')}</code></div>
+      ${ctrl}
+    </div>`;
+  })() : ''}
+
   ${S.quizMaster && S.activity && S.activity.sub !== 'final' ? `
   <div class="card" style="border-color:var(--neon3)">
     <div class="pixel neon-yellow" style="font-size:11px">🎙️ MJ — QUESTION ${(S.quizMaster.qIndex??0)+1}</div>
@@ -255,7 +281,12 @@ function render(){
 }
 
 function startAct(type, opts={}){ act('startActivity',{type,opts}); }
-function mosaic(){ const w = prompt('Mot à reconstituer (le code) :','KONAMI'); if(w) act('startActivity',{type:'mosaic',opts:{word:w}}); }
+function mosaic(){
+  // Vide = mot auto (lié au jeu vidéo, longueur selon le nb de joueurs). 1ʳᵉ manche = KONAMI.
+  const w = prompt('Mot mosaïque (laisse VIDE = auto). 1ʳᵉ manche = KONAMI quoi qu\'il arrive :','');
+  if (w === null) return; // annulé
+  act('startActivity',{type:'mosaic',opts: w.trim()?{word:w.trim()}:{}});
+}
 
 // --- Spotlight : liste de défis chargée une fois, sélections persistées ---
 let SPOT_DEFIS = [];

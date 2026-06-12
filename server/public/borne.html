@@ -131,17 +131,28 @@ function render(){
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='enquete'){
     renderEnqueteBorne(STATE.activity); return;
   }
+  // --- Roue des gages (spin → défi → vote → résultat) ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='roue_des_gages'){
+    renderRoueBorne(STATE.activity); return;
+  }
+  if (roueCountTimer){ clearInterval(roueCountTimer); roueCountTimer = null; }
   // --- Mosaïque de téléphones ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='mosaic'){
     const a = STATE.activity;
+    const q = (a.rows||1) > 1;
     stage.innerHTML = `<div class="center">
-      <h1 class="big neon-cyan">🧩 MOSAÏQUE</h1>
-      <p class="big">Posez vos <b>${a.n}</b> téléphones côte à côte,<br>dans le BON ORDRE, pour reconstituer le mot secret.</p>
-      <div class="huge">📱📱📱</div>
-      <p class="muted">Indice : le bandeau de couleur en bas des écrans doit former un dégradé continu.</p>
-      <p class="big neon-yellow">Puis tapez le mot ci-dessous 👇 (ou sur un téléphone).</p>
+      <h1 class="big neon-cyan">🧩 MOSAÏQUE${a.round>1?` · MANCHE ${a.round}`:''}</h1>
+      ${q ? `
+        <p class="big">Chaque écran affiche <b>${a.rows} lignes</b>… mais <b>UNE SEULE est la bonne</b> (celle qui s'allume en COULEUR).</p>
+        <div class="huge">📱↗️📱↘️📱</div>
+        <p class="big neon-yellow">Disposez vos <b>${a.n}</b> téléphones EN QUINCONCE (en escalier) pour aligner les lignes colorées en un seul mot.</p>
+        <p class="muted">Ordre gauche→droite : suivez l'arc-en-ciel des bandeaux (rouge → bleu).</p>`
+      : `
+        <p class="big">Posez vos <b>${a.n}</b> téléphones côte à côte, dans le BON ORDRE, pour reconstituer le mot secret.</p>
+        <div class="huge">📱📱📱</div>
+        <p class="muted">Indice : le bandeau de couleur doit former un dégradé continu (rouge → bleu).</p>`}
     </div>`;
-    tickerEl.textContent = 'MOSAÏQUE — alignez vos téléphones !';
+    tickerEl.textContent = q ? 'MOSAÏQUE — placez vos téléphones EN QUINCONCE !' : 'MOSAÏQUE — alignez vos téléphones !';
     return;
   }
   // --- Défi des enfants : prend le contrôle de la borne (insensible au SSE) ---
@@ -264,24 +275,6 @@ function activityView(act){
       <div class="big neon-pink">${name}</div>
       <p class="big">${defi}</p>
       <p class="big neon-yellow blink">À toi de jouer ! 🎤</p>
-    </div>`;
-  }
-  if (act.type==='roue_des_gages'){
-    const g = STATE.currentGage;
-    // L'horodatage du gage sert de clé : la roue "tourne" 1,2 s à chaque nouveau tirage.
-    const spinning = g && (Date.now() - (g.at||0) < 1200);
-    return `<div class="center glow-box">
-      <h1 class="huge neon-pink">🎰 LA ROUE DES GAGES</h1>
-      <div class="wheel" style="display:inline-block;${spinning?'animation:spin .25s linear infinite':''}">🎡</div>
-      ${g ? (spinning
-          ? `<p class="big neon-yellow blink">La roue tourne…</p>`
-          : `<div class="card" style="border-color:var(--neon3);max-width:680px;margin:10px auto">
-              <div class="pill neon-yellow">🎲 ${esc(g.titre)}</div>
-              <p class="big">${esc(g.desc||'')}</p>
-              ${g.alt && g.alt!=='—' ? `<p class="muted">Alternative sans alcool : ${esc(g.alt)}</p>`:''}
-              ${g.targetName?`<p class="big neon-cyan">→ ${esc(g.targetName)}</p>`:'<p class="muted">Pour toute la table</p>'}
-            </div>`)
-        : `<p class="big">Le maître du jeu lance la roue…</p>`}
     </div>`;
   }
   if (act.type==='boss_final'){
@@ -438,6 +431,92 @@ function renderMusicBorne(a){
   tickerEl.textContent = 'SÉQUENCE MUSICALE — coordonnez-vous !';
 }
 
+// =================== ROUE DES GAGES (affichage borne) ===================
+let roueCountTimer = null;
+function renderRoueBorne(a){
+  if (roueCountTimer){ clearInterval(roueCountTimer); roueCountTimer = null; }
+  const opts = a.options || [];
+  const n = Math.max(1, opts.length);
+  const COLORS = ['#ff2e88','#2effd5','#ffe600','#7a5cff','#38ff9c','#ff6b3c','#3c9cff','#c45cff'];
+
+  // --- Phase 1 : la roue tourne et tombe sur le gage choisi ---
+  if (a.sub === 'spin'){
+    const R=140, cx=160, cy=160, seg=360/n;
+    let paths='';
+    for (let i=0;i<n;i++){
+      const a0=((i)*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
+      const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
+      const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+      paths+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${COLORS[i%COLORS.length]}" stroke="#03010a" stroke-width="2"/>`;
+      const am=((i+0.5)*seg-90)*Math.PI/180, lx=cx+R*0.6*Math.cos(am), ly=cy+R*0.6*Math.sin(am);
+      const t=(opts[i].titre||'').slice(0,13);
+      paths+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="11" fill="#03010a" text-anchor="middle" transform="rotate(${((i+0.5)*seg).toFixed(1)} ${lx.toFixed(1)} ${ly.toFixed(1)})" style="font-family:var(--term);font-weight:bold">${esc(t)}</text>`;
+    }
+    stage.innerHTML = `<div class="center">
+      <h1 class="big neon-pink">🎰 LA ROUE DES GAGES</h1>
+      <svg width="340" height="360" viewBox="0 0 320 340">
+        <g id="rouewheel" style="transform-origin:160px 160px">${paths}<circle cx="160" cy="160" r="14" fill="#03010a"/></g>
+        <polygon points="160,6 148,32 172,32" fill="#ffe600" stroke="#03010a" stroke-width="2"/>
+      </svg>
+      <p class="big neon-yellow blink">La roue tourne…</p>`;
+    tickerEl.textContent = 'LA ROUE DES GAGES — qui va s\'y coller ?';
+    const g=document.getElementById('rouewheel');
+    if(g && g.animate){
+      const center=(a.chosenIndex+0.5)*seg;
+      const final=360*4 - center;
+      g.animate([{transform:'rotate(0deg)'},{transform:`rotate(${final}deg)`}],
+        {duration:4500, easing:'cubic-bezier(.15,.7,.12,1)', fill:'forwards'});
+      if (SOUND_ON && window.SFX){ let k=0; const iv=setInterval(()=>{ if(k++>16){clearInterval(iv); try{SFX.coin();}catch(_){}; return;} try{SFX.pad(k%4);}catch(_){} }, 250); }
+    }
+    return;
+  }
+
+  const g = a.gage || {};
+
+  // --- Phase 2 : décompte, tout le monde relève le défi ---
+  if (a.sub === 'challenge'){
+    const total=a.challengeSeconds||20;
+    stage.innerHTML = `<div class="center glow-box">
+      <div class="pill neon-yellow">🎰 DÉFI TIRÉ AU SORT</div>
+      <h1 class="big neon-pink" style="margin:8px 0">${esc(g.titre||'')}</h1>
+      <div class="card" style="border-color:var(--neon3);max-width:780px;margin:10px auto">
+        <p class="big">${esc(g.desc||'')}</p>
+        ${g.alt && g.alt!=='—' ? `<p class="muted">Variante sans alcool : ${esc(g.alt)}</p>`:''}
+      </div>
+      <p class="big">TOUT LE MONDE relève le défi !</p>
+      <div class="huge neon-yellow" id="rouecount">${total}</div>
+      <p class="muted">Le meilleur gagnera une vie ❤️ — les autres en perdront une 💔</p>`;
+    tickerEl.textContent = 'RELEVEZ LE DÉFI — le meilleur gagne une vie !';
+    const el=document.getElementById('rouecount');
+    const tick=()=>{ const left=Math.max(0,Math.ceil(((a.challengeAt||Date.now())+total*1000-Date.now())/1000)); if(el)el.textContent=left; if(SOUND_ON&&window.SFX&&left<=5&&left>0){try{SFX.pad(0);}catch(_){}} };
+    tick(); roueCountTimer=setInterval(tick,500);
+    return;
+  }
+
+  // --- Phase 3 : vote « qui a été le meilleur ? » ---
+  if (a.sub === 'vote'){
+    const counts={}; Object.values(a.votes||{}).forEach(t=>counts[t]=(counts[t]||0)+1);
+    const board=STATE.players.filter(p=>p.connected)
+      .map(p=>`<div>${avatarEmoji(p.avatar)} ${esc(p.name)} <span class="neon-cyan" style="float:right">${counts[p.id]||0} ✋</span></div>`).join('');
+    stage.innerHTML = `<div class="center glow-box">
+      <h1 class="big neon-yellow">🗳️ QUI A ÉTÉ LE MEILLEUR ?</h1>
+      <p class="big">Défi : <b class="neon-pink">${esc(g.titre||'')}</b></p>
+      <p class="big neon-cyan blink">Votez sur vos téléphones !</p>
+      <div class="card leaderboard" style="max-width:560px;margin:14px auto;text-align:left">${board||'<div class="muted">En attente…</div>'}</div>`;
+    tickerEl.textContent = 'VOTEZ LE MEILLEUR sur vos téléphones !';
+    return;
+  }
+
+  // --- Phase 4 : résultat ---
+  const winners=(a.winnerIds||[]).map(id=>{const p=STATE.players.find(x=>x.id===id);return p?p.name:null;}).filter(Boolean);
+  stage.innerHTML = `<div class="center glow-box">
+    <h1 class="huge neon-yellow pixel">🏆 ${winners.length?esc(winners.join(' & ')):'—'}</h1>
+    <p class="big">remporte une vie ❤️ pour « ${esc(g.titre||'')} » !</p>
+    <p class="big neon-pink">Les autres perdent une vie 💔</p>
+    <div class="mt">${scoresStrip()}</div>`;
+  tickerEl.textContent = 'LA ROUE — '+(winners.join(', ')||'fin')+' !';
+}
+
 // =================== ENQUÊTE (affichage borne) ===================
 function renderEnqueteBorne(a){
   // Affiche le "mur d'enquête" : pitch, acte courant (article + énigme + indices),
@@ -575,7 +654,8 @@ function detectMusic(s){
   if(!a || a.type!=='music_seq'){ _m = { demoAt:0, step:0, wrongAt:0, win:false }; return; }
   if(a.demo && a.demo.at && a.demo.at!==_m.demoAt){
     _m.demoAt = a.demo.at; let t = 0;
-    a.demo.seq.forEach(n=>{ SFX.note(n.freq, t, 0.34); t += 0.42; });
+    // thème Mario : tempo plus vif pour qu'on le reconnaisse
+    a.demo.seq.forEach(n=>{ SFX.note(n.freq, t, 0.2); t += 0.26; });
   }
   if(a.step>_m.step && a.slots[a.step-1] && a.slots[a.step-1].freq){ SFX.note(a.slots[a.step-1].freq); }
   if(a.wrongAt && a.wrongAt!==_m.wrongAt){ SFX.wrong(); }

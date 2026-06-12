@@ -105,42 +105,46 @@ export const ENQUETE = {
       num: 2,
       key: 'a2',
       kind: 'text',
-      title: 'LE DGS QUI RÉÉCRIVAIT',
+      title: 'LE SYSTÈME DES FAUSSES FACTURES',
       place: "Direction Générale des Services — 2ᵉ étage",
       article: {
-        source: "ORGANIGRAMME INTERNE — caviardé",
+        source: "ORGANIGRAMME + COUPURE DE PRESSE AGRAFÉE",
         date: "—",
         body:
-          "MAIRE › DIRECTEUR GÉNÉRAL DES SERVICES (signature « F. E. ») › Direction des Finances " +
-          "(Nathalie NEVES) · Direction des Systèmes d'Information (DSI) · Services techniques.\n" +
-          "Note RH en marge : prénom du DGS = Frédéric ; NOM = 5 lettres, deux voyelles E.\n" +
-          "Mention manuscrite : « les bons étaient RÉÉCRITS après signature des services ».",
+          "MAIRE › DIRECTEUR GÉNÉRAL DES SERVICES : Frédéric ERZEN (signature « F. E. ») › " +
+          "Direction des Finances (Nathalie NEVES) · Systèmes d'Information (DSI) · Services techniques.\n" +
+          "Mention manuscrite : « les bons étaient RÉÉCRITS après signature, puis couverts par de " +
+          "FAUSSES FACTURES — exactement comme dans CE scandale national ».\n" +
+          "Du titre de l'article agrafé, déchiré, ne reste lisible que : « …ALION — l'affaire des " +
+          "fausses factures de campagne ».",
       },
       scene:
-        "Le DGS gonflait les montants après coup, la directrice payait. Son nom (5 lettres) est " +
-        "effacé. Personne ne vous le donnera : vos pièces décrivent ses lettres. Recomposez-le.",
+        "Erzen n'improvisait rien : il copiait une MÉCANIQUE déjà vue dans la presse — entreprise-" +
+        "écran et fausses factures pour masquer des dépassements d'une campagne présidentielle " +
+        "française. Le mot de passe du dossier, c'est le NOM de ce scandale.",
       riddle:
-        "Recomposez le NOM de famille du DGS (5 lettres). Il n'est écrit nulle part — il se " +
-        "construit à partir de vos pièces.",
-      answer: 'ERZEN',
+        "Quel est le nom (9 lettres) du scandale de fausses factures qu'Erzen imite ? Il n'est pas " +
+        "écrit en entier : déduisez-le de vos pièces… et de votre culture.",
+      answer: 'BYGMALION',
       hints: [
-        "Deux morceaux à coller : un début de 2 lettres, et un mot de 3 lettres qui invite au calme.",
-        "« ER » (début) + « ZEN » (le calme) = un nom de 5 lettres commençant par E.",
-        "Réponse : ERZEN.",
+        "Ce nom est calqué sur un MYTHE grec : un sculpteur tombe amoureux de sa statue, qu'une déesse change en femme vivante.",
+        "Le mythe s'appelle PYGMALION (la pièce derrière « My Fair Lady »). Le scandale n'en change qu'UNE lettre.",
+        "Remplacez le P initial par un B → réponse : BYGMALION.",
       ],
       humor:
-        "Note de l'inspecteur : Erzen rangeait les faux dans un dossier nommé « NE_PAS_OUVRIR_" +
-        "vacances.jpg ». On l'a ouvert en premier.",
+        "Note de l'inspecteur : Erzen avait renommé son tableur de faux « pas_un_scandale_promis." +
+        "xlsx ». On l'a ouvert juste après « NE_PAS_OUVRIR_vacances.jpg ».",
       reveal:
-        "ACTE 2 — Le DGS est Frédéric ERZEN (ER + ZEN). Il réécrivait les montants, la directrice " +
-        "validait. Mais Erzen ne savait pas pirater la compta : quelqu'un l'a aidé. Et un AGENT " +
-        "de la DSI, lui, avait tenté d'alerter… il porte le même prénom. Méfiance.",
+        "ACTE 2 — Erzen avait monté un mini-« BYGMALION » municipal : fausses factures pour couvrir " +
+        "les bons réécrits, Neves validait les paiements. Mais Erzen ne savait pas pirater la compta : " +
+        "quelqu'un l'a aidé. Et un AGENT de la DSI avait justement tenté d'alerter… il porte le MÊME " +
+        "prénom que le DGS : deux Frédéric. Méfiance.",
       fragments: [
-        { label: "Pièce B1 — au cœur du nom", text: "Au CŒUR de son nom se cache un mot de 3 lettres qui invite au calme (pensez yoga…)." },
-        { label: "Pièce B2 — le début", text: "Son nom COMMENCE par les deux premières lettres du mot « ERREUR », dans l'ordre." },
-        { label: "Pièce B3 — montage", text: "Le nom = [le début de B2] suivi de [le mot de B1]. Cinq lettres en tout." },
-        { label: "Pièce B4 — Scrabble", text: "Sa 3ᵉ lettre vaut 10 points au Scrabble français (la lettre la plus chère). Cela confirme le mot du milieu." },
-        { label: "Pièce B5 — leurre", text: "Un certain M. EVANO (accueil) a les mêmes initiales F.E… mais ce n'est pas un nom de 5 lettres avec deux E. Écartez-le." },
+        { label: "Pièce B1 — le procédé", text: "Le système copié est un VRAI scandale français : entreprise-écran + fausses factures pour cacher des dépassements d'une campagne présidentielle." },
+        { label: "Pièce B2 — le mythe source", text: "Son nom est forgé sur un mythe grec : un sculpteur de Chypre tombe amoureux de sa statue d'ivoire, qu'Aphrodite (Vénus) change en femme vivante." },
+        { label: "Pièce B3 — le mythe nommé", text: "Ce mythe — et la pièce de G. B. Shaw derrière « My Fair Lady » — s'appelle PYGMALION. Neuf lettres." },
+        { label: "Pièce B4 — la lettre changée", text: "Le scandale n'écrit PAS « Pygmalion » : il remplace la 1ʳᵉ lettre par la 2ᵉ lettre de l'alphabet (une consonne)." },
+        { label: "Pièce B5 — montage", text: "Prenez PYGMALION, changez le P initial en B → le nom de l'entreprise-écran. C'est le mot de passe (9 lettres)." },
       ],
     },
 

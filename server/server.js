@@ -272,6 +272,13 @@ app.post('/api/2048/move', (req, res) => {
   res.json({ ok: true });
 });
 
+// Pong : déplacement de la raquette (minus/plus le long du côté)
+app.post('/api/pong/move', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.pongMove(p.id, req.body.dir);
+  res.json({ ok: true });
+});
+
 // Roue des gages : un joueur vote pour le meilleur
 app.post('/api/roue/vote', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

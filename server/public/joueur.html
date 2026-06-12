@@ -61,6 +61,7 @@ let mosKey = null;
 let tetKey = null;
 let tronKey = null;
 let g2048Key = null;
+let pongKey = null;
 
 // --- Upload photo (input caché, réutilisé) ---
 let _photoMissionIdx = 0;
@@ -111,6 +112,11 @@ function render() {
     render2048Player(me); return;
   }
   g2048Key = null;
+  // --- PONG : raquette (appui maintenu) ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'pong' && STATE.pong) {
+    renderPongPlayer(me); return;
+  }
+  pongKey = null;
   // --- MOSAÏQUE : fragment plein écran ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'mosaic') {
     renderMosaicPlayer(me); return;
@@ -578,6 +584,63 @@ function render2048Player(me){
     else info.innerHTML = mine ? `<span class="neon-cyan">${mine.score} pts · top ${mine.best}</span>` : '';
   }
   if (grid && mine) grid.innerHTML = grid2048P(mine.board, cell);
+}
+
+// =================== PONG (manette joueur, appui maintenu) ===================
+let _pongHold = null;
+function pongHold(dir){ pongRelease(); pongMoveOnce(dir); _pongHold = setInterval(()=>pongMoveOnce(dir), 70); }
+function pongRelease(){ if(_pongHold){ clearInterval(_pongHold); _pongHold=null; } }
+function pongMoveOnce(dir){ api('/api/pong/move', { dir }); }
+function pongDrawJ(ctx, S, t, mineSide){
+  const k=S/t.size; ctx.fillStyle='#05010f'; ctx.fillRect(0,0,S,S);
+  ctx.strokeStyle='#1b1060'; ctx.lineWidth=2; ctx.strokeRect(2,2,S-4,S-4);
+  const m=t.margin*k, pad=t.pad*k;
+  t.players.forEach(p=>{ if(!p.alive)return; ctx.fillStyle=p.color; const c=p.pos*k;
+    if(p.side==='top') ctx.fillRect(c-pad/2,m-3,pad,6);
+    if(p.side==='bottom') ctx.fillRect(c-pad/2,S-m-3,pad,6);
+    if(p.side==='left') ctx.fillRect(m-3,c-pad/2,6,pad);
+    if(p.side==='right') ctx.fillRect(S-m-3,c-pad/2,6,pad);
+    if(p.side===mineSide){ ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+      if(p.side==='top') ctx.strokeRect(c-pad/2-1,m-5,pad+2,9);
+      if(p.side==='bottom') ctx.strokeRect(c-pad/2-1,S-m-5,pad+2,9);
+      if(p.side==='left') ctx.strokeRect(m-5,c-pad/2-1,9,pad+2);
+      if(p.side==='right') ctx.strokeRect(S-m-5,c-pad/2-1,9,pad+2);
+    }
+  });
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(t.ball.x*k,t.ball.y*k,t.ballr*k,0,7); ctx.fill();
+}
+function renderPongPlayer(me){
+  const t = STATE.pong;
+  const mine = t.players.find(p=>p.id===me.id);
+  if (pongKey !== STATE.activity.startedAt){
+    pongKey = STATE.activity.startedAt;
+    const horiz = mine && (mine.side==='top' || mine.side==='bottom');
+    const cw = Math.min(window.innerWidth-16, 360);
+    const b1 = horiz ? '◄' : '▲', b2 = horiz ? '►' : '▼';
+    app.innerHTML = `
+      <div class="center">
+        <div id="ponginfo" class="pixel" style="font-size:13px;margin:6px 0"></div>
+        <canvas id="pongcvj" width="360" height="360" style="width:${cw}px;height:${cw}px;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:340px;margin:12px auto 0">
+          <button class="tbtn" data-d="minus">${b1}</button>
+          <button class="tbtn" data-d="plus">${b2}</button>
+        </div>
+      </div>`;
+    app.querySelectorAll('.tbtn[data-d]').forEach(b=>{
+      const down=(ev)=>{ ev.preventDefault(); pongHold(b.dataset.d); };
+      b.addEventListener('touchstart', down, {passive:false});
+      b.addEventListener('mousedown', down);
+      ['touchend','touchcancel','mouseup','mouseleave'].forEach(e=>b.addEventListener(e, pongRelease));
+    });
+  }
+  const cv=document.getElementById('pongcvj');
+  if(cv) pongDrawJ(cv.getContext('2d'), 360, t, mine?mine.side:null);
+  const info=document.getElementById('ponginfo');
+  if(info){
+    if (t.status!=='playing'){ const w=(t.ranking||[])[0]; info.innerHTML=(w&&w.id===me.id)?'<span class="neon-yellow">🏆 TU GAGNES !</span>':(w?('🏆 '+esc(w.name)+' gagne'):'Terminé'); }
+    else if (mine && !mine.alive) info.innerHTML='<span class="neon-pink">💀 ÉLIMINÉ — regarde la borne !</span>';
+    else info.innerHTML = mine ? `<span style="color:${mine.color}">● côté ${mine.side}</span> · ${'❤'.repeat(Math.max(0,mine.hp))}` : 'Spectateur';
+  }
 }
 
 function musicController(act) {

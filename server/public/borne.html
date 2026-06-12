@@ -110,6 +110,7 @@ function detectSounds(s){
 let kidsKey = null;
 let pacKey = null;
 let tronKey = null;
+let pongKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
@@ -140,6 +141,11 @@ function render(){
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='2048' && STATE.g2048){
     render2048Borne(); return;
   }
+  // --- PONG : arène centrale ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='pong' && STATE.pong){
+    renderPongBorne(); return;
+  }
+  pongKey = null;
   // --- Séquence musicale ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
@@ -886,6 +892,62 @@ function render2048Borne(){
     ${others.length?`<p class="muted mt">Autres : ${others.map(p=>`${esc(p.name)} ${p.eliminated?'☠️':'('+p.score+')'}`).join(' · ')}</p>`:''}
   </div>`;
   tickerEl.textContent='2048 — fusionnez pour le meilleur score !';
+}
+
+// =================== PONG (affichage borne) ===================
+function pongDraw(ctx, S, t){
+  const k = S/t.size;
+  ctx.fillStyle='#05010f'; ctx.fillRect(0,0,S,S);
+  ctx.strokeStyle='#1b1060'; ctx.lineWidth=2; ctx.strokeRect(2,2,S-4,S-4);
+  const m = t.margin*k, pad = t.pad*k;
+  const sideOf = (s)=> t.players.find(p=>p.side===s);
+  // murs (côtés sans joueur vivant)
+  ['top','bottom','left','right'].forEach(s=>{
+    const pl=sideOf(s);
+    if(!pl || !pl.alive){ ctx.strokeStyle='#3a2bd0'; ctx.lineWidth=6;
+      ctx.beginPath();
+      if(s==='top'){ctx.moveTo(0,m);ctx.lineTo(S,m);} if(s==='bottom'){ctx.moveTo(0,S-m);ctx.lineTo(S,S-m);}
+      if(s==='left'){ctx.moveTo(m,0);ctx.lineTo(m,S);} if(s==='right'){ctx.moveTo(S-m,0);ctx.lineTo(S-m,S);}
+      ctx.stroke();
+    }
+  });
+  // raquettes
+  t.players.forEach(p=>{
+    if(!p.alive) return;
+    ctx.fillStyle=p.color; const c=p.pos*k;
+    if(p.side==='top') ctx.fillRect(c-pad/2, m-3, pad, 6);
+    if(p.side==='bottom') ctx.fillRect(c-pad/2, S-m-3, pad, 6);
+    if(p.side==='left') ctx.fillRect(m-3, c-pad/2, 6, pad);
+    if(p.side==='right') ctx.fillRect(S-m-3, c-pad/2, 6, pad);
+  });
+  // balle
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(t.ball.x*k, t.ball.y*k, t.ballr*k, 0, 7); ctx.fill();
+}
+function renderPongBorne(){
+  const t = STATE.pong;
+  if (t.status!=='playing' && t.ranking){
+    stage.innerHTML = `<div class="center">
+      <h1 class="huge neon-yellow pixel">🏓 PONG TERMINÉ</h1>
+      ${t.ranking[0]?`<p class="big neon-cyan">🏆 ${esc(t.ranking[0].name)} — ${t.ranking[0].hp} PV (+1 vie ❤️)</p>`:''}
+      <div class="card leaderboard" style="max-width:520px;margin:auto;text-align:left">
+        ${t.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${esc(p.name)} <span class="coins">${p.hp} PV</span> ${i===0?'❤️':'💔'}</div>`).join('')}
+      </div></div>`;
+    tickerEl.textContent='PONG — manche terminée !';
+    return;
+  }
+  if (pongKey !== STATE.activity.startedAt){
+    pongKey = STATE.activity.startedAt;
+    stage.innerHTML = `<div class="center">
+      <div id="ponghud" class="muted" style="font-size:18px;margin-bottom:4px"></div>
+      <canvas id="pongcv" width="600" height="600"
+        style="max-width:62vh;max-height:62vh;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+    </div>`;
+  }
+  const cv=document.getElementById('pongcv');
+  if(cv) pongDraw(cv.getContext('2d'), 600, t);
+  const hud=document.getElementById('ponghud');
+  if(hud) hud.innerHTML = '🏓 PONG &nbsp; ' + t.players.map(p=>`<span style="color:${p.color};${p.alive?'':'opacity:.4'}">${esc(p.name)} ${'❤'.repeat(Math.max(0,p.hp))||'💀'}</span>`).join(' &nbsp; ');
+  tickerEl.textContent='PONG — ne laisse pas passer la balle !';
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================

@@ -90,10 +90,16 @@ app.get('/api/ytconfig', (req, res) => {
     const m = (url || '').match(/[?&]list=([^&]+)/);
     return m ? m[1] : (url || '');
   }
+  function extractVideo(url) {
+    const m = (url || '').match(/[?&]v=([^&]+)/) || (url || '').match(/youtu\.be\/([^?&]+)/);
+    const t = (url || '').match(/[?&]t=(\d+)/);
+    return { id: m ? m[1] : '', start: t ? parseInt(t[1], 10) : 0 };
+  }
   res.set('Cache-Control', 'no-store');
   res.json({
     ambiance: extractList(CONFIG.ambianceYoutube),
     blindtest: CONFIG.blindtestPlaylist || '',
+    pacman: extractVideo(CONFIG.pacmanYoutube),
   });
 });
 

@@ -907,9 +907,10 @@ export class GameState {
       this.pacman.tick();
       if (this.pacman.status !== 'playing') {
         clearInterval(this.pacmanTimer); this.pacmanTimer = null;
-        this.addLog(this.pacman.status === 'pacwin'
-          ? '🟡 PAC-MAN : l\'équipe Pac a tout gobé, VICTOIRE !'
-          : '👻 Les FANTÔMES ont gagné !');
+        const win = this.pacman.ranking()[0];
+        this.addLog(win
+          ? `🏆 PAC-MAN terminé ! Vainqueur : ${win.name} (${win.score} pts).`
+          : '🟡 PAC-MAN terminé.');
         this.save();
       }
       this.broadcast();

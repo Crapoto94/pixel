@@ -40,6 +40,7 @@
 <body class="scanlines">
 <div id="yt-amb" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-bt"  style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-pac" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
@@ -559,6 +560,7 @@ function detectMusic(s){
 }
 
 // =================== PAC-MAN (affichage borne) ===================
+function pacIcon(e){ return e.role==='ghost' ? '👻' : (e.role==='mr' ? '🟡' : '🌸'); }
 function renderPacmanBorne(){
   const pm = STATE.pacman;
   if (pacKey !== STATE.activity.startedAt){
@@ -566,33 +568,53 @@ function renderPacmanBorne(){
     stage.innerHTML = `
       <div class="center">
         <div id="pachud" class="big" style="margin-bottom:6px"></div>
-        <canvas id="paccanvas" width="760" height="800"
-          style="max-width:94vw;max-height:72vh;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+        <canvas id="paccanvas" width="784" height="868"
+          style="max-width:94vw;max-height:66vh;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
         <div id="pacroles" class="muted" style="font-size:18px;margin-top:8px"></div>
       </div>`;
   }
   const canvas = document.getElementById('paccanvas');
   if (canvas) drawPacman(canvas, pm, null, { names: true });
-  // sons sur les événements (capture / fantôme mangé)
+  // sons sur les événements (capture = musique de perte / fantôme mangé / élimination)
   if (SOUND_ON && window.SFX && pm.events && pm.events.length){
     let maxAt = pacEventSeen;
-    pm.events.forEach(ev=>{ if(ev.at>pacEventSeen){ ev.type==='ghost_eaten'?SFX.coin():SFX.wrong(); } if(ev.at>maxAt) maxAt=ev.at; });
+    pm.events.forEach(ev=>{
+      if(ev.at>pacEventSeen){
+        if(ev.type==='eliminated') SFX.pacOut();
+        else if(ev.type==='pac_caught') SFX.pacDeath();   // 🎵 musique de perte
+        else if(ev.type==='ghost_eaten') SFX.coin();
+      }
+      if(ev.at>maxAt) maxAt=ev.at;
+    });
     pacEventSeen = maxAt;
   }
   const hud = document.getElementById('pachud');
   if (hud){
-    if (pm.status==='pacwin') hud.innerHTML = '<span class="neon-yellow pixel">🟡 PAC WINS !</span>';
-    else if (pm.status==='ghostwin') hud.innerHTML = '<span class="neon-pink pixel">👻 GHOSTS WIN !</span>';
-    else hud.innerHTML = `⏱ ${pm.timeLeft}s &nbsp;·&nbsp; ${'❤'.repeat(Math.max(0,pm.teamLives))||'💀'} &nbsp;·&nbsp; 🟡 ${pm.scorePac} &nbsp;·&nbsp; ${pm.dotsLeft} gommes ${pm.frightened?'&nbsp;·&nbsp; <span class="neon-cyan blink">FRIGHTENED !</span>':''}`;
+    if (pm.status!=='playing'){
+      const win = (pm.ranking||[])[0];
+      hud.innerHTML = win ? `<span class="neon-yellow pixel">🏆 ${esc(win.name)} GAGNE !</span>` : '<span class="pixel">PARTIE TERMINÉE</span>';
+    } else {
+      hud.innerHTML = `⏱ ${pm.timeLeft}s &nbsp;·&nbsp; 🟡 ${pm.scorePac} &nbsp;·&nbsp; ${pm.dotsLeft} gommes ${pm.frightened?'&nbsp;·&nbsp; <span class="neon-cyan blink">SUPER !</span>':''}`;
+    }
   }
   const roles = document.getElementById('pacroles');
   if (roles){
-    const team = `<b class="neon-yellow">ÉQUIPE PAC</b> ${'❤'.repeat(Math.max(0,pm.teamLives))} : ` +
-      pm.entities.filter(e=>e.role!=='ghost').map(e=>`${e.role==='mr'?'🟡':'🌸'} ${esc(e.name)}`).join(' ');
-    const ghosts = '👻 ' + pm.entities.filter(e=>e.role==='ghost').map(e=>esc(e.name)).join(', ');
-    roles.innerHTML = team + ' &nbsp;|&nbsp; ' + ghosts;
+    if (pm.status!=='playing' && pm.ranking){
+      // Classement final : vainqueur + autres
+      roles.innerHTML = `<div class="card leaderboard" style="max-width:560px;margin:auto;text-align:left">
+        <div class="pixel neon-yellow center" style="font-size:13px">CLASSEMENT</div>
+        ${pm.ranking.map((p,i)=>`<div>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${pacIcon(p)} ${esc(p.name)} <span class="coins">${p.score} pts</span> ${p.eliminated?'☠️':''}</div>`).join('')}
+      </div>`;
+    } else {
+      // En jeu : vies de CHAQUE joueur (façon "lives" en bas d'écran)
+      roles.innerHTML = pm.entities.map(e=>{
+        const hearts = e.eliminated ? '☠️ ÉLIMINÉ' : '🟡'.repeat(Math.max(0,e.lives));
+        const col = e.role==='ghost' ? (e.color||'#fff') : (e.role==='mr' ? '#ffe600' : '#ff6db0');
+        return `<span style="display:inline-block;margin:2px 8px;${e.eliminated?'opacity:.45':''}">${pacIcon(e)} <b style="color:${col}">${esc(e.name)}</b> ${hearts}</span>`;
+      }).join('');
+    }
   }
-  tickerEl.textContent = 'PAC-MAN — gobez toutes les gommes avant la fin !';
+  tickerEl.textContent = pm.status!=='playing' ? 'PAC-MAN — manche terminée !' : 'PAC-MAN — survivez et gobez les gommes !';
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================
@@ -757,8 +779,8 @@ function syncBlindtest(s) {
   }
 }
 
-// =================== YOUTUBE (ambiance gaming + blind-test rock) ===================
-let ytAmb = null, ytBt = null, ytApiReady = false, ytInited = false;
+// =================== YOUTUBE (ambiance gaming + blind-test rock + pac-man) ===================
+let ytAmb = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
 
 window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; initYT(); }; // démarre muet sans attendre de clic
 
@@ -800,21 +822,38 @@ function initYT(){
         }
       });
     }
+    if (cfg.pacman && cfg.pacman.id) {
+      const pid = cfg.pacman.id, pstart = cfg.pacman.start || 0;
+      ytPac = new YT.Player('yt-pac', {
+        height:'1', width:'1', videoId: pid,
+        playerVars:{ autoplay:1, loop:1, playlist:pid, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:pstart },
+        events:{
+          onReady(e){ e.target.mute(); }, // prêt, muet ; lancé pendant Pac-Man
+          onStateChange(e){ if(e.data===YT.PlayerState.ENDED){ try{ e.target.seekTo(pstart); e.target.playVideo(); }catch(_){} } }
+        }
+      });
+    }
   }).catch(()=>{});
 }
 
 function syncYT(s){
   const a = s.activity;
   const isBT = a && a.type === 'blindtest';
-  // Une chanson est posée uniquement quand le QCM est affiché (sub === 'question'
-  // ET un playVideoId existe). Sinon (avant 1ère chanson, ou révélation) : silence
-  // côté rock, l'ambiance gaming reprend en fond.
+  const isPac = a && a.type === 'pacman';
+  // Une chanson blind-test est posée uniquement quand le QCM est affiché.
   const songOn = isBT && a.sub === 'question' && !!a.playVideoId;
   try {
-    if (songOn) {
+    if (isPac) {
+      // 🟡 PAC-MAN : musique dédiée, ambiance et rock en pause
+      if (ytPac) { ytPac.unMute(); ytPac.playVideo(); }
+      if (ytAmb) ytAmb.pauseVideo();
+      if (ytBt) ytBt.mute();
+    } else if (songOn) {
+      if (ytPac) ytPac.pauseVideo();
       if (ytBt) { ytBt.unMute(); ytBt.playVideo(); }
       if (ytAmb) ytAmb.pauseVideo();
     } else {
+      if (ytPac) ytPac.pauseVideo();
       if (ytBt) ytBt.mute();
       if (ytAmb) ytAmb.playVideo();
     }

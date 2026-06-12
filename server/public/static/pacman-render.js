@@ -53,6 +53,7 @@ window.drawPacman = function (canvas, pm, meId, opts) {
 
   // --- personnages ---
   for (const e of pm.entities) {
+    if (e.eliminated) continue; // joueur éliminé : retiré du plateau
     const cx = ox + e.c * cell + cell / 2;
     const cy = oy + e.r * cell + cell / 2;
     const rad = cell * 0.42;

@@ -380,10 +380,16 @@ function renderPacmanPlayer(me) {
       : ent.role==='mr' ? '🟡 TU ES Mr PAC-MAN'
       : ent.role==='mrs' ? '🌸 TU ES Mrs PAC-MAN'
       : '👻 TU ES UN FANTÔME';
-    const extra = pm.status==='pacwin' ? ' — 🟡 PAC GAGNE !'
-      : pm.status==='ghostwin' ? ' — 👻 FANTÔMES GAGNENT !'
-      : ` — ÉQUIPE ${'❤'.repeat(Math.max(0,pm.teamLives))||'💀'}`;
-    msg.innerHTML = `<span class="neon-cyan">${role}</span>${esc(extra)}`;
+    if (pm.status!=='playing') {
+      const win = (pm.ranking||[])[0];
+      const iWin = win && win.id===me.id;
+      msg.innerHTML = `<span class="${iWin?'neon-yellow':'neon-cyan'}">${win?('🏆 '+esc(win.name)+' gagne'+(iWin?' — BRAVO !':' !')):'Partie terminée'}</span>`;
+    } else if (ent && ent.eliminated) {
+      msg.innerHTML = `<span class="neon-pink">☠️ ÉLIMINÉ — tu peux encourager les autres !</span>`;
+    } else {
+      const lives = ent ? ('🟡'.repeat(Math.max(0,ent.lives))||'—') : '';
+      msg.innerHTML = `<span class="neon-cyan">${role}</span> <b>${lives}</b>`;
+    }
   }
 }
 function pacDir(d){ if(window.SFX) {} api('/api/pacman/dir', { dir: d }); }

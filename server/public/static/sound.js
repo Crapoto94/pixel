@@ -73,5 +73,12 @@ window.SFX = (function () {
     padOk()  { seq([[523, 0.09], [659, 0.09], [784, 0.09], [1047, 0.22]], 'square', 0.22); },
     // note libre (séquence musicale) — freq en Hz, départ optionnel
     note(freq, start, dur) { tone(freq, start || 0, dur || 0.34, 'square', 0.22); },
+    // 🟡 PAC-MAN : jingle de mort (descente caractéristique) quand on perd une vie
+    pacDeath() {
+      slide(660, 110, 0.55, 'square', 0.25);
+      seq([[0, 0.1], [523, 0.1], [0, 0.05], [415, 0.1], [0, 0.05], [330, 0.1], [0, 0.05], [262, 0.22]], 'square', 0.2);
+    },
+    // 🟡 PAC-MAN : un joueur est ÉLIMINÉ (3 vies perdues)
+    pacOut() { seq([[330, 0.12], [262, 0.12], [196, 0.12], [147, 0.34]], 'sawtooth', 0.24); },
   };
 })();

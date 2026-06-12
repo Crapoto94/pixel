@@ -1103,6 +1103,14 @@ export class GameState {
     };
   }
 
+  // Fin automatique d'une diffusion vidéo (borneOnly).
+  endVideo() {
+    if (this.activity && this.activity.type === 'videoshow') {
+      this.addLog('📺 Fin de la vidéo.');
+      this.stopActivity();
+    }
+  }
+
   stopActivity() {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }

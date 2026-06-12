@@ -173,6 +173,11 @@ app.post('/api/hint', (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/end-video', (req, res) => {
+  game.endVideo();
+  res.json({ ok: true });
+});
+
 app.post('/api/buzz', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.buzz(p.id);

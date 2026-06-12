@@ -64,6 +64,10 @@ let tronKey = null;
 let g2048Key = null;
 let pongKey = null;
 let bombKey = null;
+let drawKey = null;
+let _drawStrokes = [];
+let _drawCur = null;
+let _drawSendT = null;
 
 // --- Upload photo (input caché, réutilisé) ---
 let _photoMissionIdx = 0;
@@ -124,6 +128,11 @@ function render() {
     renderBombPlayer(me); return;
   }
   bombKey = null;
+  // --- DESSINE-MOI : dessinateur ou devineur ---
+  if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'draw') {
+    renderDrawPlayer(me); return;
+  }
+  drawKey = null;
   // --- MOSAÏQUE : fragment plein écran ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'mosaic') {
     renderMosaicPlayer(me); return;
@@ -700,6 +709,73 @@ function renderBombPlayer(me){
     if (t.status!=='playing'){ const w=(t.ranking||[])[0]; info.innerHTML=(w&&w.id===me.id)?'<span class="neon-yellow">🏆 TU SURVIS — VICTOIRE !</span>':(w?('🏆 '+esc(w.name)+' gagne'):'Terminé'); }
     else if (mine && !mine.alive) info.innerHTML='<span class="neon-pink">💥 BOOM — éliminé ! Regarde la borne.</span>';
     else info.innerHTML = mine ? `<span style="color:${mine.color}">● TOI</span> — pose des bombes 💣` : 'Spectateur';
+  }
+}
+
+// =================== DESSINE-MOI (manette joueur) ===================
+function drawStrokesJ(ctx, W, H, strokes){
+  ctx.fillStyle='#fdf6e3'; ctx.fillRect(0,0,W,H);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(const s of (strokes||[])){ const pts=s.p||[]; if(!pts.length) continue;
+    ctx.strokeStyle=s.c||'#160a2e'; ctx.lineWidth=(s.w||3);
+    ctx.beginPath(); ctx.moveTo(pts[0][0]*W, pts[0][1]*H);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0]*W, pts[i][1]*H);
+    if(pts.length===1) ctx.lineTo(pts[0][0]*W+0.1, pts[0][1]*H+0.1);
+    ctx.stroke();
+  }
+}
+function drawSendNow(){ api('/api/draw/update', { strokes: _drawStrokes }); }
+function drawSendThrottled(){ if(_drawSendT) return; _drawSendT=setTimeout(()=>{ _drawSendT=null; drawSendNow(); }, 120); }
+function drawGuessSend(){
+  const inp=document.getElementById('drawguess'); if(!inp) return;
+  const txt=inp.value.trim(); if(!txt) return; inp.value='';
+  api('/api/draw/guess', { text: txt }).then(r=>{ const fb=document.getElementById('drawfb'); if(fb) fb.innerHTML = (r&&r.correct)?'<span class="neon-cyan">🎉 TROUVÉ !</span>':'<span class="muted">Essaie encore…</span>'; });
+}
+function renderDrawPlayer(me){
+  const a = STATE.activity;
+  const rkey = a.startedAt + '-' + (a.round||0) + '-' + (a.phase||'');
+  if (drawKey !== rkey){
+    drawKey = rkey;
+    const cw = Math.min(window.innerWidth-16, 360);
+    if (a.iAmDrawer && a.phase==='draw'){
+      _drawStrokes = []; _drawCur = null;
+      app.innerHTML = `
+        <div class="center">
+          <div class="card" style="border-color:var(--neon3);margin-bottom:8px"><div class="pill neon-yellow">✏️ DESSINE : ${esc(a.word||'?')}</div><div class="muted">Catégorie : ${esc(a.category||'')}</div></div>
+          <canvas id="drawcvj" width="340" height="340" style="width:${cw}px;height:${cw}px;border:3px solid var(--neon4);border-radius:10px;background:#fdf6e3;touch-action:none"></canvas>
+          <button class="btn warn mt" style="max-width:${cw}px" onclick="_drawStrokes=[];_drawCur=null;drawSendNow();var c=document.getElementById('drawcvj');if(c)drawStrokesJ(c.getContext('2d'),c.width,c.height,[]);">🧽 Effacer</button>
+        </div>`;
+      const cv=document.getElementById('drawcvj');
+      drawStrokesJ(cv.getContext('2d'), cv.width, cv.height, _drawStrokes);
+      const pt=(e)=>{ const r=cv.getBoundingClientRect(); const t=e.touches&&e.touches[0]?e.touches[0]:e; return [Math.max(0,Math.min(1,(t.clientX-r.left)/r.width)), Math.max(0,Math.min(1,(t.clientY-r.top)/r.height))]; };
+      const redraw=()=>drawStrokesJ(cv.getContext('2d'), cv.width, cv.height, _drawStrokes);
+      const start=(e)=>{ e.preventDefault(); _drawCur={c:'#160a2e',w:3,p:[pt(e)]}; _drawStrokes.push(_drawCur); redraw(); drawSendThrottled(); };
+      const move=(e)=>{ if(!_drawCur) return; e.preventDefault(); _drawCur.p.push(pt(e)); redraw(); drawSendThrottled(); };
+      const end=(e)=>{ if(!_drawCur) return; _drawCur=null; drawSendNow(); };
+      cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',end);
+      cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',(e)=>{ if(e.buttons) move(e); }); cv.addEventListener('mouseup',end);
+    } else {
+      // devineur (ou dessinateur pendant la révélation)
+      app.innerHTML = `
+        <div class="center">
+          <div id="drawstatus" class="pixel" style="font-size:13px;margin:6px 0"></div>
+          <canvas id="drawcvj" width="340" height="280" style="width:${cw}px;height:${Math.round(cw*280/340)}px;border:3px solid var(--neon4);border-radius:10px;background:#fdf6e3"></canvas>
+          ${a.phase==='draw' ? `<div class="row mt" style="max-width:${cw}px">
+            <input id="drawguess" type="text" placeholder="Ta réponse…" style="flex:1" />
+            <button class="btn secondary" onclick="drawGuessSend()">Deviner</button>
+          </div><div id="drawfb" class="center mt"></div>`:''}
+        </div>`;
+      const gi=document.getElementById('drawguess');
+      if(gi) gi.addEventListener('keydown',(e)=>{ if(e.key==='Enter') drawGuessSend(); });
+    }
+  }
+  // mise à jour continue
+  const cv=document.getElementById('drawcvj');
+  if(cv){ if(a.iAmDrawer && a.phase==='draw') drawStrokesJ(cv.getContext('2d'),cv.width,cv.height,_drawStrokes); else drawStrokesJ(cv.getContext('2d'),cv.width,cv.height,a.strokes); }
+  const st=document.getElementById('drawstatus');
+  if(st){
+    if(a.phase==='reveal') st.innerHTML = a.winnerName?`<span class="neon-cyan">🎉 ${esc(a.winnerName)} a trouvé : ${esc((a.word||'').toUpperCase())}</span>`:`<span class="neon-pink">Mot : ${esc((a.word||'').toUpperCase())}</span>`;
+    else st.innerHTML = `<span class="neon-pink">✏️ ${esc(a.drawerName)} dessine</span> — ${a.wordLen} lettres (${esc(a.category||'')})`;
   }
 }
 

@@ -112,6 +112,7 @@ let pacKey = null;
 let tronKey = null;
 let pongKey = null;
 let bombKey = null;
+let drawKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
@@ -153,6 +154,11 @@ function render(){
     renderBombBorne(); return;
   }
   bombKey = null;
+  // --- DESSINE-MOI : le dessin en direct ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='draw'){
+    renderDrawBorne(); return;
+  }
+  drawKey = null;
   // --- Séquence musicale ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
@@ -1078,6 +1084,56 @@ function renderBombBorne(){
   const hud=document.getElementById('bombhud');
   if(hud) hud.innerHTML = '💣 BOMBERMAN &nbsp; ' + t.players.map(p=>`<span style="color:${p.color};${p.alive?'':'opacity:.35;text-decoration:line-through'}">${esc(p.name)}</span>`).join(' &nbsp; ');
   tickerEl.textContent='BOMBERMAN — survis au dernier !';
+}
+
+// =================== DESSINE-MOI (affichage borne) ===================
+function drawStrokes(ctx, W, H, strokes){
+  ctx.fillStyle='#fdf6e3'; ctx.fillRect(0,0,W,H);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(const s of (strokes||[])){
+    const pts=s.p||[]; if(!pts.length) continue;
+    ctx.strokeStyle=s.c||'#160a2e'; ctx.lineWidth=(s.w||3);
+    ctx.beginPath(); ctx.moveTo(pts[0][0]*W, pts[0][1]*H);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0]*W, pts[i][1]*H);
+    if(pts.length===1) ctx.lineTo(pts[0][0]*W+0.1, pts[0][1]*H+0.1);
+    ctx.stroke();
+  }
+}
+function wordHint(a){
+  // tirets par lettre, espaces conservés ; révèle le mot à la fin
+  if(a.phase==='reveal' && a.word) return esc(a.word.toUpperCase());
+  return Array.from({length:a.wordLen}).map(()=>'_').join(' ');
+}
+function renderDrawBorne(){
+  const a = STATE.activity;
+  if (drawKey !== a.startedAt){
+    drawKey = a.startedAt;
+    stage.innerHTML = `<div class="center">
+      <div id="drawhead" class="big" style="margin-bottom:6px"></div>
+      <canvas id="drawcv" width="760" height="470" style="max-width:90vw;max-height:56vh;border:3px solid var(--neon4);border-radius:10px;background:#fdf6e3"></canvas>
+      <div id="drawfoot" style="margin-top:6px"></div>
+    </div>`;
+  }
+  const cv=document.getElementById('drawcv');
+  if(cv) drawStrokes(cv.getContext('2d'), cv.width, cv.height, a.strokes);
+  const head=document.getElementById('drawhead');
+  if(head){
+    if(a.phase==='reveal'){
+      head.innerHTML = a.winnerName
+        ? `<span class="neon-cyan">🎉 ${esc(a.winnerName)} a trouvé : </span><span class="neon-yellow pixel">${esc((a.word||'').toUpperCase())}</span>`
+        : `<span class="neon-pink">Le mot était : </span><span class="neon-yellow pixel">${esc((a.word||'').toUpperCase())}</span>`;
+    } else {
+      head.innerHTML = `<span class="neon-pink">✏️ ${esc(a.drawerName)} dessine</span> <span class="muted">(${esc(a.category||'')})</span>`;
+    }
+  }
+  const foot=document.getElementById('drawfoot');
+  if(foot){
+    const lb=(a.leaderboard||[]).slice(0,4).map((p,i)=>`${['🥇','🥈','🥉'][i]||''} ${esc(p.name)} ${p.pts}`).join(' &nbsp; ');
+    foot.innerHTML = `<div class="huge pixel neon-yellow" style="letter-spacing:6px">${wordHint(a)}</div>
+      <p class="big">Devinez sur vos téléphones !</p>
+      ${lb?`<p class="muted">${lb}</p>`:''}`;
+  }
+  tickerEl.textContent='DESSINE-MOI — tapez votre réponse sur le téléphone !';
 }
 
 // =================== DÉFI DES PIXELS (enfants, sur la borne) ===================

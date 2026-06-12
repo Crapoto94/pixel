@@ -296,6 +296,17 @@ app.post('/api/bomb/drop', (req, res) => {
   res.json({ ok: true });
 });
 
+// Dessine-moi : le dessinateur envoie ses traits ; les autres devinent
+app.post('/api/draw/update', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.drawUpdate(p.id, req.body.strokes);
+  res.json({ ok: true });
+});
+app.post('/api/draw/guess', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  res.json(game.drawGuess(p.id, req.body.text || ''));
+});
+
 // Roue des gages : un joueur vote pour le meilleur
 app.post('/api/roue/vote', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
@@ -353,6 +364,8 @@ app.get('/api/gm/state', (req, res) => {
     enqueteMaster: game.enqueteMaster(),
     mosaicWord: game.activity && game.activity.type === 'mosaic' ? game.activity.word : null,
     playlistTrackCount: game.playlistTracks.length,
+    // Mot secret du Dessine-moi (l'hôte le voit pour animer)
+    drawWord: game.activity?.type === 'draw' ? game.activity.word : null,
     // Solution du monde courant (l'hôte doit pouvoir débloquer/aider)
     worldCode: cw ? cw.code : null,
     worldResoluParVote: cw ? !!cw.resoluParVote : false,
@@ -383,6 +396,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'blindtestAsk': game.blindtestAsk(); break;
     case 'spotlightOpenVote': game.spotlightOpenVote(); break;
     case 'spotlightTally': game.spotlightTally(); break;
+    case 'drawNext': game.drawNext(); break;
+    case 'drawReveal': game.drawReveal(); break;
     case 'roueOpenVote': game.roueOpenVote(); break;
     case 'roueTally': game.roueTally(); break;
     case 'mosaicReveal': game.mosaicReveal(payload.on !== false); break;

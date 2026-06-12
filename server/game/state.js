@@ -23,6 +23,7 @@ import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord } from '../da
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
+import { DRAW_WORDS } from '../data/draw_words.js';
 import { ENQUETE } from '../data/enquete.js';
 import { SCENARIO_SLIDES } from '../data/briefing.js';
 
@@ -590,6 +591,14 @@ export class GameState {
       this.activity.sub = 'question'; // question | reveal
       this.activity.answers = {}; // { playerId: { choice, t } }
     }
+    // Dessine-moi : un joueur dessine, les autres devinent (rotation des dessinateurs).
+    if (type === 'draw') {
+      this.activity.scores = {};       // { playerId: points }
+      this.activity.round = 0;
+      this.activity.order = this.players.filter((p) => p.connected).map((p) => p.id);
+      this.activity.drawerPos = -1;
+      this._drawNewRound();
+    }
     // Spotlight : un joueur relève un défi, la salle vote ensuite.
     if (type === 'spotlight') {
       const tid = opts.targetId || null;
@@ -822,6 +831,7 @@ export class GameState {
     if (a.type === 'music_seq') return this.musicPublic(forPlayerId);
     if (a.type === 'mosaic') return this.mosaicPublic(forPlayerId);
     if (a.type === 'enquete') return this.enquetePublic(forPlayerId);
+    if (a.type === 'draw') return this._drawPublic(forPlayerId);
     if (a.type !== 'quiz' && a.type !== 'blindtest') return a;
     const q = this.quizQuestion();
     const list = a.dynamicBlindtest ? [] : (QUESTIONS[a.deck] || []);
@@ -1271,6 +1281,73 @@ export class GameState {
   }
   bombMove(playerId, dir) { if (this.bomb) { this.bomb.move(playerId, dir); this.broadcast(); } }
   bombDrop(playerId) { if (this.bomb) { this.bomb.placeBomb(playerId); this.broadcast(); } }
+
+  // ---- DESSINE-MOI (Pictionary) ------------------------------------
+  _drawNewRound() {
+    const a = this.activity;
+    if (!a || a.type !== 'draw') return;
+    const connected = this.players.filter((p) => p.connected).map((p) => p.id);
+    a.order = (a.order || []).filter((id) => connected.includes(id));
+    connected.forEach((id) => { if (!a.order.includes(id)) a.order.push(id); });
+    if (!a.order.length) { a.drawerId = null; a.phase = 'draw'; return; }
+    a.drawerPos = ((a.drawerPos ?? -1) + 1) % a.order.length;
+    a.drawerId = a.order[a.drawerPos];
+    const w = DRAW_WORDS[Math.floor(Math.random() * DRAW_WORDS.length)];
+    a.word = w.word; a.category = w.cat;
+    a.strokes = []; a.guessed = {}; a.phase = 'draw'; a.winnerName = null; a.round = (a.round || 0) + 1;
+    this.addLog(`🎨 Dessine-moi : à ${this.player(a.drawerId)?.name || '?'} de dessiner (${w.cat}) !`);
+    this.touch();
+  }
+
+  drawUpdate(playerId, strokes) {
+    const a = this.activity;
+    if (!a || a.type !== 'draw' || a.phase !== 'draw' || playerId !== a.drawerId) return;
+    if (!Array.isArray(strokes)) return;
+    a.strokes = strokes.slice(0, 500);
+    this.broadcast();
+  }
+
+  drawGuess(playerId, text) {
+    const a = this.activity;
+    if (!a || a.type !== 'draw' || a.phase !== 'draw') return { ok: false };
+    if (playerId === a.drawerId) return { ok: false };
+    const p = this.player(playerId);
+    if (normalize(text) && normalize(text) === normalize(a.word)) {
+      a.phase = 'reveal';
+      a.winnerName = p?.name || null;
+      a.scores[playerId] = (a.scores[playerId] || 0) + 100;
+      if (a.drawerId) a.scores[a.drawerId] = (a.scores[a.drawerId] || 0) + 50;
+      this.addLog(`🎨 ${p?.name} a trouvé « ${a.word} » ! (+100, dessinateur +50)`);
+      this.touch();
+      return { ok: true, correct: true };
+    }
+    this.touch();
+    return { ok: true, correct: false };
+  }
+
+  drawNext() { this._drawNewRound(); }
+  drawReveal() {
+    const a = this.activity;
+    if (!a || a.type !== 'draw') return;
+    a.phase = 'reveal';
+    this.addLog(`🎨 Mot révélé : « ${a.word} ».`);
+    this.touch();
+  }
+
+  _drawPublic(forPlayerId) {
+    const a = this.activity;
+    const reveal = a.phase === 'reveal';
+    const isDrawer = !!(forPlayerId && forPlayerId === a.drawerId);
+    return {
+      type: 'draw', state: a.state, phase: a.phase, round: a.round,
+      drawerId: a.drawerId, drawerName: this.player(a.drawerId)?.name || '?',
+      category: a.category, wordLen: (a.word || '').length,
+      strokes: a.strokes || [], winnerName: a.winnerName || null,
+      word: (reveal || isDrawer) ? a.word : null,
+      iAmDrawer: isDrawer,
+      leaderboard: Object.entries(a.scores || {}).map(([id, pts]) => ({ id, name: this.player(id)?.name, pts })).sort((x, y) => y.pts - x.pts),
+    };
+  }
 
   // Applique les vies de fin de manche arcade : vainqueur +1 (max 3), autres −1.
   _applyArcadeLives(rank, label, detail) {

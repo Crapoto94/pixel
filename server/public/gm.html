@@ -97,6 +97,7 @@ function render(){
       <button class="btn warn" onclick="startAct('2048',{seconds:180})">🔢 2048</button>
       <button class="btn warn" onclick="startAct('pong',{seconds:180})">🏓 Pong</button>
       <button class="btn warn" onclick="startAct('bomberman',{seconds:180})">💣 Bomberman</button>
+      <button class="btn warn" onclick="startAct('draw')">🎨 Dessine-moi</button>
       <button class="btn warn" onclick="startAct('music_seq')">🎵 Séquence</button>
       <button class="btn warn" onclick="mosaic()">🧩 Mosaïque</button>
       <button class="btn warn" onclick="startAct('enquete')">🕵️ Enquête</button>
@@ -165,6 +166,18 @@ function render(){
     </div>
     ${S.photoPhase ? `<div class="mt"><span class="pill neon-yellow">Phase : ${S.photoPhase}</span></div>` : ''}
   </div>
+
+  ${S.activity && S.activity.type === 'draw' ? `
+  <div class="card" style="border-color:var(--neon3)">
+    <div class="pixel neon-yellow" style="font-size:11px">🎨 DESSINE-MOI — manche ${S.activity.round||1}</div>
+    <div class="mt">✏️ Dessinateur : <code>${esc(S.activity.drawerName||'?')}</code> · catégorie <code>${esc(S.activity.category||'')}</code></div>
+    <div class="mt">🔑 Mot : <code style="color:var(--neon3)">${esc(S.drawWord||S.activity.word||'(secret)')}</code>
+      ${S.activity.phase==='reveal' && S.activity.winnerName ? `<span class="pill neon-cyan">trouvé par ${esc(S.activity.winnerName)}</span>`:''}</div>
+    <div class="grid mt">
+      <button class="btn warn" onclick="act('drawReveal')">💡 Révéler le mot</button>
+      <button class="btn secondary" onclick="act('drawNext')">⏭ Dessinateur suivant</button>
+    </div>
+  </div>`:''}
 
   ${S.activity && S.activity.type === 'music_seq' ? `
   <div class="card" style="border-color:var(--neon3)">

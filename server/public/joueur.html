@@ -309,7 +309,7 @@ function controllerView(act) {
 function renderMosaicPlayer(me) {
   const a = STATE.activity;
   const mine = a.mine;
-  const key = (a.round||1) + '-' + (mine ? mine.slice : 'x');
+  const key = (a.round||1) + '-' + (mine ? mine.slice : 'x') + '-' + (a.reveal?1:0);
   if (mosKey === key) return; // statique : on ne redessine pas à chaque SSE
   mosKey = key;
   if (!mine) { app.innerHTML = `<div class="card center"><h2 class="neon-cyan">🧩 MOSAÏQUE</h2><p>En attente…</p></div>`; return; }
@@ -323,7 +323,9 @@ function renderMosaicPlayer(me) {
     return `<div style="height:${bandH}px;display:flex;align-items:center;justify-content:center;background:${bg};border-bottom:2px solid #000;font-family:var(--pixel);font-size:${Math.floor(bandH*0.42)}px;color:${col};letter-spacing:8px;${sh}">${esc(s)}</div>`;
   }).join('');
   const hint = rows > 1
-    ? `La ligne <b style="color:#ffe600">colorée</b> est la bonne. Décale ton téléphone (en escalier) pour l'aligner avec celles des voisins.`
+    ? (a.reveal
+        ? `La ligne <b style="color:#ffe600">colorée</b> est la bonne. Décale ton téléphone (en escalier) pour l'aligner avec celles des voisins.`
+        : `UNE seule des ${rows} lignes est la bonne. Trouvez-la en équipe et placez-vous en quinconce. <span class="muted">(le MJ peut révéler un indice couleur)</span>`)
     : `Place-toi au bon endroit dans la rangée pour reconstituer le mot.`;
   app.innerHTML = `
     <div class="center">

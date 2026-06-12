@@ -532,6 +532,7 @@ export class GameState {
       this.activity.slices = slices;
       this.activity.bands = bands;
       this.activity.correctRow = correctRow;
+      this.activity.reveal = false; // la ligne colorée n'apparaît que si le MJ le demande
     }
     // Séquence musicale collaborative : attribution des notes aux joueurs
     if (type === 'music_seq') {
@@ -1144,21 +1145,32 @@ export class GameState {
   // pour le rendu local). La borne ne reçoit pas le mot (ce serait la solution).
   mosaicPublic(forPlayerId) {
     const a = this.activity;
+    // La ligne correcte (et sa couleur) n'est transmise QUE si le MJ a révélé.
+    const reveal = !!a.reveal;
     const mine = (forPlayerId && a.slices && a.slices[forPlayerId] != null)
       ? {
           slice: a.slices[forPlayerId],
           n: a.n,
           rows: a.rows || 1,
           bands: (a.bands && a.bands[forPlayerId]) || [a.word || ''],
-          correctRow: (a.correctRow && a.correctRow[forPlayerId]) || 0,
-          // teinte du bandeau coloré : forme un arc-en-ciel de gauche à droite
-          hue: Math.round((a.slices[forPlayerId] / Math.max(1, (a.n || 1) - 1)) * 300),
+          // null tant que non révélé → aucune bande colorée côté joueur
+          correctRow: reveal ? ((a.correctRow && a.correctRow[forPlayerId]) || 0) : null,
+          hue: reveal ? Math.round((a.slices[forPlayerId] / Math.max(1, (a.n || 1) - 1)) * 300) : null,
         }
       : null;
     return {
-      type: 'mosaic', n: a.n, rows: a.rows || 1, round: a.round || 1,
+      type: 'mosaic', n: a.n, rows: a.rows || 1, round: a.round || 1, reveal,
       assigned: Object.keys(a.slices || {}).length, mine,
     };
+  }
+
+  // Le MJ révèle (ou masque) la ligne colorée d'aide sur les téléphones.
+  mosaicReveal(on = true) {
+    const a = this.activity;
+    if (!a || a.type !== 'mosaic') return;
+    a.reveal = !!on;
+    this.addLog(a.reveal ? '🧩 Mosaïque : ligne colorée RÉVÉLÉE par le MJ.' : '🧩 Mosaïque : aide masquée.');
+    this.touch();
   }
 
   musicPublic(forPlayerId) {

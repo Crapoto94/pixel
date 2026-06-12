@@ -347,6 +347,7 @@ app.post('/api/gm/action', (req, res) => {
     case 'spotlightTally': game.spotlightTally(); break;
     case 'roueOpenVote': game.roueOpenVote(); break;
     case 'roueTally': game.roueTally(); break;
+    case 'mosaicReveal': game.mosaicReveal(payload.on !== false); break;
     case 'enqueteHint': game.enqueteHint(); break;
     case 'enqueteSkip': game.enqueteSkip(); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });

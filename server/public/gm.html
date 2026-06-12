@@ -200,7 +200,11 @@ function render(){
   <div class="card" style="border-color:var(--neon3)">
     <div class="pixel neon-yellow" style="font-size:11px">🧩 MOSAÏQUE — manche ${S.activity.round||1} · ${S.activity.rows||1} ligne(s)</div>
     <div class="mt">Mot à reconstituer : <code>${esc(S.mosaicWord||'?')}</code></div>
-    <div class="muted mt" style="font-size:13px">${(S.activity.rows||1)>1?'Les joueurs placent les téléphones EN QUINCONCE (1 seule ligne colorée par écran).':'Téléphones côte à côte, dans le bon ordre.'}</div>
+    <div class="muted mt" style="font-size:13px">${(S.activity.rows||1)>1?'Les joueurs placent les téléphones EN QUINCONCE (1 seule ligne correcte par écran).':'Téléphones côte à côte, dans le bon ordre.'}</div>
+    ${(S.activity.rows||1)>1 ? `<div class="grid mt">
+      <button class="btn ${S.activity.reveal?'secondary':'warn'}" onclick="act('mosaicReveal',{on:true})">💡 Révéler la ligne ${S.activity.reveal?'✔':''}</button>
+      <button class="btn" onclick="act('mosaicReveal',{on:false})">🙈 Masquer l'aide</button>
+    </div>`:''}
     <button class="btn warn mt" onclick="mosaic()">🔁 Relancer (manche suivante, +1 ligne)</button>
   </div>`:''}
 

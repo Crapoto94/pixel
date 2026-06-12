@@ -500,15 +500,18 @@ function renderTronPlayer(me){
   const mine = t.players.find(p=>p.id===me.id);
   if (tronKey !== STATE.activity.startedAt){
     tronKey = STATE.activity.startedAt;
+    const cw = Math.min(window.innerWidth-16, 420);
+    const ch = Math.round(cw * t.h / t.w);
     app.innerHTML = `
       <div class="center">
         <div id="troninfo" class="pixel" style="font-size:13px;margin:6px 0"></div>
-        <div class="dpad">
+        <canvas id="troncv" width="${t.w*8}" height="${t.h*8}"
+          style="width:${cw}px;height:${ch}px;border:3px solid var(--neon4);border-radius:10px;background:#05010f"></canvas>
+        <div class="dpad" style="margin-top:10px">
           <div class="empty"></div><button data-d="up">▲</button><div class="empty"></div>
           <button data-d="left">◄</button><div class="empty"></div><button data-d="right">►</button>
           <div class="empty"></div><button data-d="down">▼</button><div class="empty"></div>
         </div>
-        <p class="muted mt" style="font-size:14px">Tourne sans percuter les traînées. Demi-tour interdit !</p>
       </div>`;
     app.querySelectorAll('.dpad button').forEach(b=>{
       const f=(ev)=>{ ev.preventDefault(); tronDir(b.dataset.d); };
@@ -516,11 +519,22 @@ function renderTronPlayer(me){
       b.addEventListener('mousedown', f);
     });
   }
+  // L'ARÈNE s'affiche aussi sur le téléphone, ma moto mise en évidence.
+  const cv = document.getElementById('troncv');
+  if (cv){
+    const ctx = cv.getContext('2d');
+    const cell = Math.floor(Math.min(cv.width/t.w, cv.height/t.h));
+    ctx.fillStyle='#05010f'; ctx.fillRect(0,0,cv.width,cv.height);
+    const colByIdx={}; t.players.forEach(p=>colByIdx[p.idx]=p.color);
+    for(let r=0;r<t.h;r++){ const row=t.grid[r]; for(let c=0;c<t.w;c++){ const v=+row[c]; if(v){ const mineCell = mine && v===mine.idx; ctx.fillStyle=colByIdx[v]||'#888'; ctx.globalAlpha = mineCell?0.9:0.45; ctx.fillRect(c*cell,r*cell,cell-1,cell-1); ctx.globalAlpha=1; } } }
+    // têtes : la mienne avec un contour blanc
+    t.players.forEach(p=>{ if(p.alive){ ctx.fillStyle=p.color; ctx.fillRect(p.c*cell-1,p.r*cell-1,cell+1,cell+1); if(mine&&p.id===mine.id){ ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.strokeRect(p.c*cell-2,p.r*cell-2,cell+3,cell+3); } } });
+  }
   const info = document.getElementById('troninfo');
   if (info){
     if (t.status!=='playing'){ const w=(t.ranking||[])[0]; info.innerHTML = (w&&w.id===me.id)?'<span class="neon-yellow">🏆 TU GAGNES !</span>':(w?('🏆 '+esc(w.name)+' gagne'):'Terminé'); }
     else if (mine && !mine.alive) info.innerHTML = '<span class="neon-pink">💥 CRASH — regarde la borne !</span>';
-    else info.innerHTML = mine ? `<span style="color:${mine.color}">● TA MOTO</span> · ${mine.len} cases` : 'Spectateur';
+    else info.innerHTML = mine ? `<span style="color:${mine.color}">● TA MOTO</span> · ${mine.len} cases — demi-tour interdit` : 'Spectateur';
   }
 }
 

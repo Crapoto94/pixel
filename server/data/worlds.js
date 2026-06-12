@@ -30,6 +30,11 @@ export const WORLDS = [
     // Le fameux Konami Code. Chaque joueur détient 2 flèches/lettres (cf. indices).
     code: 'HAUT HAUT BAS BAS GAUCHE DROITE GAUCHE DROITE B A',
     codeNormalise: 'HAUTHAUTBASBASGAUCHEDROITEGAUCHEDROITEBA',
+    colisContenu: [
+      'Une carte « MANETTE » d’arcade (croix ↑ ↓ ← → + boutons A / B) pour visualiser et assembler la séquence.',
+      'Une carte-consigne : « Reconstituez la SÉQUENCE LÉGENDAIRE (10 entrées). Seul le PLAYER ONE — Vincent — peut la VALIDER sur la borne. »',
+      '(Si pas déjà distribuées à l’accueil) les 6 cartes-avatars + QR de connexion.',
+    ],
     indices: {
       wilsonik: ['HAUT', 'HAUT'],
       riu: ['BAS', 'BAS'],
@@ -57,6 +62,11 @@ export const WORLDS = [
       "(encre UV / carte secrète). Suivez le chemin et lisez le mot/chiffre formé.",
     code: 'GLOUTON',
     codeNormalise: 'GLOUTON',
+    colisContenu: [
+      'Un PLAN DE LABYRINTHE imprimé (A4) avec des cases numérotées (champignons).',
+      'L’indice CACHÉ pour LARA CROÛTE : une carte transparente à superposer (ou écriture à l’encre UV + mini-lampe UV) indiquant le départ « en bas à droite, sous la cerise ».',
+      'Le bon chemin doit faire apparaître le mot-code à taper : GLOUTON.',
+    ],
     indices: {
       lara_croute: ['Le chemin commence en bas à droite, sous la cerise.'],
       super_mariano: ['Compte les champignons : ils numérotent les cases.'],
@@ -80,6 +90,11 @@ export const WORLDS = [
       "Si une pièce manque… c'est que le GLITCH est passé par là.",
     code: 'PIXEL',
     codeNormalise: 'PIXEL',
+    colisContenu: [
+      'Des PIÈCES DE PUZZLE qui, assemblées, forment un visuel (ou un QR) révélant le mot-code : PIXEL.',
+      'SABOTAGE : retire 1 pièce avant de fermer le colis et glisse-la au GLITCH (ou cache-la 3 min) — il en manquera une.',
+      'Une carte « cible » pour ZILDA (repère la pièce centrale).',
+    ],
     indices: {
       riu: ['Les bords rouges vont ensemble.'],
       zilda: ['La pièce centrale porte une cible.'],
@@ -104,6 +119,11 @@ export const WORLDS = [
       "Première énigme qu'il MÈNE : il doit utiliser un pouvoir pour aider le groupe à avancer.",
     code: 'GAMEMASTER',
     codeNormalise: 'GAMEMASTER',
+    colisContenu: [
+      'La CARTE DORÉE « PLAYER ONE / GAME MASTER » remise à VINCENT (déclenche ses pouvoirs).',
+      'Une carte-consigne expliquant le pouvoir « INDICE » (révéler une lettre/aide aux autres).',
+      'Le mot-code GAMEMASTER caché (ex. au dos de la carte dorée).',
+    ],
     indices: {
       player_one: ["Utilise ton pouvoir 'INDICE' pour révéler la lettre manquante aux autres."],
     },
@@ -127,6 +147,11 @@ export const WORLDS = [
     code: 'VOTE', // résolu par le vote, pas par un code tapé
     codeNormalise: 'VOTE',
     resoluParVote: true,
+    colisContenu: [
+      'Les FRAGMENTS DE PREUVES à distribuer façon Cluedo (un par joueur), à recouper.',
+      'Une carte récap : « notez et comparez les HEURES inscrites sur les colis 2, 3 et 4 ».',
+      'Pas de code à taper : ce monde se résout par un VOTE sur les téléphones.',
+    ],
     indices: {
       lara_croute: ['Recoupe les heures notées sur les colis 2, 3 et 4.'],
     },
@@ -150,6 +175,11 @@ export const WORLDS = [
       "Tous vos pouvoirs et objets servent ici. VINCENT porte le COUP FINAL.",
     code: 'REBOOT',
     codeNormalise: 'REBOOT',
+    colisContenu: [
+      'La CARTE DORÉE FINALE à scanner sur la borne quand la barre de vie du boss atteint zéro.',
+      'Le mot-code REBOOT caché (coup final).',
+      'Le CADEAU / coffre de Vincent à déverrouiller au moment du « YOU WIN ! ».',
+    ],
     indices: {
       player_one: ['Quand la barre de vie du boss est à zéro : scanne la CARTE DORÉE sur la BORNE.'],
     },

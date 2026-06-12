@@ -39,12 +39,16 @@
   .card.gold .role { background: #b8860b; }
   .card.gold .aname { color: #7a5a00; }
 
-  /* Étiquettes COLIS */
-  .colis { width: 90mm; height: 55mm; border: 3px dashed #160a2e; border-radius: 10px; background: #fff;
-    display: flex; align-items: center; gap: 5mm; padding: 5mm; }
-  .colis .num { font-family: 'Press Start 2P'; font-size: 34px; color: #ff2e88; }
-  .colis .txt b { font-family: 'Press Start 2P'; font-size: 12px; }
-  .colis .txt p { margin: 4px 0 0; font-size: 13px; color: #444; }
+  /* Cartes CONTENU des COLIS (à mettre dans/sur chaque enveloppe) */
+  .colis { width: 90mm; min-height: 70mm; border: 3px dashed #160a2e; border-radius: 10px; background: #fff;
+    padding: 5mm; display: flex; flex-direction: column; }
+  .colis .head { display: flex; align-items: center; gap: 4mm; }
+  .colis .num { font-family: 'Press Start 2P'; font-size: 28px; color: #ff2e88; }
+  .colis .titre { font-family: 'Press Start 2P'; font-size: 9px; color: #160a2e; }
+  .colis .code { font-size: 12px; color: #7a5cff; margin-top: 1mm; }
+  .colis .lbl { font-size: 11px; color: #888; margin: 3mm 0 1mm; text-transform: uppercase; letter-spacing: .5px; }
+  .colis ul { margin: 0; padding-left: 5mm; }
+  .colis li { font-size: 12px; margin: 2mm 0; }
 
   /* Jetons */
   .tokens { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -105,11 +109,21 @@ function render(data){
     </div>`;
   }).join('');
 
-  const colis = data.colis.map(n=>`
-    <div class="colis">
-      <div class="num">${n}</div>
-      <div class="txt"><b>COLIS ${n}</b><p>🔒 Verrouillé — à ouvrir UNIQUEMENT au signal de la BORNE (« PIXELS, livrez le colis ${n} »).</p></div>
-    </div>`).join('');
+  const colis = (data.colis||[]).map(c=>{
+    const n = (typeof c === 'object') ? c.num : c;
+    const titre = (typeof c === 'object') ? (c.titre||'') : '';
+    const code = (typeof c === 'object') ? c.code : null;
+    const contenu = (typeof c === 'object' && Array.isArray(c.contenu)) ? c.contenu : [];
+    return `<div class="colis">
+      <div class="head"><div class="num">${n}</div>
+        <div><div class="titre">COLIS ${n}</div><div style="font-size:11px;color:#555">${esc(titre)}</div>
+        ${code?`<div class="code">🔑 Code : <b>${esc(code)}</b></div>`:'<div class="code">🗳️ Résolu par VOTE</div>'}</div>
+      </div>
+      <div class="lbl">À mettre dans l’enveloppe :</div>
+      <ul>${contenu.map(x=>`<li>${esc(x)}</li>`).join('') || '<li>(à compléter selon ton matériel)</li>'}</ul>
+      <div style="margin-top:auto;font-size:10px;color:#aaa">🔒 N’ouvrir qu’au signal de la borne (« PIXELS, livrez le colis ${n} »).</div>
+    </div>`;
+  }).join('');
 
   const coins = Array.from({length:18}).map(()=>`<div class="token coin">🪙</div>`).join('');
   const lives = Array.from({length:12}).map(()=>`<div class="token life">❤️</div>`).join('');
@@ -118,7 +132,7 @@ function render(data){
     <h2>① Cartes-avatars (1 par joueur)</h2>
     <div class="cards">${cards}</div>
 
-    <h2>② Étiquettes des COLIS (à coller sur les enveloppes)</h2>
+    <h2>② COLIS — contenu à préparer (1 carte par enveloppe)</h2>
     <div class="cards">${colis}</div>
 
     <h2>③ Jetons à découper — 🪙 PIÈCES & ❤️ VIES</h2>

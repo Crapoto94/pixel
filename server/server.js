@@ -15,6 +15,7 @@ import { SCENARIO_SLIDES, AVATAR_BRIEF } from './data/briefing.js';
 import { PHOTO_MISSIONS } from './data/photos.js';
 import { SPOTLIGHT_DEFIS } from './data/spotlight.js';
 import { ENQUETE } from './data/enquete.js';
+import { WORLDS } from './data/worlds.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -68,7 +69,11 @@ app.get('/api/print', async (req, res) => {
       isHero: !!p.isHero, joinUrl, qr,
     });
   }
-  res.json({ players, npcs: NPCS, colis: [1, 2, 3, 4, 5, 6], publicUrl: CONFIG.publicUrl });
+  const colis = WORLDS.map((w) => ({
+    num: w.colis, titre: w.titre, enigme: w.enigme,
+    code: w.resoluParVote ? null : w.code, contenu: w.colisContenu || [],
+  }));
+  res.json({ players, npcs: NPCS, colis, publicUrl: CONFIG.publicUrl });
 });
 
 // Données du briefing affiché sur la BORNE (scénario + attendus par joueur)

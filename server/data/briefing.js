@@ -9,8 +9,12 @@ export const SCENARIO_SLIDES = [
     text: "Le bug a désigné un Avatar Légendaire : VINCENT. Tant que le jeu n'est pas terminé, personne ne peut se déconnecter." },
   { title: 'VOTRE MISSION',
     text: "6 MONDES, des énigmes, des défis — et un GLITCH infiltré parmi vous. Aidez Vincent à atteindre le BOSS FINAL avant minuit." },
+  { title: 'AU PROGRAMME',
+    text: "Une GROSSE ENQUÊTE à résoudre tous ensemble (~1 h, comme un escape game), et PLEIN DE MINI-JEUX d'arcade : Pac-Man, Tetris, blind-test, roue des gages, quiz… De quoi en avoir pour la soirée !" },
   { title: "RÈGLE D'OR",
     text: "Votre téléphone = votre manette. La BORNE = l'écran commun. Restez groupés, communiquez, amusez-vous." },
+  { title: '📱 PLEIN ÉCRAN',
+    text: "C'est BIEN MIEUX en PLEIN ÉCRAN ! Sur ton téléphone, passe en plein écran (et garde l'écran allumé). Sur la borne aussi : plein écran obligatoire pour l'immersion." },
 ];
 
 // Ce qu'on attend de chaque avatar (affiché pendant le briefing)

@@ -23,6 +23,7 @@ import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
 import { ENQUETE } from '../data/enquete.js';
+import { SCENARIO_SLIDES } from '../data/briefing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
@@ -58,6 +59,7 @@ export class GameState {
     if (this.pongTimer) { clearInterval(this.pongTimer); this.pongTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
+    if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.tron = null;   // partie Tron en cours
@@ -109,7 +111,7 @@ export class GameState {
     //  - pacmanTimer / _autoAdvanceTimer (objets Timer)
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
-      g2048Timer, g2048, pongTimer, pong, _autoAdvanceTimer, _roueTimer, ...data } = this;
+      g2048Timer, g2048, pongTimer, pong, _autoAdvanceTimer, _roueTimer, _briefTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -367,6 +369,7 @@ export class GameState {
 
   // ---- Démarrage de partie -----------------------------------------
   startGame() {
+    if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     // Le Glitch n'est PAS désigné ici : il s'infiltre à la fin du Monde 1.
     this.phase = 'world';
     this.worldIndex = 0;
@@ -498,6 +501,8 @@ export class GameState {
 
   // ---- Activités BORNE (reaction, buzzer, spotlight, roue...) -------
   startActivity(type, opts = {}) {
+    // Toute nouvelle activité annule un éventuel auto-lancement du briefing.
+    if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     if (type === 'pacman') return this.startPacman(opts);
     if (type === 'tetris') return this.startTetris(opts);
     if (type === 'tron') return this.startTron(opts);
@@ -634,6 +639,19 @@ export class GameState {
       this.activity.votes = {};                 // voterId -> targetId
       this.activity.winnerIds = [];
       this._scheduleRoue();
+    }
+    // Briefing : après le déroulé complet, on enchaîne AUTOMATIQUEMENT sur
+    // l'énigme 1 (lancement de la partie). La borne joue ~6,5 s par slide.
+    if (type === 'briefing') {
+      const slides = SCENARIO_SLIDES.length + 1 /* sep */ + PLAYERS.length + 1 /* PRÊTS ? */;
+      const ms = slides * 6500 + 1500;
+      this._briefTimer = setTimeout(() => {
+        this._briefTimer = null;
+        if (this.phase === 'activity' && this.activity && this.activity.type === 'briefing') {
+          this.addLog('🎬 Briefing terminé — lancement de l\'énigme 1 !');
+          this.startGame();
+        }
+      }, ms);
     }
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
@@ -1041,6 +1059,7 @@ export class GameState {
   }
 
   stopActivity() {
+    if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     if (this.pacmanTimer) { clearInterval(this.pacmanTimer); this.pacmanTimer = null; }
     if (this.tetrisTimer) { clearInterval(this.tetrisTimer); this.tetrisTimer = null; }

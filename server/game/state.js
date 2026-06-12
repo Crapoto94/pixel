@@ -824,21 +824,25 @@ export class GameState {
     if (this.activity.buzzes.find((b) => b.id === playerId)) return;
     const p = this.player(playerId);
     this.activity.buzzes.push({ id: playerId, name: p?.name, t: Date.now() });
-    // Reaction Race : quand tous les joueurs connectés ont réagi,
+    // Reaction Race : on résout dès que TOUT LE MONDE SAUF UN a buzzé.
     //  - le PREMIER regagne une vie (max 3)
-    //  - le DERNIER perd une vie ; les deux sont affichés sur la BORNE.
+    //  - celui qui n'a PAS buzzé (le plus lent) perd une vie
     if (this.activity.type === 'reaction_race') {
       const connected = this.players.filter(pl => pl.connected);
-      if (connected.length >= 2 && this.activity.buzzes.length >= connected.length && !this.activity.resolved) {
+      const need = Math.max(1, connected.length - 1); // tout le monde sauf un
+      if (connected.length >= 2 && this.activity.buzzes.length >= need && !this.activity.resolved) {
         this.activity.resolved = true;
         const sorted = [...this.activity.buzzes].sort((a, b) => a.t - b.t);
         const first = this.player(sorted[0].id);
-        const last = this.player(sorted[sorted.length - 1].id);
+        // le DERNIER = le seul joueur connecté qui n'a pas buzzé (sinon le plus tardif)
+        const buzzed = new Set(this.activity.buzzes.map(b => b.id));
+        const nonBuzzer = connected.find(p => !buzzed.has(p.id));
+        const last = nonBuzzer || this.player(sorted[sorted.length - 1].id);
         this.activity.firstName = first?.name || null;
         this.activity.lastName = last?.name || null;
         if (last && last.lives > 0) {
           last.lives -= 1;
-          this.addLog(`🐢 ${last.name} a réagi EN DERNIER — −1 vie (${last.lives} restante(s)).`);
+          this.addLog(`🐢 ${last.name} n'a pas réagi à temps — −1 vie (${last.lives} restante(s)).`);
         }
         if (first) {
           if (first.lives < 3) { first.lives += 1; this.addLog(`⚡ ${first.name} le plus RAPIDE — +1 vie (${first.lives}) !`); }

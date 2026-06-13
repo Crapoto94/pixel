@@ -55,14 +55,10 @@
 </head>
 <body class="scanlines">
 <div id="buildtag" style="position:fixed;top:3px;left:5px;z-index:9999;font-family:monospace;font-size:10px;color:#ffffff55;pointer-events:none;user-select:none"></div>
-<!-- Lecteurs YouTube de fond : YouTube REFUSE / met en pause (~1 s) les players
-     sous ~200x200 px. On les garde donc à 200x200, DANS le viewport, opaques,
-     et on les masque visuellement avec un cache opaque par-dessus (l'occlusion
-     ne suspend pas la lecture, contrairement à opacity:0 / hors-écran). -->
-<div id="yt-amb" style="position:fixed;bottom:0;right:0;width:200px;height:200px;z-index:1;pointer-events:none"></div>
-<div id="yt-bt"  style="position:fixed;bottom:0;right:0;width:200px;height:200px;z-index:1;pointer-events:none"></div>
-<div id="yt-pac" style="position:fixed;bottom:0;right:0;width:200px;height:200px;z-index:1;pointer-events:none"></div>
-<div id="yt-cover" style="position:fixed;bottom:0;right:0;width:220px;height:220px;z-index:2;background:#0a0118;pointer-events:none"></div>
+<!-- Lecteurs YouTube de fond (état du matin 8h12 — fonctionnel). -->
+<div id="yt-amb" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-bt"  style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-pac" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
@@ -117,27 +113,14 @@ if (/[?&]debug=1/.test(location.search)) {
 }
 
 // --- Activation du son au 1er clic n'importe où (obligatoire sur navigateur) ---
-let SOUND_ON = false, YT_BLESSED = false;
+let SOUND_ON = false;
 function enableSound(){
-  if (!SOUND_ON) {
-    if (window.SFX) { SFX.unlock(); SFX.coin(); if (SFX.pacPreload) SFX.pacPreload(); }
-    SOUND_ON = true;
-    const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
-  }
-  // BÉNÉDICTION des lecteurs YouTube : il faut dé-muter CHAQUE lecteur DANS un
-  // geste utilisateur, sinon Chrome coupe le son ~1 s après un unMute() lancé
-  // plus tard depuis un callback SSE (cas du blind-test et de Pac-Man).
-  // On dé-mute → joue → re-mute instantanément ; seul l'ambiance reste audible.
-  if (!YT_BLESSED) {
-    if (ytAmb || ytBt || ytPac) {
-      YT_BLESSED = true;
-      try { if (ytBt)  { ytBt.unMute();  ytBt.playVideo();  ytBt.mute(); } } catch(_){}            // reste en lecture muette (moisson des titres)
-      try { if (ytPac) { ytPac.unMute(); ytPac.playVideo(); ytPac.mute(); ytPac.pauseVideo(); } } catch(_){} // muet + en pause jusqu'à Pac-Man
-      try { if (ytAmb) { ytAmb.unMute(); ytAmb.setVolume(70); ytAmb.playVideo(); } } catch(_){}
-    } else {
-      initYT(); // API pas prête : on initialise, la bénédiction aura lieu au prochain geste
-    }
-  }
+  if (SOUND_ON) return;
+  if (window.SFX) { SFX.unlock(); SFX.coin(); if (SFX.pacPreload) SFX.pacPreload(); }
+  SOUND_ON = true;
+  const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
+  if (ytAmb) { try { ytAmb.unMute(); } catch(_){} } // déjà en train de jouer, on retire juste le mute
+  else initYT(); // API pas encore prête, on démarre normalement
 }
 document.getElementById('soundhint').addEventListener('click', enableSound);
 ['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: false }));
@@ -1426,7 +1409,7 @@ function initYT(){
   fetch('/api/ytconfig').then(r=>r.json()).then(cfg=>{
     if (cfg.ambiance) {
       ytAmb = new YT.Player('yt-amb', {
-        height:'200', width:'200',
+        height:'1', width:'1',
         playerVars:{ listType:'playlist', list:cfg.ambiance, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
           onReady(e){ e.target.setShuffle(true); e.target.playVideo(); }, // muet jusqu'au 1er clic
@@ -1436,7 +1419,7 @@ function initYT(){
     }
     if (cfg.blindtest) {
       ytBt = new YT.Player('yt-bt', {
-        height:'200', width:'200',
+        height:'1', width:'1',
         playerVars:{ listType:'playlist', list:cfg.blindtest, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
           onReady(e){ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); harvestTracks(e.target); }, // muet : on moissonne les titres
@@ -1461,7 +1444,7 @@ function initYT(){
     if (cfg.pacman && cfg.pacman.id) {
       const pid = cfg.pacman.id, pstart = cfg.pacman.start || 0;
       ytPac = new YT.Player('yt-pac', {
-        height:'200', width:'200', videoId: pid,
+        height:'1', width:'1', videoId: pid,
         playerVars:{ autoplay:1, loop:1, playlist:pid, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:pstart },
         events:{
           onReady(e){ e.target.mute(); }, // prêt, muet ; lancé pendant Pac-Man

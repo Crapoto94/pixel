@@ -1008,12 +1008,41 @@ function gageView(g, me) {
 function gmPlayerPanel(me) {
   const title = me.gameMaster ? '👑 POUVOIRS DU GAME MASTER' : '🎛️ CONTRÔLE HÔTE';
   const targets = STATE.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  const gbtn = (label,type,opts)=>`<button class="btn secondary" style="font-size:12px;padding:8px" onclick='gmStart(${JSON.stringify(type)},${JSON.stringify(opts||{})})'>${label}</button>`;
   return `<div class="card" style="border-color:var(--neon3);background:#1a1400">
     <div class="pill neon-yellow">${title}</div>
-    <p class="muted">Distribue un gage à qui tu veux. Longue vie au roi.</p>
-    <select id="gmTarget" style="width:100%;padding:10px;font-family:var(--term);font-size:20px">${targets}</select>
-    <button class="btn warn mt" onclick="gmGage()">🎲 LANCER UN GAGE</button>
+    <p class="muted" style="font-size:13px">Tu peux LANCER les activités depuis ton téléphone.</p>
+
+    <div class="pixel neon-cyan" style="font-size:10px;margin-top:6px">🎵 BLIND-TEST & QUIZ</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px">
+      ${gbtn('🎵 Blind-test','blindtest')}
+      ${gbtn('🎮 Quiz JV','quiz',{deck:'videogame'})}
+      ${gbtn('📼 Quiz 80s','quiz',{deck:'eighties'})}
+      ${gbtn('💿 Quiz 90s','quiz',{deck:'nineties'})}
+      ${gbtn('🍙 Quiz Animés','quiz',{deck:'anime'})}
+      ${gbtn('🏘️ Quiz St-Maur','quiz',{deck:'saintmaur'})}
+    </div>
+
+    <div class="pixel neon-cyan" style="font-size:10px;margin-top:8px">🕹️ JEUX</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px">
+      ${gbtn('🟡 Pac-Man','pacman',{seconds:120})}
+      ${gbtn('🧱 Tetris','tetris',{seconds:240})}
+      ${gbtn('🟦 Tron','tron')}
+      ${gbtn('🔢 2048','2048',{seconds:180})}
+      ${gbtn('🏓 Pong','pong',{seconds:180})}
+      ${gbtn('🎨 Dessine-moi','draw')}
+      ${gbtn('⚡ Réaction','reaction_race')}
+      ${gbtn('🎰 Roue','roue_des_gages')}
+    </div>
+    <button class="btn danger mt" style="width:100%" onclick="gmStart('stop')">⏹ STOP activité</button>
+
+    <div class="pixel neon-cyan" style="font-size:10px;margin-top:10px">🎲 GAGE</div>
+    <select id="gmTarget" style="width:100%;padding:10px;font-family:var(--term);font-size:20px;margin-top:4px">${targets}</select>
+    <button class="btn warn mt" style="width:100%" onclick="gmGage()">🎲 LANCER UN GAGE</button>
   </div>`;
+}
+function gmStart(type, opts){
+  api('/api/gm/start', { type, opts: opts||{} }).then(r=>{ if(r&&r.error) alert(r.error); });
 }
 
 // --- Défis photo ---

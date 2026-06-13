@@ -167,6 +167,12 @@ app.post('/api/code', (req, res) => {
   res.json(game.submitCode(p.id, req.body.code || ''));
 });
 
+// Monde 6 : un joueur saisit la SÉQUENCE LÉGENDAIRE (Konami) sur sa manette
+app.post('/api/w6/konami', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  res.json(game.submitW6Konami(p.id, req.body.code || ''));
+});
+
 app.post('/api/buzz', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.buzz(p.id);

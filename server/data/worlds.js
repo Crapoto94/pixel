@@ -167,21 +167,30 @@ export const WORLDS = [
     titre: 'BOSS FINAL — REBOOT REALITY',
     colis: 6,
     isFinale: true,
+    // --- Monde 6 spécial : porte « Konami collectif » puis commande en LEET ---
+    // 1) TOUS les joueurs doivent saisir la SÉQUENCE LÉGENDAIRE (Konami) sur leur
+    //    propre manette (« un pour tous et tous pour un »).
+    // 2) La porte ouverte, ils tapent la COMMANDE de redémarrage : REBOOT en LEET.
+    konamiGate: true,
+    konamiNormalise: 'HAUTHAUTBASBASGAUCHEDROITEGAUCHEDROITEBA',
+    nearMiss: 'REBOOT', // mot « presque » : on guide alors vers le LEET
+    nearMissMsg: 'Presque… mais il faut la saisir en LEET 🔢',
     intro:
       "BOSS FINAL. La BORNE elle-même est le boss. « Vous ne sortirez jamais d'ici… " +
-      "à moins de me REBOOTER. »",
+      "à moins de me REBOOTER. Mais d'abord : prouvez que vous êtes LA TEAM. »",
     enigme:
-      "Affrontement collectif : enchaînez les QTE (épreuves rapides) affichées sur la BORNE. " +
-      "Tous vos pouvoirs et objets servent ici. VINCENT porte le COUP FINAL.",
-    code: 'REBOOT',
-    codeNormalise: 'REBOOT',
+      "Chacun a une MANETTE. Saisissez TOUS la SÉQUENCE LÉGENDAIRE (un pour tous, tous pour " +
+      "un !). Une fois la porte ouverte, tapez la COMMANDE de redémarrage… en LEET.",
+    code: 'R38007', // REBOOT en leet-speak (R-3-B-0-0-7)
+    codeNormalise: 'R38007',
     colisContenu: [
-      'La CARTE DORÉE FINALE à scanner sur la borne quand la barre de vie du boss atteint zéro.',
-      'Le mot-code REBOOT caché (coup final).',
+      'Une carte « MANETTE » d’arcade par joueur (croix ↑ ↓ ← → + boutons A / B) — chacun rejoue la SÉQUENCE LÉGENDAIRE.',
+      'Une carte-consigne : « UN POUR TOUS ET TOUS POUR UN — tout le monde saisit le code ! »',
+      'Une carte-indice « LEET » : la commande REBOOT doit être tapée en 1337 (E→3, B→8, O→0, T→7).',
       'Le CADEAU / coffre de Vincent à déverrouiller au moment du « YOU WIN ! ».',
     ],
     indices: {
-      player_one: ['Quand la barre de vie du boss est à zéro : scanne la CARTE DORÉE sur la BORNE.'],
+      player_one: ['Une fois que tout le monde a saisi le Konami : la commande est REBOOT… mais en LEET.'],
     },
     activite: 'boss_final',
     gagePool: 'collectif',

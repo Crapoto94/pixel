@@ -78,6 +78,10 @@ export class GameState {
     this.glitchRevealed = false;
     this.heroAwakened = false; // Vincent a-t-il reçu ses pouvoirs ?
     this.kidsDone = false; // les Pixels (enfants) ont-ils réussi leur défi ?
+    // --- Monde 6 : porte « Konami collectif » ---
+    this.w6Konami = {};  // { playerId: true } — qui a saisi la SÉQUENCE LÉGENDAIRE
+    this.w6Hint = false; // indice « un pour tous et tous pour un » (dès le 1er code saisi)
+    this.w6Reboot = false; // quelqu'un a tapé REBOOT → on guide vers le LEET
     this.votes = {}; // { voterId: targetId }
     this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
     this.photos = []; // [{id, playerId, playerName, avatar, missionIdx, missionLabel, url, uploadedAt}]
@@ -399,6 +403,20 @@ export class GameState {
     if (world.heroOnly && !(p && p.isHero)) {
       return { ok: false, reason: 'Seul le PLAYER ONE peut valider cette séquence. Donne-lui tes touches !' };
     }
+    // Monde à « porte Konami » (Monde 6) : la commande n'est acceptée qu'une fois
+    // que TOUS les joueurs ont saisi la SÉQUENCE LÉGENDAIRE sur leur manette.
+    if (world.konamiGate) {
+      if (!this.w6GateComplete()) {
+        return { ok: false, reason: 'Séquence légendaire incomplète : tout le monde doit la saisir d\'abord !' };
+      }
+      // « Presque » : quelqu'un tape REBOOT en clair → on l'oriente vers le LEET.
+      if (world.nearMiss && normalize(code) === normalize(world.nearMiss)) {
+        this.w6Reboot = true;
+        this.addLog(`🔢 ${p ? p.name : '?'} a tapé REBOOT… presque ! Il faut le LEET.`);
+        this.touch();
+        return { ok: false, reason: world.nearMissMsg || 'Presque… essaie en LEET.' };
+      }
+    }
     const ok = normalize(code) === world.codeNormalise;
     if (ok) {
       this.addLog(`✅ ${p ? p.name : '?'} a validé le code du Monde ${world.num} !`);
@@ -408,6 +426,37 @@ export class GameState {
     this.addLog(`❌ Code refusé pour le Monde ${world.num}.`);
     this.touch();
     return { ok: false, reason: 'Code incorrect.' };
+  }
+
+  // ---- Monde 6 : porte « Konami collectif » ------------------------
+  // Tous les joueurs connectés doivent avoir saisi la SÉQUENCE LÉGENDAIRE.
+  w6GateComplete() {
+    const connected = this.players.filter((p) => p.connected);
+    return connected.length > 0 && connected.every((p) => this.w6Konami[p.id]);
+  }
+
+  // Un joueur saisit la séquence Konami sur SA manette (Monde 6).
+  submitW6Konami(playerId, code) {
+    const world = this.currentWorld();
+    if (!world || !world.konamiGate) {
+      return { ok: false, reason: 'Pas de séquence à saisir ici.' };
+    }
+    if (normalize(code) !== world.konamiNormalise) {
+      this.addLog('❌ Séquence légendaire refusée (Monde 6).');
+      this.touch();
+      return { ok: false, reason: 'Séquence incorrecte.' };
+    }
+    const p = this.player(playerId);
+    if (!this.w6Konami[playerId]) {
+      this.w6Konami[playerId] = true;
+      this.w6Hint = true; // « un pour tous et tous pour un » dès le 1er code validé
+      this.addLog(`🎮 ${p ? p.name : '?'} a saisi la SÉQUENCE LÉGENDAIRE !`);
+      if (this.w6GateComplete()) {
+        this.addLog('🤝 UN POUR TOUS ET TOUS POUR UN — porte ouverte ! Tapez la commande de redémarrage (en LEET).');
+      }
+    }
+    this.touch();
+    return { ok: true, gateComplete: this.w6GateComplete() };
   }
 
   completeWorld() {
@@ -1532,7 +1581,16 @@ export class GameState {
         intro: world.intro, enigme: world.enigme, activite: world.activite,
         isTwist: !!world.isTwist, isFinale: !!world.isFinale,
         resoluParVote: !!world.resoluParVote, heroOnly: !!world.heroOnly,
+        konamiGate: !!world.konamiGate,
       },
+      // Progression de la porte « Konami collectif » (Monde 6)
+      w6: world && world.konamiGate ? {
+        doneCount: this.players.filter((p) => p.connected && this.w6Konami[p.id]).length,
+        total: this.players.filter((p) => p.connected).length,
+        gateComplete: this.w6GateComplete(),
+        hint: this.w6Hint,
+        rebootHint: this.w6Reboot,
+      } : null,
       worldCount: WORLDS.length,
       heroAwakened: this.heroAwakened,
       kidsDone: this.kidsDone,
@@ -1576,6 +1634,8 @@ export class GameState {
       gameMaster: isHero && this.heroAwakened,
       // Indices perso pour le monde courant
       indices: world && world.indices ? (world.indices[me.avatar] || null) : null,
+      // Monde 6 : ai-je déjà saisi la SÉQUENCE LÉGENDAIRE sur ma manette ?
+      konamiDone: !!this.w6Konami[me.id],
       // Missions du Glitch (visibles uniquement par lui)
       glitchMission: isGlitch ? this.glitchMissionFor(world) : null,
       // Carnet secret : mission perso + indice sur un autre joueur

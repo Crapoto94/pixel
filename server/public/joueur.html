@@ -214,7 +214,10 @@ function render() {
     }
 
     if (!w.resoluParVote) {
-      if (w.heroOnly && !me.isHero) {
+      if (w.konamiGate) {
+        // Monde 6 : TOUS les joueurs saisissent le Konami, puis la commande en LEET.
+        html += w6GateHTML(w, me);
+      } else if (w.heroOnly && !me.isHero) {
         // Énigme réservée au PLAYER ONE : les autres transmettent leurs touches.
         html += `<div class="card" style="border-color:var(--neon3);background:#1a1400">
           <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE</div>
@@ -1049,9 +1052,12 @@ function konamiClear(){
   _konamiRefresh();
   const m = document.getElementById('codeMsg'); if (m) m.innerHTML = '';
 }
-function konamiSubmit(){
+function konamiSubmit(){ _konamiSend('/api/code'); }
+// Monde 6 : chaque joueur valide SA propre séquence sur sa manette.
+function konamiSubmitW6(){ _konamiSend('/api/w6/konami'); }
+function _konamiSend(path){
   const code = _konamiSeq.map(k=>_KON_TOKEN[k]).join(' ');
-  api('/api/code', { code }).then(r=>{
+  api(path, { code }).then(r=>{
     const m = document.getElementById('codeMsg');
     if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ SÉQUENCE VALIDÉE !</span>'
                               : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'SÉQUENCE REFUSÉE')}</span>`;
@@ -1059,12 +1065,44 @@ function konamiSubmit(){
     if (!r.ok) _konamiRefresh();
   });
 }
-function konamiPadHTML(){
+// Monde 6 : porte « Konami collectif » puis commande de redémarrage (en LEET).
+function w6GateHTML(w, me){
+  const g = STATE.w6 || {};
+  if (!g.gateComplete){
+    if (me.konamiDone){
+      return `<div class="card center" style="border-color:var(--neon2);background:#021a16">
+        <div class="pill neon-cyan">✔ SÉQUENCE SAISIE</div>
+        <p class="big neon-yellow">« UN POUR TOUS ET TOUS POUR UN »</p>
+        <p>En attente des autres joueurs… <b>${g.doneCount||0}/${g.total||0}</b></p>
+      </div>`;
+    }
+    return konamiPadHTML({
+      submit: 'konamiSubmitW6',
+      intro: 'Chaque joueur doit saisir la SÉQUENCE LÉGENDAIRE sur SA manette. Un pour tous, tous pour un !',
+      validLabel: '🎮 VALIDER MA SÉQUENCE',
+    }) + (g.hint ? `<div class="card center" style="border-color:var(--neon3);background:#1a1400">
+      <p class="neon-yellow">🤝 Indice : « UN POUR TOUS ET TOUS POUR UN »</p></div>` : '');
+  }
+  // Porte ouverte : tout le monde a saisi le Konami → la commande de redémarrage.
+  return `<div class="card" style="border-color:var(--neon3);background:#1a1400">
+    <div class="pill neon-yellow">⌨️ COMMANDE DE REDÉMARRAGE</div>
+    <p>La porte est ouverte ! Entrez la <b>commande pour redémarrer</b> la réalité.</p>
+    ${g.rebootHint ? `<p class="neon-pink">Presque… mais il faut la saisir en <b>LEET</b> 🔢</p>` : ''}
+    <input id="codeInput" type="text" placeholder="COMMANDE" />
+    <button class="btn secondary mt" onclick="submitCode()">⚡ REDÉMARRER</button>
+    <div id="codeMsg" class="center mt"></div>
+  </div>`;
+}
+function konamiPadHTML(opts){
+  opts = opts || {};
+  const submitFn = opts.submit || 'konamiSubmit';
+  const intro = opts.intro || 'Rassemble les touches de tous les joueurs et entre la séquence sur la manette. Toi seul (PLAYER ONE) peux valider.';
+  const validLabel = opts.validLabel || '👑 VALIDER';
   const dpad = 'width:38px;height:38px;background:#1a1a1a;color:#fff;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0';
   const ab = 'width:48px;height:48px;border-radius:50%;background:#c01b3a;color:#fff;border:3px solid #7c1226;font-family:var(--pixel);font-size:13px;cursor:pointer';
   return `<div class="card" style="border-color:var(--neon3);background:#1a1400">
     <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE</div>
-    <p class="muted" style="font-size:12px;margin:4px 0 8px">Rassemble les touches de tous les joueurs et entre la séquence sur la manette. Toi seul (PLAYER ONE) peux valider.</p>
+    <p class="muted" style="font-size:12px;margin:4px 0 8px">${esc(intro)}</p>
     <div id="konamiSeq" style="font-size:18px;color:var(--neon3);text-align:center;letter-spacing:2px;min-height:24px;margin-bottom:10px;word-break:break-word">${konamiSeqText()}</div>
     <div style="display:flex;justify-content:center;align-items:center;gap:20px;background:#cfcfcf;border:3px solid #222;border-radius:14px;padding:14px;max-width:330px;margin:0 auto">
       <div style="display:grid;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px)">
@@ -1085,7 +1123,7 @@ function konamiPadHTML(){
     </div>
     <div class="grid mt" style="max-width:330px;margin:10px auto 0">
       <button class="btn" onclick="konamiClear()">⟲ Effacer</button>
-      <button class="btn secondary" onclick="konamiSubmit()">👑 VALIDER</button>
+      <button class="btn secondary" onclick="${submitFn}()">${validLabel}</button>
     </div>
     <div id="codeMsg" class="center mt"></div>
   </div>`;

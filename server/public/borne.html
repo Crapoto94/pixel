@@ -284,11 +284,13 @@ function render(){
 
   else if (STATE.world) {
     const w = STATE.world;
+    const body = w.konamiGate ? w6BorneBody() : '';
     html = `<div>
       ${w.isTwist ? `<div class="center huge pixel neon-yellow glow-box">⚡ PLAYER ONE ⚡</div>`:''}
       <div class="pill neon-yellow">MONDE ${w.num}/${STATE.worldCount}</div>
       <h1 class="big neon-pink">${esc(w.titre)}</h1>
       <p>${esc(w.intro)}</p>
+      ${body}
       ${STATE.currentGage ? gageBanner(STATE.currentGage) : ''}
       <div class="mt">${scoresStrip()}</div>
     </div>`;
@@ -297,6 +299,23 @@ function render(){
   stage.innerHTML = html;
   if (STATE.phase === 'win' && !winBuilt){ winBuilt = true; buildWinVideo(); }
   tickerEl.textContent = (STATE.log||[]).map(l=>l.msg).join('   ◆   ') || 'PIXEL PANIC';
+}
+
+// Monde 6 : affichage de la porte « Konami collectif » + commande en LEET.
+function w6BorneBody(){
+  const g = STATE.w6 || {};
+  if (!g.gateComplete){
+    return `<div class="center glow-box" style="margin-top:14px">
+      <p class="big neon-cyan blink">🎮 TOUS LES JOUEURS : saisissez la SÉQUENCE LÉGENDAIRE sur votre manette !</p>
+      <div class="huge neon-yellow">${g.doneCount||0} / ${g.total||0}</div>
+      ${g.hint ? `<p class="big neon-yellow">🤝 « UN POUR TOUS ET TOUS POUR UN »</p>` : ''}
+    </div>`;
+  }
+  return `<div class="center glow-box" style="margin-top:14px">
+    <p class="big neon-cyan">✔ Séquence validée par TOUS !</p>
+    <p class="big neon-yellow blink">⌨️ ENTREZ LA COMMANDE POUR REDÉMARRER</p>
+    ${g.rebootHint ? `<p class="big neon-pink">Presque… mais il faut la saisir en LEET 🔢</p>` : ''}
+  </div>`;
 }
 
 function activityView(act){

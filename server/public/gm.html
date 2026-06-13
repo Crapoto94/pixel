@@ -80,6 +80,7 @@ function render(){
       ${S.worldResoluParVote
         ? '<code>— se résout par un VOTE —</code>'
         : `<code style="color:var(--neon3);font-size:20px">${esc(S.worldCode||'?')}</code>`}
+      ${w && w.konamiGate ? `<div class="muted" style="font-size:12px;margin-top:4px">🎮 Monde 6 : TOUS les joueurs doivent saisir le Konami (manette) — ${(S.w6&&S.w6.doneCount)||0}/${(S.w6&&S.w6.total)||0}. Puis la commande <code>${esc(S.worldCode||'R38007')}</code> = REBOOT en LEET (REBOOT en clair → indice « LEET »).</div>` : ''}
       <div class="muted" style="font-size:12px;margin-top:4px">Un joueur tape ce code sur son téléphone → le monde se valide. (Ou « ✅ Valider monde » pour forcer.)</div>
     </div>`:''}
     <div class="mt"><b>🐛 GLITCH :</b> <code>${esc(S.glitchName||'(non assigné)')}</code>

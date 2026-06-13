@@ -27,7 +27,7 @@
   .ticker { position: fixed; bottom: 0; left: 0; right: 0; background:#000; border-top:3px solid var(--neon);
             white-space: nowrap; overflow: hidden; }
   .ticker span { display: inline-block; padding: 10px 0; font-family: var(--pixel); font-size: 16px;
-            color: var(--neon3); animation: scroll 45s linear infinite; }
+            color: var(--neon3); animation: scroll 24s linear infinite; }
   @keyframes scroll { from { transform: translateX(100%);} to { transform: translateX(-100%);} }
   @keyframes spin { from { transform: rotate(0);} to { transform: rotate(360deg);} }
   .leaderboard div { font-size: clamp(16px, 2.6vh, 28px); padding: clamp(3px,0.7vh,8px); border-bottom: 1px solid #fff2; }
@@ -43,19 +43,9 @@
   .pad.lit { filter:brightness(1.6); }
   .pad:active { transform:translateY(4px); }
   .pad0{background:#ff2e88} .pad1{background:#2effd5} .pad2{background:#7a5cff} .pad3{background:#ffe600}
-  /* Clavier AZERTY du boss final */
-  .kbd { display:flex; flex-direction:column; gap:6px; align-items:center; margin-top:10px; }
-  .krow { display:flex; gap:6px; }
-  .kkey { min-width:clamp(26px,3.4vw,42px); height:clamp(34px,5.4vh,50px); padding:0 6px; display:flex;
-    align-items:center; justify-content:center; background:#171430; color:#cfd2e0; border:2px solid #3a2bd0;
-    border-radius:7px; font-size:clamp(13px,1.8vh,18px); font-family:Arial; user-select:none; touch-action:none; cursor:pointer; }
-  .kkey.wide { min-width:clamp(54px,7vw,88px); } .kkey.xwide { min-width:clamp(150px,26vw,300px); }
-  .kkey.kdown { background:#ffe600; color:#160a2e; border-color:#ffe600; transform:translateY(2px); }
 </style>
 </head>
 <body class="scanlines">
-<div id="buildtag" style="position:fixed;top:3px;left:5px;z-index:9999;font-family:monospace;font-size:10px;color:#ffffff55;pointer-events:none;user-select:none"></div>
-<!-- Lecteurs YouTube de fond (état d'hier soir — cachés 1×1). -->
 <div id="yt-amb" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-bt"  style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-pac" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
@@ -83,35 +73,6 @@ pollBorne();
 setInterval(() => { if (Date.now() - lastSse > 1500) pollBorne(); }, 1000);
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-// Numéro de build affiché en haut à gauche (vérification du commit testé)
-fetch('/api/build').then(r=>r.json()).then(d=>{
-  const el = document.getElementById('buildtag'); if (el) el.textContent = 'build ' + (d.build||'?');
-}).catch(()=>{});
-
-// Diagnostic lecteurs YouTube — UNIQUEMENT si l'URL contient ?debug=1.
-// Affiche en direct l'état (lecture/pause/muet) de chaque lecteur pour pouvoir
-// diagnostiquer le son sur le VRAI appareil (iPad/PC) où la console est inaccessible.
-if (/[?&]debug=1/.test(location.search)) {
-  const dbg = document.createElement('div');
-  dbg.style.cssText = 'position:fixed;top:18px;left:5px;z-index:9999;font-family:monospace;font-size:11px;color:#2effd5;background:#000a;padding:4px 6px;border-radius:4px;white-space:pre;pointer-events:none';
-  document.body.appendChild(dbg);
-  const ST = { '-1':'unstart','0':'end','1':'PLAY','2':'pause','3':'buf','5':'cued' };
-  const line = (name, p) => {
-    if (!p || !p.getPlayerState) return name + ': —';
-    try { return name + ': ' + (ST[p.getPlayerState()]||'?') + (p.isMuted&&p.isMuted()?' M':'') + ' t' + (p.getCurrentTime?p.getCurrentTime().toFixed(0):'?'); }
-    catch(_) { return name + ': err'; }
-  };
-  setInterval(() => {
-    dbg.textContent = [
-      'son:' + (typeof SOUND_ON!=='undefined'&&SOUND_ON?'ON':'off'),
-      line('amb', typeof ytAmb!=='undefined'?ytAmb:null),
-      line('bt',  typeof ytBt!=='undefined'?ytBt:null),
-      line('pac', typeof ytPac!=='undefined'?ytPac:null),
-      line('show',typeof ytShow!=='undefined'?ytShow:null),
-    ].join('\n');
-  }, 500);
-}
-
 // --- Activation du son au 1er clic n'importe où (obligatoire sur navigateur) ---
 let SOUND_ON = false;
 function enableSound(){
@@ -138,6 +99,7 @@ function detectSounds(s){
     if (s.phase === 'win' && _p.phase !== 'win') SFX.win();
     else if (s.phase === 'world' && _p.phase === 'lobby') SFX.start();
     else if (w && w !== _p.world) { (s.world && s.world.isTwist) ? SFX.twist() : SFX.level(); }
+    if (s.phase === 'vote' && _p.phase !== 'vote') SFX.vote();
     if (act && act !== _p.act) SFX.start();
     if ((act === 'quiz' || act === 'blindtest') && sub === 'reveal' && _p.sub !== 'reveal') SFX.correct();
     if (gageId && gageId !== _p.gageId) SFX.gage();
@@ -150,23 +112,12 @@ let pacKey = null;
 let tronKey = null;
 let pongKey = null;
 let drawKey = null;
-let bossKey = null;
-let winKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
   if(!STATE) return;
-  // Vidéo finale : on ne reconstruit le lecteur QU'UNE FOIS (sinon il redémarre
-  // à chaque frame et ne joue jamais, et l'ambiance reprend).
-  if (STATE.phase === 'win' && STATE.winVideo) {
-    if (winKey === STATE.winVideo) return; // déjà construite et en lecture
-  } else {
-    winKey = null;
-  }
-  // Nettoyage du briefing dès qu'on ne l'affiche PLUS (passage au monde, stop…)
-  const _inBrief = STATE.phase==='activity' && STATE.activity
-    && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
-  if (briefTimer && !_inBrief){
+  // Nettoyage du briefing si on en sort (+ coupe la musique de fond)
+  if (briefTimer && !(STATE.activity && STATE.activity.type==='briefing')){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
     if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
   }
@@ -202,11 +153,6 @@ function render(){
     renderDrawBorne(); return;
   }
   drawKey = null;
-  // --- BOSS FINAL : clavier AZERTY (construit une seule fois pour garder le multi-touch) ---
-  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='boss_final'){
-    renderBossBorne(); return;
-  }
-  bossKey = null;
   // --- Séquence musicale ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
@@ -297,21 +243,20 @@ function render(){
     html = activityView(STATE.activity);
   }
 
+  else if (STATE.phase === 'vote') {
+    html = `<div class="center">
+      <h1 class="big neon-pink">🗳️ DÉMASQUEZ LE GLITCH</h1>
+      <p class="big">Votez sur vos téléphones…</p>
+      <div class="wheel">🐛❓</div>
+    </div>`;
+  }
+
   else if (STATE.phase === 'win') {
-    if (STATE.winVideo) {
-      html = `<div id="winOverlay" style="position:fixed;inset:0;background:#000;z-index:50000;display:flex;align-items:center;justify-content:center">
-        <div style="position:absolute;top:6px;left:0;right:0;text-align:center;z-index:2;pointer-events:none">
-          <span class="pixel neon-yellow blink" style="font-size:20px">🎉 BON ANNIVERSAIRE VINCENT !</span>
-        </div>
-        <div id="win-video-player" style="width:100vw;height:100vh"></div>
-      </div>`;
-    } else {
-      html = `<div class="center glow-box">
-        <div class="huge pixel neon-yellow">YOU&nbsp;WIN!</div>
-        <p class="big">La réalité a redémarré. 🎉</p>
-        <div class="mt">${highScore()}</div>
-      </div>`;
-    }
+    html = `<div class="center glow-box">
+      <div class="huge pixel neon-yellow">YOU&nbsp;WIN!</div>
+      <p class="big">La réalité a redémarré. 🎉</p>
+      <div class="mt">${highScore()}</div>
+    </div>`;
   }
 
   else if (STATE.world) {
@@ -328,38 +273,6 @@ function render(){
 
   stage.innerHTML = html;
   tickerEl.textContent = (STATE.log||[]).map(l=>l.msg).join('   ◆   ') || 'PIXEL PANIC';
-  // Win video : plein écran (overlay) + coupe DÉFINITIVEMENT le son ambiant
-  const wv = STATE.winVideo;
-  const el = document.getElementById('win-video-player');
-  if (wv && el && !el._ytInit) {
-    el._ytInit = true;
-    winKey = wv; // construit une seule fois (cf. garde en haut de render)
-    // Plein écran navigateur (best-effort) ; l'overlay assure déjà le plein cadre.
-    try { document.documentElement.requestFullscreen(); } catch(_){}
-    // Coupe tous les autres lecteurs YouTube (ambiance, rock, pac-man).
-    try { if (ytAmb){ ytAmb.pauseVideo(); ytAmb.mute(); } if (ytBt){ ytBt.pauseVideo(); ytBt.mute(); } if (ytPac){ ytPac.pauseVideo(); ytPac.mute(); } } catch(_){}
-    if (window.YT && YT.Player) {
-      new YT.Player('win-video-player', {
-        height:'100%', width:'100%', videoId: wv,
-        playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:1 },
-        events:{
-          onReady(e){ try{ e.target.playVideo(); }catch(_){} },
-          onStateChange(e){
-            if (e.data === YT.PlayerState.PLAYING) {
-              try{ e.target.unMute(); e.target.setVolume(100); }catch(_){}
-            }
-            if (e.data === YT.PlayerState.ENDED) {
-              try{ if (document.fullscreenElement) document.exitFullscreen(); }catch(_){}
-              fetch('/api/end-video',{method:'POST'}).catch(()=>{});
-            }
-          }
-        }
-      });
-    } else {
-      // Fallback iframe si l'API n'est pas encore chargée
-      el.outerHTML = `<iframe src="https://www.youtube.com/embed/${wv}?autoplay=1&playsinline=1&controls=1" style="width:100vw;height:100vh;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
-    }
-  }
 }
 
 function activityView(act){
@@ -418,7 +331,13 @@ function activityView(act){
       <p class="big neon-yellow blink">À toi de jouer ! 🎤</p>
     </div>`;
   }
-  // (le boss final est rendu par renderBossBorne via le dispatch — pas ici)
+  if (act.type==='boss_final'){
+    return `<div class="center">
+      <h1 class="huge neon-pink glow-box">👾 BOSS FINAL</h1>
+      <div class="hpbar" style="max-width:700px;margin:18px auto"><div style="width:${act.data?.hp??100}%"></div></div>
+      <p class="big">Enchaînez les QTE ! Vincent porte le coup final.</p>
+    </div>`;
+  }
   return `<div class="center"><h1 class="big">ACTIVITÉ</h1></div>`;
 }
 
@@ -530,7 +449,7 @@ function setupBriefing(){
   if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
   briefKey = STATE.activity.startedAt;
   briefSlides = null; briefIdx = 0;
-  if (SOUND_ON && window.SFX && SFX.briefMusic) SFX.briefMusic(); // musique chiptune de fond (hier soir)
+  if (SOUND_ON && window.SFX && SFX.briefMusic) SFX.briefMusic(); // musique chiptune de fond
   stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
   tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
   fetch('/api/briefing').then(r=>r.json()).then(d=>{
@@ -595,50 +514,31 @@ function renderVideoBorne(a){
   </div>`;
   tickerEl.textContent = (a.topLabel||'VIDÉO').replace(/<[^>]+>/g,'') + ' — ' + (a.chyron||'').replace(/<[^>]+>/g,' ');
   try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
-  startShowPlayer(a.skipIntro ? null : (a.intro || SHOW_INTRO), a.video || '7kyY29BHTZs', a.startAt || 0, a.borneOnly);
+  startShowPlayer(a.intro || SHOW_INTRO, a.video || '7kyY29BHTZs');
 }
 function destroyShowPlayer(){ try { if (ytShow) { ytShow.destroy(); ytShow = null; } } catch(_){ ytShow = null; } }
-function startShowPlayer(intro, main, startAt, autoStop){
-  startAt = startAt || 0;
+function startShowPlayer(intro, main){
+  // Sans l'API YouTube : on saute le sting et on joue la vidéo principale.
   if (!(window.YT && YT.Player)){
-    const loop = autoStop ? '' : '&loop=1&playlist='+main;
-    const src = `https://www.youtube.com/embed/${main}?autoplay=1&playsinline=1${loop}&rel=0${startAt?'&start='+startAt:''}`;
     const el = document.getElementById('ytshow');
-    if (el) el.outerHTML = `<iframe width="100%" height="100%" style="border:0" src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+    if (el) el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
+      src="https://www.youtube.com/embed/${main}?autoplay=1&playsinline=1&loop=1&playlist=${main}&rel=0"
+      allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
     return;
   }
   destroyShowPlayer();
-  // Sur desktop la borne a toujours une interaction utilisateur → pas besoin du hack mute+unmute
-  // (mute:1 + unMute() dans onStateChange cause un arrêt sur Chrome PC)
-  if (!intro){
-    ytShow = new YT.Player('ytshow', {
-      height:'100%', width:'100%', videoId: main,
-      playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0, start: startAt },
-      events:{
-        onReady(e){ try{ e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
-        onStateChange(e){
-          if (e.data === YT.PlayerState.ENDED){
-            if (autoStop) { fetch('/api/end-video', {method:'POST'}).catch(()=>{}); return; }
-            try{ e.target.seekTo(startAt, true); e.target.playVideo(); }catch(_){}
-          }
-        }
-      }
-    });
-    return;
-  }
   ytShow = new YT.Player('ytshow', {
     height:'100%', width:'100%', videoId: intro,
     playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
     events:{
-      onReady(e){ try{ e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+      onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
       onStateChange(e){
         if (e.data === YT.PlayerState.ENDED){
-          if (!ytShow._main){
+          if (!ytShow._main){ // fin du sting → on lance la vidéo principale
             ytShow._main = true;
-            try{ e.target.loadVideoById({videoId: main, startSeconds: startAt}); }catch(_){}
-          } else {
-            if (autoStop) { fetch('/api/end-video', {method:'POST'}).catch(()=>{}); return; }
-            try{ e.target.seekTo(startAt, true); e.target.playVideo(); }catch(_){}
+            try{ e.target.loadVideoById(main); e.target.unMute(); e.target.setVolume(100); }catch(_){}
+          } else { // boucle la vidéo principale
+            try{ e.target.seekTo(0, true); e.target.playVideo(); }catch(_){}
           }
         }
       }
@@ -1457,11 +1357,6 @@ function initYT(){
 
 function syncYT(s){
   const a = s.activity;
-  // Vidéo anniversaire : tout couper
-  if (s.winVideo) {
-    try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
-    return;
-  }
   const isBT = a && a.type === 'blindtest';
   const isPac = a && a.type === 'pacman';
   // Une chanson blind-test est posée uniquement quand le QCM est affiché.
@@ -1491,85 +1386,6 @@ function syncYT(s){
 
 const EMOJI = { player_one:'👑', wilsonik:'🦔', riu:'👊', zilda:'🗡️', super_mariano:'🍄', lara_croute:'🏺', glouton:'🟡' };
 function avatarEmoji(a){ return EMOJI[a] || '🎮'; }
-
-// BOSS FINAL : clavier AZERTY cliquable. Ctrl+Alt+Suppr maintenus EN MÊME TEMPS
-// (multi-touch sur l'iPad) → menu de redémarrage → victoire. Aucun indice du combo.
-function renderBossBorne(){
-  const act = STATE.activity;
-  if (act.done || (act.data && act.data.rebooted)){
-    bossKey = null;
-    stage.innerHTML = `<div class="center"><h1 class="huge neon-yellow pixel blink">🔄 REDÉMARRAGE…</h1></div>`;
-    tickerEl.textContent = 'REDÉMARRAGE DE LA RÉALITÉ…';
-    return;
-  }
-  if (bossKey === act.startedAt) return; // déjà construit : préserve l'état multi-touch
-  bossKey = act.startedAt;
-  const rows = [
-    ['1','2','3','4','5','6','7','8','9','0','°','+'],
-    ['A','Z','E','R','T','Y','U','I','O','P','¨','£'],
-    ['Q','S','D','F','G','H','J','K','L','M','%','µ'],
-    ['<','W','X','C','V','B','N',',',';',':','!'],
-  ];
-  const K=(label,o={})=>`<button class="kkey${o.wide?' wide':''}${o.xwide?' xwide':''}"${o.k?` data-k="${o.k}"`:''}>${label}</button>`;
-  stage.innerHTML = `<div class="center">
-    <h1 class="big neon-pink glow-box">👾 SYSTÈME PLANTÉ</h1>
-    <p class="big">Le système réclame le <span class="neon-yellow">CODE DE REDÉMARRAGE</span>. Tapez-le, puis ⏎.</p>
-    <div style="display:inline-block;background:#0a0420;border:2px solid var(--neon4);border-radius:8px;padding:8px 18px;font-family:'Courier New',monospace;font-size:30px;color:#2effd5;letter-spacing:6px;min-width:240px">&gt; <span id="bossCode">_</span></div>
-    <div id="bossFeedback" class="big" style="margin:6px 0;min-height:30px"></div>
-    <div style="display:flex;align-items:flex-start;justify-content:center;flex-wrap:wrap;gap:10px">
-      <div class="kbd">
-        <div class="krow">${K('Échap')}${rows[0].map(c=>K(c)).join('')}${K('⌫',{wide:true})}</div>
-        <div class="krow">${K('↹',{wide:true})}${rows[1].map(c=>K(c)).join('')}</div>
-        <div class="krow">${K('⇪',{wide:true})}${rows[2].map(c=>K(c)).join('')}${K('⏎',{wide:true})}</div>
-        <div class="krow">${K('⇧',{wide:true})}${rows[3].map(c=>K(c)).join('')}${K('⇧',{wide:true})}</div>
-        <div class="krow">${K('Ctrl',{k:'CTRL'})}${K('⊞')}${K('Alt',{k:'ALT'})}${K('Espace',{xwide:true})}${K('Alt Gr',{k:'ALT'})}${K('Ctrl',{k:'CTRL'})}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${K('Inser')}${K('Suppr',{k:'SUPR'})}${K('Fin')}
-      </div>
-    </div>
-    <div id="rebootMenu" style="display:none;position:fixed;inset:0;background:rgba(8,30,90,.97);z-index:99999;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px;text-align:center">
-      <div style="font-family:Arial;font-size:26px;margin-bottom:14px">⚠️ Sécurité de la réalité</div>
-      <div style="display:flex;flex-direction:column;gap:10px;width:min(520px,86vw)">
-        <div style="background:#1133aa;padding:14px 18px;border-radius:8px;font-size:20px;opacity:.7">🔒 Verrouiller</div>
-        <div style="background:#1133aa;padding:14px 18px;border-radius:8px;font-size:20px;opacity:.7">👤 Changer d'utilisateur</div>
-        <div style="background:#1133aa;padding:14px 18px;border-radius:8px;font-size:20px;opacity:.7">📊 Gestionnaire des tâches</div>
-        <button id="rebootBtn" style="background:#ff2e88;color:#fff;padding:18px;border:0;border-radius:10px;font-size:24px;font-weight:bold;cursor:pointer">🔄 REDÉMARRER LA RÉALITÉ</button>
-      </div>
-    </div>
-  </div>`;
-  const pressed=new Set(); let typed='';
-  const menu=document.getElementById('rebootMenu');
-  const disp=document.getElementById('bossCode');
-  const fb=document.getElementById('bossFeedback');
-  function reboot(){ fetch('/api/boss/reboot',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{}); }
-  function updateDisp(){ disp.textContent = typed || '_'; }
-  // chemin normal : Ctrl + Alt + Suppr maintenus en même temps → menu
-  function checkCombo(){ if(menu.style.display==='none' && pressed.has('CTRL') && pressed.has('ALT') && pressed.has('SUPR')){ if(window.SFX){try{SFX.twist();}catch(_){}} menu.style.display='flex'; } }
-  // saisie du code de redémarrage
-  function validateCode(){
-    if(typed.toUpperCase()==='REB00T'){ fb.style.color='#2effd5'; fb.textContent='✅ CODE ACCEPTÉ — REDÉMARRAGE…'; if(window.SFX){try{SFX.win();}catch(_){}} reboot(); }
-    else { fb.style.color='#ff2e88'; fb.textContent='❌ MAUVAIS CODE'; if(window.SFX){try{SFX.wrong();}catch(_){}} typed=''; updateDisp(); }
-  }
-  function codeKey(ch){
-    if(ch==='⌫'){ typed=typed.slice(0,-1); fb.textContent=''; }
-    else if(ch==='⏎'){ validateCode(); return; }
-    else if(/^[A-Z0-9]$/.test(ch)){ if(typed.length<12){ typed+=ch; fb.textContent=''; } }
-    else return;
-    updateDisp();
-  }
-  stage.querySelectorAll('.kkey').forEach(el=>{
-    const k=el.dataset.k;
-    const down=(e)=>{ e.preventDefault(); try{el.setPointerCapture(e.pointerId);}catch(_){} el.classList.add('kdown'); if(k){ pressed.add(k); checkCombo(); } else { codeKey(el.textContent); } };
-    const up=()=>{ el.classList.remove('kdown'); if(k) pressed.delete(k); };
-    el.addEventListener('pointerdown',down);
-    el.addEventListener('pointerup',up);
-    el.addEventListener('pointercancel',up);
-  });
-  const rb=document.getElementById('rebootBtn');
-  if(rb) rb.addEventListener('click', reboot);
-  tickerEl.textContent='BOSS FINAL — la borne est plantée…';
-}
 </script>
 </body>
 </html>

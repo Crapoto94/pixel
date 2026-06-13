@@ -115,6 +115,8 @@ function render(){
       <button class="btn secondary" onclick="startAct('briefing')">📖 Briefing</button>
       <button class="btn" style="background:var(--neon4);color:#fff" onclick="duckDance()">🦆 Danse des canards</button>
       <button class="btn" style="background:var(--neon4);color:#fff" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
+      <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(1)">🎉 Fête 1</button>
+      <button class="btn" style="background:#c026d3;color:#fff;opacity:.45;cursor:not-allowed" disabled title="Reel Facebook — uploader sur YouTube d'abord">🎉 Fête 2</button>
     </div>
     <div class="pixel neon-cyan mt" style="font-size:11px">QUIZ — THÈMES</div>
     <div class="grid3 mt">
@@ -339,6 +341,12 @@ function duckDance(){
   startAct('videoshow',{video:'7kyY29BHTZs',topLabel:'🔴 BREAKING NEWS',
     chyron:'CONCOURS DE DANSE 🦆<br>DANSEZ TOUS LA DANSE DES CANARDS !',
     footer:'À VOS PLUMES — TOUT LE MONDE DANSE ! 🪿'});
+}
+function fete(n){
+  const videos = { 1:'HpCZqG7lxD8' };
+  startAct('videoshow',{video:videos[n],topLabel:'🎉 FÊTE '+n,
+    chyron:'FÊTE '+n+' 🎊<br>À LA SANTÉ DE VINCENT !',
+    footer:'🥂 TCHIN TCHIN !'});
 }
 function anecdote(n,video){
   startAct('videoshow',{video,topLabel:'💡 ANECDOTE #'+n,

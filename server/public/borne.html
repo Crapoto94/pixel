@@ -122,7 +122,7 @@ let drawKey = null;
 let bossKey = null;
 let winKey = null;
 let pacEventSeen = 0;
-let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
+let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0, _briefMusicOn = false;
 function render(){
   if(!STATE) return;
   // Vidéo finale : on ne reconstruit le lecteur QU'UNE FOIS (sinon il redémarre
@@ -135,7 +135,10 @@ function render(){
   // Nettoyage du briefing dès qu'on ne l'affiche PLUS (passage au monde, stop…)
   const _inBrief = STATE.phase==='activity' && STATE.activity
     && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
-  if (!_inBrief && window.SFX && SFX.briefMusicStop) SFX.briefMusicStop(); // toujours, même si briefTimer est null
+  if (_briefMusicOn && !_inBrief){
+    _briefMusicOn = false;
+    if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
+  }
   if (briefTimer && !_inBrief){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
   }
@@ -499,7 +502,7 @@ function setupBriefing(){
   if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
   briefKey = STATE.activity.startedAt;
   briefSlides = null; briefIdx = 0;
-  if (SOUND_ON && window.SFX && SFX.briefMusic) SFX.briefMusic(); // musique chiptune de fond
+  if (SOUND_ON && window.SFX && SFX.briefMusic){ SFX.briefMusic(); _briefMusicOn = true; }
   stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
   tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
   fetch('/api/briefing').then(r=>r.json()).then(d=>{

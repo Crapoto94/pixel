@@ -20,6 +20,20 @@
 </style>
 </head>
 <body class="scanlines">
+
+<!-- Lecteur YouTube persistant (créé au 1er tap → iOS le "déverrouille" pour toute la session) -->
+<div id="phone-yt-bg" style="display:none;position:fixed;inset:0;z-index:40;background:#000;flex-direction:column;align-items:stretch">
+  <div id="phone-yt-slot" style="flex:1;position:relative"></div>
+  <div id="phone-yt-chyron" style="display:none;background:rgba(212,0,0,.92);color:#fff;font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center"></div>
+</div>
+
+<!-- Splash de déverrouillage — affiché jusqu'au 1er tap -->
+<div id="phone-splash" onclick="phoneUnlock()" style="position:fixed;inset:0;z-index:100;background:#03010a;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:18px">
+  <div style="font-family:var(--pixel);color:#ff2e88;font-size:22px;text-align:center;filter:drop-shadow(0 0 20px #ff2e88);letter-spacing:3px">PIXEL PANIC</div>
+  <div style="font-size:80px;color:#ff2e88;filter:drop-shadow(0 0 20px #ff2e88)">▶</div>
+  <div style="font-family:var(--pixel);color:#fff;font-size:14px;text-align:center;line-height:1.8">APPUYER<br>POUR JOUER</div>
+</div>
+
 <div class="wrap" id="app">
   <div class="card center"><span class="pixel blink">CONNEXION…</span></div>
 </div>
@@ -138,13 +152,13 @@ function render() {
   // --- DIFFUSION VIDÉO : vidéo plein écran + bandeau ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'videoshow') {
     if (STATE.activity.borneOnly) {
-      if (videoKey){ videoKey = null; destroyPhonePlayer(); }
+      if (videoKey) hidePhoneVideo();
       app.innerHTML = `<div class="card center"><h2>${STATE.activity.topLabel||'📺 VIDÉO'}</h2><p class="muted">Regarde la BORNE.</p></div>` + footer();
       return;
     }
     renderVideoPlayer(me); return;
   }
-  if (videoKey){ videoKey = null; destroyPhonePlayer(); } // quitté : coupe le son
+  if (videoKey) hidePhoneVideo(); // quitté : masque et stoppe
 
   const av = me.avatarInfo;
   const hearts = '❤️'.repeat(me.lives) + '🖤'.repeat(Math.max(0,3-me.lives));
@@ -374,78 +388,64 @@ function controllerView(act) {
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
 }
 
-// Sur iOS/iPadOS, le cross-origin postMessage ne propage pas le geste utilisateur.
-// ytPhone.playVideo() (postMessage → youtube.com) est donc toujours bloqué sur iOS.
-// Solution définitive : créer l'<iframe> PENDANT le onclick (geste direct → autoplay autorisé).
-const _isMobile = navigator.maxTouchPoints > 0;
-let _pendingVideo = null;
+// ─── Lecteur YouTube persistant ──────────────────────────────────────────────
+// Un seul tap (splash) crée le player via YT.Player pendant le geste utilisateur.
+// iOS "déverrouille" ce player pour toute la session : loadVideoById() fonctionne
+// ensuite sans aucun nouveau tap, même sur iPad/Safari/Chrome.
+let _ytPhoneReady = false;
+
+function phoneUnlock(){
+  const splash = document.getElementById('phone-splash');
+  if (splash) splash.remove();
+  // Création du player PENDANT le onclick → geste valide pour iOS
+  if (window.YT && YT.Player){
+    const container = document.createElement('div');
+    container.id = 'phone-yt-player';
+    container.style.cssText = 'width:100%;height:100%';
+    document.getElementById('phone-yt-slot').appendChild(container);
+    ytPhone = new YT.Player('phone-yt-player', {
+      height:'100%', width:'100%', videoId: 'Y0r3bg8hKG4',
+      playerVars:{ autoplay:0, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
+      events:{
+        onReady(){ _ytPhoneReady = true; try{ ytPhone.stopVideo(); }catch(_){} },
+        onStateChange(e){
+          if (e.data === YT.PlayerState.ENDED){
+            // fin du sting → vidéo principale (si définie)
+            if (ytPhone._mainVideo && !ytPhone._mainLoaded){
+              ytPhone._mainLoaded = true;
+              try{ ytPhone.loadVideoById(ytPhone._mainVideo); }catch(_){}
+            } else {
+              // vidéo principale : boucle
+              try{ ytPhone.seekTo(0,true); ytPhone.playVideo(); }catch(_){}
+            }
+          }
+        }
+      }
+    });
+  }
+}
 
 function renderVideoPlayer(me) {
   if (videoKey === STATE.activity.startedAt) return;
   videoKey = STATE.activity.startedAt;
   const a = STATE.activity;
-  _pendingVideo = { main: a.video || '7kyY29BHTZs', chyron: a.chyron||'' };
-  app.innerHTML = `
-    <div class="center">
-      <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
-      <div id="vid-wrap" style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
-        <div style="aspect-ratio:9/16" id="vid-slot">
-          ${_isMobile ? '' : `<div id="videoplayer" style="width:100%;height:100%"></div>`}
-        </div>
-        ${_isMobile ? `
-        <div id="vid-tap-overlay" onclick="vidTapStart()" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;gap:16px;z-index:5">
-          <div style="font-size:72px;color:#ff2e88;filter:drop-shadow(0 0 16px #ff2e88)">▶</div>
-          <div style="font-family:var(--pixel);color:#fff;font-size:13px;text-align:center;line-height:1.6">APPUYER<br>POUR LANCER</div>
-        </div>` : ''}
-        ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;z-index:6;background:rgba(212,0,0,.92);color:#fff;
-          font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}
-      </div>
-      ${a.footer?`<p class="muted" style="font-size:13px">${a.footer}</p>`:''}
-    </div>`;
-  if (!_isMobile) phoneShowStart(_pendingVideo.main);
-}
-
-function vidTapStart(){
-  // Créer l'iframe DANS le onclick → iOS considère l'autoplay comme initié par geste
-  const ov = document.getElementById('vid-tap-overlay');
-  if (ov) ov.remove();
-  const slot = document.getElementById('vid-slot');
-  if (!slot || !_pendingVideo) return;
-  const v = _pendingVideo.main;
-  slot.innerHTML = `<iframe width="100%" height="100%" style="border:0;display:block"
-    src="https://www.youtube.com/embed/${v}?autoplay=1&playsinline=1&loop=1&playlist=${v}&rel=0&modestbranding=1"
-    allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
-}
-
-function destroyPhonePlayer(){
-  try { if (ytPhone) { ytPhone.destroy(); ytPhone = null; } } catch(_){ ytPhone = null; }
-  const slot = document.getElementById('vid-slot');
-  if (slot) slot.innerHTML = '';
-}
-
-function phoneShowStart(main){
-  // Desktop uniquement — sur mobile on passe par vidTapStart()
-  const el = document.getElementById('videoplayer');
-  if (!el) return;
-  if (!(window.YT && YT.Player)){
-    el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
-      src="https://www.youtube.com/embed/${main}?autoplay=1&playsinline=1&loop=1&playlist=${main}&rel=0"
-      allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
-    return;
+  const bg = document.getElementById('phone-yt-bg');
+  const chyron = document.getElementById('phone-yt-chyron');
+  if (bg){ bg.style.display = 'flex'; }
+  if (chyron){ chyron.textContent = a.chyron || ''; chyron.style.display = a.chyron ? 'block' : 'none'; }
+  app.innerHTML = `<div class="card center"><p class="muted" style="font-size:13px">${a.topLabel||'📺 VIDÉO'}</p></div>`;
+  if (_ytPhoneReady && ytPhone){
+    ytPhone._mainVideo = a.video || '7kyY29BHTZs';
+    ytPhone._mainLoaded = false;
+    try{ ytPhone.setVolume(100); ytPhone.loadVideoById(a.intro || a.video || '7kyY29BHTZs'); }catch(_){}
   }
-  destroyPhonePlayer();
-  ytPhone = new YT.Player('videoplayer', {
-    height:'100%', width:'100%', videoId: main,
-    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
-    events:{
-      onReady(e){ try{ e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
-      onStateChange(e){
-        if (e.data === YT.PlayerState.ENDED){
-          try{ e.target.seekTo(0,true); e.target.playVideo(); }catch(_){}
-        }
-      }
-    }
-  });
+}
+
+function hidePhoneVideo(){
+  const bg = document.getElementById('phone-yt-bg');
+  if (bg) bg.style.display = 'none';
+  try{ if (ytPhone && _ytPhoneReady) ytPhone.stopVideo(); }catch(_){}
+  videoKey = null;
 }
 
 function mosaicGuessSend(){

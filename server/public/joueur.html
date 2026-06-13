@@ -374,10 +374,9 @@ function controllerView(act) {
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
 }
 
-// Sur iOS, playVideo() n'est autorisé QUE dans le handler du geste utilisateur
-// (pas dans onReady qui est asynchrone). Solution :
-//   1. Pré-charger le player (autoplay:0) sous l'overlay pendant que l'user voit le bouton
-//   2. Au tap : appeler playVideo() DIRECTEMENT dans le onclick (contexte geste valide)
+// Sur iOS/iPadOS, le cross-origin postMessage ne propage pas le geste utilisateur.
+// ytPhone.playVideo() (postMessage → youtube.com) est donc toujours bloqué sur iOS.
+// Solution définitive : créer l'<iframe> PENDANT le onclick (geste direct → autoplay autorisé).
 const _isMobile = navigator.maxTouchPoints > 0;
 let _pendingVideo = null;
 
@@ -385,12 +384,14 @@ function renderVideoPlayer(me) {
   if (videoKey === STATE.activity.startedAt) return;
   videoKey = STATE.activity.startedAt;
   const a = STATE.activity;
-  _pendingVideo = { intro: a.intro || PHONE_INTRO, main: a.video || '7kyY29BHTZs' };
+  _pendingVideo = { main: a.video || '7kyY29BHTZs', chyron: a.chyron||'' };
   app.innerHTML = `
     <div class="center">
       <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
       <div id="vid-wrap" style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
-        <div style="aspect-ratio:9/16"><div id="videoplayer" style="width:100%;height:100%"></div></div>
+        <div style="aspect-ratio:9/16" id="vid-slot">
+          ${_isMobile ? '' : `<div id="videoplayer" style="width:100%;height:100%"></div>`}
+        </div>
         ${_isMobile ? `
         <div id="vid-tap-overlay" onclick="vidTapStart()" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;gap:16px;z-index:5">
           <div style="font-size:72px;color:#ff2e88;filter:drop-shadow(0 0 16px #ff2e88)">▶</div>
@@ -401,60 +402,29 @@ function renderVideoPlayer(me) {
       </div>
       ${a.footer?`<p class="muted" style="font-size:13px">${a.footer}</p>`:''}
     </div>`;
-  if (_isMobile && window.YT && YT.Player) {
-    // Pré-charge silencieusement sous l'overlay (autoplay:0)
-    _phonePreload(_pendingVideo.intro, _pendingVideo.main);
-  } else if (!_isMobile) {
-    phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
-  }
-}
-
-function _phonePreload(intro, main){
-  destroyPhonePlayer();
-  // Pas de mute:1 → pas besoin d'unMute() (qui échoue sur iOS).
-  // playVideo() dans le tap joue directement avec le son.
-  ytPhone = new YT.Player('videoplayer', {
-    height:'100%', width:'100%', videoId: intro,
-    playerVars:{ autoplay:0, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
-    events:{
-      onReady(){
-        ytPhone._preloaded = true;
-        if (ytPhone._tapPending){
-          try{ ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
-        }
-      },
-      onStateChange(e){
-        if (e.data === YT.PlayerState.PLAYING){
-          const ov = document.getElementById('vid-tap-overlay');
-          if (ov) ov.remove();
-        }
-        if (e.data === YT.PlayerState.ENDED){
-          if (!ytPhone._main){ ytPhone._main = true; try{ ytPhone.loadVideoById(main); }catch(_){} }
-          else { try{ ytPhone.seekTo(0,true); ytPhone.playVideo(); }catch(_){} }
-        }
-      }
-    }
-  });
+  if (!_isMobile) phoneShowStart(_pendingVideo.main);
 }
 
 function vidTapStart(){
+  // Créer l'iframe DANS le onclick → iOS considère l'autoplay comme initié par geste
   const ov = document.getElementById('vid-tap-overlay');
-  if (ov){
-    ov.style.pointerEvents = 'none';
-    ov.innerHTML = '<div style="font-family:var(--pixel);color:#fff;font-size:15px;letter-spacing:2px">⏳ CHARGEMENT…</div>';
-  }
-  if (ytPhone){
-    ytPhone._tapPending = true;
-    try{ ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
-  } else if (_pendingVideo){
-    phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
-    setTimeout(()=>{ const o=document.getElementById('vid-tap-overlay'); if(o) o.remove(); }, 800);
-  }
+  if (ov) ov.remove();
+  const slot = document.getElementById('vid-slot');
+  if (!slot || !_pendingVideo) return;
+  const v = _pendingVideo.main;
+  slot.innerHTML = `<iframe width="100%" height="100%" style="border:0;display:block"
+    src="https://www.youtube.com/embed/${v}?autoplay=1&playsinline=1&loop=1&playlist=${v}&rel=0&modestbranding=1"
+    allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
 }
 
-function destroyPhonePlayer(){ try { if (ytPhone) { ytPhone.destroy(); ytPhone = null; } } catch(_){ ytPhone = null; } }
+function destroyPhonePlayer(){
+  try { if (ytPhone) { ytPhone.destroy(); ytPhone = null; } } catch(_){ ytPhone = null; }
+  const slot = document.getElementById('vid-slot');
+  if (slot) slot.innerHTML = '';
+}
 
-function phoneShowStart(intro, main){
+function phoneShowStart(main){
+  // Desktop uniquement — sur mobile on passe par vidTapStart()
   const el = document.getElementById('videoplayer');
   if (!el) return;
   if (!(window.YT && YT.Player)){
@@ -465,14 +435,13 @@ function phoneShowStart(intro, main){
   }
   destroyPhonePlayer();
   ytPhone = new YT.Player('videoplayer', {
-    height:'100%', width:'100%', videoId: intro,
+    height:'100%', width:'100%', videoId: main,
     playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
     events:{
       onReady(e){ try{ e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
       onStateChange(e){
         if (e.data === YT.PlayerState.ENDED){
-          if (!ytPhone._main){ ytPhone._main = true; try{ e.target.loadVideoById(main); }catch(_){} }
-          else { try{ e.target.seekTo(0,true); e.target.playVideo(); }catch(_){} }
+          try{ e.target.seekTo(0,true); e.target.playVideo(); }catch(_){}
         }
       }
     }

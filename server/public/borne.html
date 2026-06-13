@@ -135,9 +135,9 @@ function render(){
   // Nettoyage du briefing dès qu'on ne l'affiche PLUS (passage au monde, stop…)
   const _inBrief = STATE.phase==='activity' && STATE.activity
     && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
+  if (!_inBrief && window.SFX && SFX.briefMusicStop) SFX.briefMusicStop(); // toujours, même si briefTimer est null
   if (briefTimer && !_inBrief){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
-    if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
   }
   // --- BRIEFING : déroulé scénario + attendus par joueur ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='briefing'){

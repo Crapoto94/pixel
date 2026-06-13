@@ -265,7 +265,7 @@ function render(){
         <h2 class="big neon-pink" style="margin-top:0">BON ANNIVERSAIRE VINCENT !</h2>
         <div style="margin-top:10px;max-width:560px;width:90%">
           <div style="position:relative;padding-bottom:56.25%;height:0">
-            <iframe src="https://www.youtube.com/embed/${STATE.winVideo}?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:12px" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <div id="win-video-player" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:12px"></div>
           </div>
         </div>
         <div class="mt">${highScore()}</div>
@@ -293,6 +293,25 @@ function render(){
 
   stage.innerHTML = html;
   tickerEl.textContent = (STATE.log||[]).map(l=>l.msg).join('   ◆   ') || 'PIXEL PANIC';
+  // Win video : utilise l'API YouTube pour détecter la fin
+  const wv = STATE.winVideo;
+  const el = document.getElementById('win-video-player');
+  if (wv && el && !el._ytInit) {
+    el._ytInit = true;
+    if (window.YT && YT.Player) {
+      new YT.Player('win-video-player', {
+        height:'100%', width:'100%', videoId: wv,
+        playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
+        events:{
+          onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} },
+          onStateChange(e){ if (e.data === YT.PlayerState.ENDED) { fetch('/api/end-video',{method:'POST'}).catch(()=>{}); } }
+        }
+      });
+    } else {
+      // Fallback iframe si l'API n'est pas encore chargée
+      el.outerHTML = `<iframe src="https://www.youtube.com/embed/${wv}?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:12px" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    }
+  }
 }
 
 function activityView(act){

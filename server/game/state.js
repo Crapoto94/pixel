@@ -386,13 +386,16 @@ export class GameState {
       this.phase = 'win';
       this.activity = null;
       this.addLog('🏆 YOU WIN ! La réalité a redémarré.');
-      // Message de félicitations + transition automatique vers les résultats photos
       this.addLog('🎉 BRAVO À TOUS LES PIXELS ! Vous avez sauvé la réalité !');
-      if (this._winTimer) clearTimeout(this._winTimer);
-      this._winTimer = setTimeout(() => {
-        this._winTimer = null;
-        this.setPhotoPhase('results');
-      }, 8000);
+      if (this.winVideo) {
+        // La vidéo anniversaire défile — le passage aux photos se fait à la fin de la vidéo
+      } else {
+        if (this._winTimer) clearTimeout(this._winTimer);
+        this._winTimer = setTimeout(() => {
+          this._winTimer = null;
+          this.setPhotoPhase('results');
+        }, 8000);
+      }
     } else {
       this.worldIndex += 1;
       const next = this.currentWorld();
@@ -1058,6 +1061,11 @@ export class GameState {
     if (this.activity && this.activity.type === 'videoshow') {
       this.addLog('📺 Fin de la vidéo.');
       this.stopActivity();
+    }
+    if (this.phase === 'win' && this.winVideo) {
+      this.addLog('📺 Vidéo anniversaire terminée.');
+      this.winVideo = null;
+      this.setPhotoPhase('results');
     }
   }
 

@@ -18,7 +18,8 @@ import { TetrisGame } from './tetris.js';
 import { TronGame } from './tron.js';
 import { Game2048 } from './game2048.js';
 import { PongGame } from './pong.js';
-import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord } from '../data/collab.js';
+import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord,
+  PIANO_KEYS_PER_PHONE, PIANO_BASE_MIDI, PIANO_MELODY, pianoNoteInfo } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
@@ -672,6 +673,18 @@ export class GameState {
       this.activity.wrongAt = 0;
       this.activity.status = 'playing';
     }
+    // Piano réparti : chaque téléphone connecté = un demi-octave aligné.
+    if (type === 'piano') {
+      const players = this.players.filter((p) => p.connected);
+      this.activity.order = players.map((p) => p.id); // ordre gauche → droite
+      this.activity.keysPerPhone = PIANO_KEYS_PER_PHONE;
+      this.activity.baseMidi = PIANO_BASE_MIDI;
+      this.activity.melody = (opts.melody && opts.melody.length) ? opts.melody.slice() : [...PIANO_MELODY];
+      this.activity.step = 0;
+      this.activity.status = 'playing';
+      this.activity.demo = null;
+      this.activity.wrongAt = 0;
+    }
     // Quiz / blind-test : on initialise le déroulé QCM
     if (type === 'quiz' || type === 'blindtest') {
       const deck = type === 'blindtest' ? 'blindtest' : (opts.deck || 'videogame');
@@ -914,6 +927,7 @@ export class GameState {
     const a = this.activity;
     if (!a) return null;
     if (a.type === 'music_seq') return this.musicPublic(forPlayerId);
+    if (a.type === 'piano') return this.pianoPublic(forPlayerId);
     if (a.type === 'mosaic') return this.mosaicPublic(forPlayerId);
     if (a.type === 'enquete') return this.enquetePublic(forPlayerId);
     if (a.type === 'draw') return this._drawPublic(forPlayerId);
@@ -1483,6 +1497,86 @@ export class GameState {
     a.revealed = Math.min(MELODY.length, (a.revealed || 0) + 1);
     this.addLog(`💡 Indice musical : ${a.revealed} note(s) révélée(s).`);
     this.touch();
+  }
+
+  // ---- Piano réparti (un demi-octave par téléphone) ----------------
+  // Un joueur appuie sur une touche (offset = position absolue sur le clavier).
+  pianoPress(playerId, offset) {
+    const a = this.activity;
+    if (!a || a.type !== 'piano' || a.status !== 'playing') return;
+    offset = Number(offset);
+    const idx = a.order.indexOf(playerId);
+    if (idx < 0) return; // pas un joueur du clavier
+    const lo = idx * a.keysPerPhone, hi = lo + a.keysPerPhone - 1;
+    if (offset < lo || offset > hi) return; // cette touche n'est pas sur ton téléphone
+    // Bonne note attendue → on avance ; sinon on laisse explorer (pas de pénalité).
+    if (a.melody[a.step] === offset) {
+      a.step += 1;
+      if (a.step >= a.melody.length) {
+        a.status = 'win';
+        this.addLog('🎹 Mélodie jouée en entier — BRAVO l\'orchestre réparti !');
+      }
+      this.touch();
+    }
+  }
+
+  // Le MJ (re)joue la mélodie en démo sur la borne.
+  pianoDemo() {
+    const a = this.activity;
+    if (!a || a.type !== 'piano') return;
+    a.demo = {
+      at: Date.now(),
+      seq: a.melody.map((off) => { const n = pianoNoteInfo(off, a.baseMidi); return { freq: n.freq, name: n.name }; }),
+    };
+    a.step = 0;
+    this.addLog('🎶 Démo de la mélodie jouée sur la borne (piano).');
+    this.touch();
+  }
+
+  // Vue publique du piano réparti (placement + mélodie + touches du joueur).
+  pianoPublic(forPlayerId) {
+    const a = this.activity;
+    const kpp = a.keysPerPhone;
+    const rangeLabel = (i) => {
+      const lo = pianoNoteInfo(i * kpp, a.baseMidi);
+      const hi = pianoNoteInfo(i * kpp + kpp - 1, a.baseMidi);
+      return `${lo.label}–${hi.label}`;
+    };
+    const placement = a.order.map((id, i) => ({
+      pos: i + 1, name: this.player(id)?.name || '?', range: rangeLabel(i),
+    }));
+    const slots = a.melody.map((off, i) => {
+      const n = pianoNoteInfo(off, a.baseMidi);
+      let st = 'todo';
+      if (i < a.step) st = 'done';
+      else if (i === a.step && a.status === 'playing') st = 'next';
+      return { st, name: n.name, freq: n.freq };
+    });
+    // Quel téléphone (et quelle note) doit jouer maintenant ?
+    let nextPos = -1, nextName = null;
+    if (a.status === 'playing' && a.step < a.melody.length) {
+      const off = a.melody[a.step];
+      nextPos = Math.floor(off / kpp) + 1;
+      nextName = pianoNoteInfo(off, a.baseMidi).name;
+    }
+    // Touches du joueur (son demi-octave).
+    const idx = forPlayerId ? a.order.indexOf(forPlayerId) : -1;
+    const myKeys = [];
+    if (idx >= 0) {
+      for (let k = 0; k < kpp; k++) {
+        const off = idx * kpp + k;
+        const n = pianoNoteInfo(off, a.baseMidi);
+        myKeys.push({ off, name: n.name, label: n.label, white: n.white, freq: n.freq,
+          next: a.status === 'playing' && a.melody[a.step] === off });
+      }
+    }
+    return {
+      type: 'piano', state: a.state, status: a.status,
+      len: a.melody.length, step: a.step, wrongAt: a.wrongAt || 0,
+      nPhones: a.order.length, placement, slots, nextPos, nextName,
+      myPos: idx, myKeys,
+      demo: a.demo ? { at: a.demo.at, seq: a.demo.seq } : null,
+    };
   }
 
   // La mosaïque : chaque joueur ne reçoit QUE son fragment (son index + le mot

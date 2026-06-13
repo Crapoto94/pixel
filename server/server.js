@@ -344,6 +344,13 @@ app.post('/api/music/press', (req, res) => {
   res.json({ ok: true });
 });
 
+// Piano réparti : le joueur appuie sur une touche de son demi-octave
+app.post('/api/piano/press', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.pianoPress(p.id, req.body.off);
+  res.json({ ok: true });
+});
+
 // --- API Game Master (Vincent éveillé OU Marc l'hôte) ---------------
 app.post('/api/gm/gage', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
@@ -403,6 +410,7 @@ app.post('/api/gm/action', (req, res) => {
     case 'quizNext': game.quizNext(); break;
     case 'musicDemo': game.musicDemo(); break;
     case 'musicHint': game.musicHint(); break;
+    case 'pianoDemo': game.pianoDemo(); break;
     case 'drawGage': game.drawGage(payload.pool || null, payload.targetId || null); break;
     case 'clearGage': game.clearGage(); break;
     case 'startVote': game.startVote(); break;

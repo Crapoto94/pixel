@@ -83,26 +83,26 @@ export const WORLDS = [
   {
     id: 'w3',
     num: 3,
-    titre: 'BOSS DE MI-PARCOURS & SABOTAGE',
+    titre: 'LE PIANO GÉANT',
     colis: 3,
     intro:
-      "Mi-parcours. Un mini-boss bloque le passage. « Assemblez les FRAGMENTS. " +
-      "Mais attention : tout n'est peut-être pas là… »",
+      "Mi-parcours. Une PORTE SONORE bloque le passage. « Seule LA MÉLODIE LÉGENDAIRE " +
+      "m'ouvrira. Mais aucun de vous n'a le clavier entier… »",
     enigme:
-      "Le COLIS 3 contient des pièces de puzzle. Assemblées, elles forment un QR / un code. " +
-      "Si une pièce manque… c'est que le GLITCH est passé par là.",
-    code: 'PIXEL',
-    codeNormalise: 'PIXEL',
+      "Chaque téléphone affiche un DEMI-OCTAVE de piano. Alignez-les côte à côte dans " +
+      "l'ordre indiqué par la BORNE pour former un grand clavier, puis jouez la mélodie ensemble.",
+    code: 'JOIE', // la mélodie est l'« Hymne à la Joie »
+    codeNormalise: 'JOIE',
     colisContenu: [
-      'Des PIÈCES DE PUZZLE qui, assemblées, forment un visuel (ou un QR) révélant le mot-code : PIXEL.',
-      'SABOTAGE : retire 1 pièce avant de fermer le colis et glisse-la au GLITCH (ou cache-la 3 min) — il en manquera une.',
-      'Une carte « cible » pour ZILDA (repère la pièce centrale).',
+      'Une carte-consigne : « Chaque téléphone = un DEMI-CLAVIER. Alignez-les dans l’ordre de la BORNE (de gauche à droite). »',
+      'Une partition simplifiée : MI MI FA SOL… (la BORNE affiche aussi la mélodie note par note).',
+      'Indice (mot-code) : quel est le titre de cette mélodie ? (Hymne à la… ).',
     ],
     indices: {
-      riu: ['Les bords rouges vont ensemble.'],
-      zilda: ['La pièce centrale porte une cible.'],
+      riu: ['Suis la note qui clignote sur ton clavier : joue-la quand c’est ton tour.'],
+      zilda: ['La BORNE indique QUEL téléphone joue la prochaine note.'],
     },
-    activite: 'spotlight',
+    activite: 'piano',
     gagePool: 'duel',
     twist:
       "La BORNE détecte une ANOMALIE sur le PLAYER ONE : « Pouvoir dormant détecté… » " +

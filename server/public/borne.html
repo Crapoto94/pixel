@@ -62,7 +62,7 @@ let STATE = null;
 let lastSse = 0;
 let _lastBorneJson = null;
 function applyState(s){
-  STATE = s; detectSounds(STATE); detectMusic(STATE); syncYT(STATE); syncBlindtest(STATE);
+  STATE = s; detectSounds(STATE); detectMusic(STATE); detectPiano(STATE); syncYT(STATE); syncBlindtest(STATE);
   // On ne reconstruit le DOM que si l'état a changé (évite le clignotement à chaque poll).
   const j = JSON.stringify(s);
   if (j !== _lastBorneJson) { _lastBorneJson = j; render(); }
@@ -206,6 +206,9 @@ function render(){
   // --- Séquence musicale ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='music_seq'){
     renderMusicBorne(STATE.activity); return;
+  }
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='piano'){
+    renderPianoBorne(STATE.activity); return;
   }
   // --- Enquête collaborative (Cold Case Saint-Maur) ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='enquete'){
@@ -562,6 +565,54 @@ function renderMusicBorne(a){
     <p class="muted mt">${a.step}/${a.len} ${a.wrongAt&&!win?'· <span class="neon-pink blink">raté, on reprend !</span>':''}</p>
   </div>`;
   tickerEl.textContent = 'SÉQUENCE MUSICALE — coordonnez-vous !';
+}
+
+// =================== PIANO RÉPARTI (affichage borne) ===================
+function renderPianoBorne(a){
+  const win = a.status === 'win';
+  // Ordre de placement des téléphones (gauche → droite) avec leur tessiture.
+  const cards = (a.placement||[]).map(p=>{
+    const hot = a.nextPos===p.pos && !win;
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:12px;
+      border:3px solid ${hot?'var(--neon3)':'#ffffff22'};background:${hot?'#1a1400':'#0a0420'};min-width:130px">
+      <div class="pixel" style="font-size:13px;color:var(--neon2)">N°${p.pos}</div>
+      <div class="big">${esc(p.name)}</div>
+      <div class="muted" style="font-size:13px">${esc(p.range)}</div>
+      <div style="font-size:22px">📱</div>
+    </div>`;
+  }).join('<div style="align-self:center;font-size:26px;color:#ffffff55">▸</div>');
+  // Partition : la mélodie, note par note, avec l'avancement.
+  const notes = (a.slots||[]).map(s=>{
+    const style = s.st==='done' ? 'background:var(--neon2);color:#0a0420'
+                : s.st==='next' ? 'border:2px solid var(--neon3);color:var(--neon3);animation:blink 1s steps(1) infinite'
+                : 'border:2px solid #ffffff22;color:#fff';
+    return `<span style="display:inline-block;min-width:46px;text-align:center;padding:6px 8px;margin:3px;border-radius:8px;font-family:var(--pixel);font-size:14px;${style}">${esc(s.name)}</span>`;
+  }).join('');
+  stage.innerHTML = `<div class="center">
+    <h1 class="big neon-pink">🎹 PIANO GÉANT</h1>
+    ${win ? `<p class="big neon-yellow pixel glow-box" style="display:inline-block;padding:6px 18px">🎉 MÉLODIE COMPLÈTE !</p>`
+          : `<p class="big">Placez vos téléphones <b>de GAUCHE à DROITE</b> dans cet ordre, puis jouez la mélodie ensemble&nbsp;:</p>`}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:stretch;margin:14px auto;max-width:1150px">${cards}</div>
+    <div style="margin:14px auto;max-width:1000px">${notes}</div>
+    ${win ? '' : `<p class="big neon-cyan">${a.nextName?`👉 Prochaine note : <b>${esc(a.nextName)}</b> — téléphone <b>N°${a.nextPos}</b>`:''}</p>`}
+    <p class="muted">${a.step}/${a.len}</p>
+  </div>`;
+  tickerEl.textContent = 'PIANO GÉANT — alignez les téléphones et jouez la mélodie !';
+}
+
+// Détection sonore du piano réparti (démo, note jouée, victoire)
+let _pn = { demoAt: 0, step: 0, win: false };
+function detectPiano(s){
+  if(!SOUND_ON || !window.SFX) return;
+  const a = s.activity;
+  if(!a || a.type!=='piano'){ _pn = { demoAt:0, step:0, win:false }; return; }
+  if(a.demo && a.demo.at && a.demo.at!==_pn.demoAt){
+    _pn.demoAt = a.demo.at; let t = 0;
+    a.demo.seq.forEach(n=>{ SFX.note(n.freq, t, 0.34); t += 0.44; });
+  }
+  if(a.step>_pn.step && a.slots[a.step-1] && a.slots[a.step-1].freq){ SFX.note(a.slots[a.step-1].freq); }
+  if(a.status==='win' && !_pn.win){ SFX.win(); _pn.win = true; }
+  _pn.step = a.step;
 }
 
 // =================== DIFFUSION VIDÉO (affichage borne) ===================

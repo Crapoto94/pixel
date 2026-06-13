@@ -26,6 +26,31 @@ export const MELODY = [
   6, 8, 9, 7, 8,
 ];
 
+// --- Piano réparti : chaque téléphone affiche un DEMI-OCTAVE (6 demi-tons) ---
+//  Alignés côte à côte, les téléphones forment un grand clavier continu.
+//  2 téléphones = 1 octave ; 4 téléphones = 2 octaves.
+export const PIANO_KEYS_PER_PHONE = 6;   // un demi-octave = 6 demi-tons
+export const PIANO_BASE_MIDI = 60;       // DO4 (C4) = première touche à gauche
+const PIANO_NAMES = ['DO', 'DO♯', 'RE', 'RE♯', 'MI', 'FA', 'FA♯', 'SOL', 'SOL♯', 'LA', 'LA♯', 'SI'];
+const PIANO_WHITE_PC = new Set([0, 2, 4, 5, 7, 9, 11]); // touches blanches
+// Mélodie par défaut : « Hymne à la joie » (offsets en demi-tons depuis DO4).
+//  MI MI FA SOL | SOL FA MI RE | DO DO RE MI | MI RE RE
+export const PIANO_MELODY = [4, 4, 5, 7, 7, 5, 4, 2, 0, 0, 2, 4, 4, 2, 2];
+
+// Infos d'une touche à partir de son offset ABSOLU sur le clavier réparti.
+export function pianoNoteInfo(offset, baseMidi = PIANO_BASE_MIDI) {
+  const midi = baseMidi + offset;
+  const pc = ((midi % 12) + 12) % 12;
+  const octave = Math.floor(midi / 12) - 1; // convention MIDI : 60 = DO4
+  return {
+    midi, pc, octave,
+    name: PIANO_NAMES[pc],
+    label: PIANO_NAMES[pc] + octave, // ex. « DO4 »
+    white: PIANO_WHITE_PC.has(pc),
+    freq: 440 * Math.pow(2, (midi - 69) / 12),
+  };
+}
+
 // --- Mosaïque de téléphones : mot révélé quand les écrans sont alignés ---
 //  La 1ʳᵉ manche est toujours KONAMI. Les suivantes piochent un titre/héros de
 //  jeu vidéo connu, de longueur adaptée au nombre de joueurs (≥ 2 lettres par

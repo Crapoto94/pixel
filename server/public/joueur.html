@@ -295,6 +295,9 @@ function controllerView(act) {
   if (act.type === 'music_seq') {
     return musicController(act);
   }
+  if (act.type === 'piano') {
+    return pianoController(act);
+  }
   // QUIZ / BLIND-TEST : QCM (question sur la BORNE, réponse ici)
   if (act.type === 'quiz' || act.type === 'blindtest') {
     return quizController(act);
@@ -791,6 +794,33 @@ function musicController(act) {
   </div>`;
 }
 function musicPress(index, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/music/press', { index }); }
+
+// =================== PIANO RÉPARTI (manette joueur = un demi-octave) ===========
+function pianoController(act){
+  if (act.myPos < 0){
+    return `<div class="card center glow-box"><div class="pill neon-pink">🎹 PIANO GÉANT</div>
+      <p>Regarde la BORNE 📺 — tu rejoindras au prochain morceau.</p></div>`;
+  }
+  const win = act.status==='win';
+  const myTurn = act.nextPos === (act.myPos+1);
+  const keys = (act.myKeys||[]).map(k=>{
+    const bg = k.white ? '#f4f4f8' : '#15131f';
+    const col = k.white ? '#15131f' : '#f4f4f8';
+    const hl = (k.next && !win) ? 'box-shadow:0 0 0 4px var(--neon3),0 0 22px var(--neon3);transform:translateY(2px);' : '';
+    return `<button onpointerdown="pianoPress(${k.off},${k.freq})"
+      style="flex:1;min-width:0;height:130px;border:2px solid #000;border-radius:0 0 9px 9px;background:${bg};color:${col};
+      font-family:var(--pixel);font-size:11px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;cursor:pointer;touch-action:manipulation;${hl}">${esc(k.name)}</button>`;
+  }).join('');
+  return `<div class="card center glow-box">
+    <div class="pill neon-pink">🎹 PIANO GÉANT — TÉLÉPHONE N°${act.myPos+1}</div>
+    <p class="muted" style="font-size:12px;margin:4px 0 8px">Place ton téléphone au bon endroit (vois l'ordre sur la BORNE) et joue quand ta touche s'allume.</p>
+    <div style="display:flex;gap:2px;background:#000;padding:3px;border-radius:0 0 12px 12px">${keys}</div>
+    <p class="mt">${win
+      ? '<span class="neon-yellow pixel" style="font-size:12px">🎉 MÉLODIE RÉUSSIE !</span>'
+      : (act.nextName ? `Prochaine note : <b class="neon-cyan">${esc(act.nextName)}</b>${myTurn?' — <b class="neon-yellow blink">À TOI !</b>':''}` : '')}</p>
+  </div>`;
+}
+function pianoPress(off, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/piano/press', { off }); }
 
 function roueController(act){
   const g = act.gage || {};

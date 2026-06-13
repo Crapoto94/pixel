@@ -50,7 +50,6 @@
     align-items:center; justify-content:center; background:#171430; color:#cfd2e0; border:2px solid #3a2bd0;
     border-radius:7px; font-size:clamp(13px,1.8vh,18px); font-family:Arial; user-select:none; touch-action:none; cursor:pointer; }
   .kkey.wide { min-width:clamp(54px,7vw,88px); } .kkey.xwide { min-width:clamp(150px,26vw,300px); }
-  .kkey.kspecial { background:#2a1030; border-color:#ff2e88; color:#ff8ac0; font-size:clamp(11px,1.5vh,15px); }
   .kkey.kdown { background:#ffe600; color:#160a2e; border-color:#ffe600; transform:translateY(2px); }
 </style>
 </head>
@@ -1437,7 +1436,7 @@ function renderBossBorne(){
     ['Q','S','D','F','G','H','J','K','L','M','%','µ'],
     ['<','W','X','C','V','B','N',',',';',':','!'],
   ];
-  const K=(label,o={})=>`<button class="kkey${o.wide?' wide':''}${o.xwide?' xwide':''}${o.special?' kspecial':''}"${o.k?` data-k="${o.k}"`:''}>${label}</button>`;
+  const K=(label,o={})=>`<button class="kkey${o.wide?' wide':''}${o.xwide?' xwide':''}"${o.k?` data-k="${o.k}"`:''}>${label}</button>`;
   stage.innerHTML = `<div class="center">
     <h1 class="big neon-pink glow-box">👾 SYSTÈME PLANTÉ</h1>
     <p class="big">La réalité est <b>FIGÉE</b>. <span class="neon-yellow">Forcez le redémarrage de l'ordinateur…</span></p>

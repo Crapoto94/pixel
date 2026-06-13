@@ -117,6 +117,9 @@ function render(){
       <button class="btn secondary" onclick="startAct('briefing')">📖 Briefing</button>
       <button class="btn warn" onclick="duckDance()">🦆 Danse des canards</button>
       <button class="btn warn" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
+      <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(1)">🎉 Fête 1</button>
+      <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(2)">🎉 Fête 2</button>
+      <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(3)">🎉 Fête 3</button>
     </div>
     <div class="pixel neon-cyan mt" style="font-size:11px">QUIZ — THÈMES</div>
     <div class="grid3 mt">
@@ -339,6 +342,12 @@ function anecdote(n,video){
   startAct('videoshow',{video,topLabel:'💡 ANECDOTE #'+n,
     chyron:'ANECDOTE #'+n+' 🍿<br>OUVREZ GRAND LES OREILLES !',
     footer:'Une petite histoire pour Vincent… 🎬'});
+}
+function fete(n){
+  const videos = { 1:'HpCZqG7lxD8', 2:'NoxgPqw4rSY', 3:'dhCDATSf3Ss' };
+  startAct('videoshow',{video:videos[n],topLabel:'🎉 FÊTE '+n,
+    chyron:'FÊTE '+n+' 🎊<br>À LA SANTÉ DE VINCENT !',
+    footer:'🥂 TCHIN TCHIN !'});
 }
 function mosaic(){
   // Vide = mot auto (lié au jeu vidéo, longueur selon le nb de joueurs). 1ʳᵉ manche = KONAMI.

@@ -184,12 +184,6 @@ app.post('/api/buzz', (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/vote', (req, res) => {
-  const p = requirePlayer(req, res); if (!p) return;
-  game.castVote(p.id, req.body.targetId);
-  res.json({ ok: true });
-});
-
 app.post('/api/answer', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.quizAnswer(p.id, req.body.choice);
@@ -340,6 +334,19 @@ app.post('/api/gm/gage', (req, res) => {
   res.json(game.drawGage(req.body.pool || null, req.body.targetId || null));
 });
 
+// Pouvoir « MAÎTRE DU JEU » : Vincent éveillé (ou l'hôte) lance/arrête une
+// activité depuis son téléphone (jeux, quiz, blind-test…).
+app.post('/api/gm/start', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  const allowed = p.isHost || (p.isHero && game.heroAwakened);
+  if (!allowed) return res.status(403).json({ error: 'Pouvoir non débloqué.' });
+  const { type, opts } = req.body;
+  if (type === 'stop') { game.stopActivity(); return res.json({ ok: true }); }
+  if (!type) return res.status(400).json({ error: 'type manquant' });
+  game.startActivity(type, opts || {});
+  res.json({ ok: true });
+});
+
 // --- API GM console (Marc) — protégée par mot de passe --------------
 function requireGM(req, res) {
   if (!CONFIG.gmPassword) return true; // pas de mot de passe configuré = accès libre
@@ -362,9 +369,6 @@ app.get('/api/gm/state', (req, res) => {
   const cw = game.currentWorld();
   res.json({
     ...game.publicState(),
-    glitchId: game.glitchId, // l'hôte a le droit de savoir
-    glitchName: game.player(game.glitchId)?.name || null,
-    votes: game.votes,
     quizMaster,
     enqueteMaster: game.enqueteMaster(),
     mosaicWord: game.activity && game.activity.type === 'mosaic' ? game.activity.word : null,
@@ -383,7 +387,6 @@ app.post('/api/gm/action', (req, res) => {
   const { action, payload = {} } = req.body;
   switch (action) {
     case 'start': game.startGame(); break;
-    case 'assignGlitch': game.assignGlitch(); break;
     case 'completeWorld': game.completeWorld(); break;
     case 'startActivity': game.startActivity(payload.type, payload.opts || {}); break;
     case 'stopActivity': game.stopActivity(); break;
@@ -393,8 +396,6 @@ app.post('/api/gm/action', (req, res) => {
     case 'musicHint': game.musicHint(); break;
     case 'drawGage': game.drawGage(payload.pool || null, payload.targetId || null); break;
     case 'clearGage': game.clearGage(); break;
-    case 'startVote': game.startVote(); break;
-    case 'tallyVotes': return res.json({ ok: true, result: game.tallyVotes() });
     case 'loseLife': game.loseLife(payload.playerId); break;
     case 'reset': game.reset(); break;
     case 'setPhotoPhase': game.setPhotoPhase(payload.phase ?? null); break;

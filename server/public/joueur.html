@@ -172,13 +172,6 @@ function render() {
     return;
   }
 
-  // --- Vote du Glitch ---
-  if (STATE.phase === 'vote') {
-    html += voteView();
-    app.innerHTML = html + footer();
-    return;
-  }
-
   // --- Vote / résultats photo ---
   if (STATE.photoPhase === 'vote') {
     html += photoVoteView(me);
@@ -225,7 +218,7 @@ function render() {
       html += `<button class="btn secondary mt" onclick="api('/api/hint',{})" style="background:var(--neon4);color:#fff">💡 Demander un indice (vidéo sur la BORNE)</button>`;
     }
 
-    if (!w.resoluParVote) {
+    if (!w.resoluParVote && w.code) {
       if (w.heroOnly && !me.isHero) {
         // Énigme réservée au PLAYER ONE : les autres transmettent leurs touches.
         html += `<div class="card" style="border-color:var(--neon3);background:#1a1400">
@@ -243,26 +236,6 @@ function render() {
       }
     }
     html += `</div>`;
-  }
-
-  // --- Mission secrète du Glitch ---
-  if (me.glitchMission) {
-    html += `
-    <div class="card" style="border-color:var(--danger);background:#1a0008">
-      <div class="pill" style="color:var(--danger)">🐛 MISSION SECRÈTE — GLITCH</div>
-      <p>${esc(me.glitchMission)}</p>
-      <p class="muted">Personne d'autre ne voit ce message. Sabote… mais ne te fais pas griller.</p>
-    </div>`;
-  }
-
-  // --- Carnet secret : mission perso + indice sur un autre joueur ---
-  if (me.mission || me.secretClue) {
-    html += `<div class="card" style="border-color:var(--neon2);background:#021a16">
-      <div class="pill neon-cyan">🤫 TON CARNET SECRET</div>
-      ${me.mission ? `<p><b class="neon-cyan">Ta mission :</b> ${esc(me.mission)}</p>` : ''}
-      ${me.secretClue ? `<p><b class="neon-cyan">Ton indice :</b> ${esc(me.secretClue)}</p>` : ''}
-      <p class="muted">Pour toi seul·e. Sers-t'en au bon moment 😉</p>
-    </div>`;
   }
 
   // --- Panneau Game Master (Vincent éveillé) ou hôte (Marc) ---
@@ -962,17 +935,6 @@ function quizController(act) {
   </div>`;
 }
 
-function voteView() {
-  const others = STATE.players.filter(p=>p.id!==STATE.me.id);
-  return `<div class="card center glow-box">
-    <h2 class="neon-pink">QUI EST LE GLITCH ?</h2>
-    <p>Vote pour démasquer le traître.</p>
-    <div class="grid-players">
-      ${others.map(p=>`<button class="btn warn" onclick="vote('${p.id}')">${esc(p.name)}</button>`).join('')}
-    </div>
-  </div>`;
-}
-
 function gageView(g, me) {
   const forMe = g.targetId === me.id;
   return `<div class="card center" style="border-color:var(--neon3)">
@@ -1049,7 +1011,6 @@ function photoVote(photoId, category) {
 // --- Actions ---
 function toggleReady(){ api('/api/ready', { ready: !STATE.me.ready }); }
 function buzz(){ api('/api/buzz'); }
-function vote(t){ api('/api/vote', { targetId: t }); }
 function answer(i){ api('/api/answer', { choice: i }); }
 function spotlightVote(v){ api('/api/spotlight/vote', { verdict: v }); }
 function submitCode(){

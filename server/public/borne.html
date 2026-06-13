@@ -99,7 +99,6 @@ function detectSounds(s){
     if (s.phase === 'win' && _p.phase !== 'win') SFX.win();
     else if (s.phase === 'world' && _p.phase === 'lobby') SFX.start();
     else if (w && w !== _p.world) { (s.world && s.world.isTwist) ? SFX.twist() : SFX.level(); }
-    if (s.phase === 'vote' && _p.phase !== 'vote') SFX.vote();
     if (act && act !== _p.act) SFX.start();
     if ((act === 'quiz' || act === 'blindtest') && sub === 'reveal' && _p.sub !== 'reveal') SFX.correct();
     if (gageId && gageId !== _p.gageId) SFX.gage();
@@ -243,14 +242,6 @@ function render(){
 
   else if (STATE.phase === 'activity' && STATE.activity) {
     html = activityView(STATE.activity);
-  }
-
-  else if (STATE.phase === 'vote') {
-    html = `<div class="center">
-      <h1 class="big neon-pink">🗳️ DÉMASQUEZ LE GLITCH</h1>
-      <p class="big">Votez sur vos téléphones…</p>
-      <div class="wheel">🐛❓</div>
-    </div>`;
   }
 
   else if (STATE.phase === 'win') {

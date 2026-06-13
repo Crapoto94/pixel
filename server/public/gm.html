@@ -82,15 +82,13 @@ function render(){
         : `<code style="color:var(--neon3);font-size:20px">${esc(S.worldCode||'?')}</code>`}
       <div class="muted" style="font-size:12px;margin-top:4px">Un joueur tape ce code sur son téléphone → le monde se valide. (Ou « ✅ Valider monde » pour forcer.)</div>
     </div>`:''}
-    <div class="mt"><b>🐛 GLITCH :</b> <code>${esc(S.glitchName||'(non assigné)')}</code>
-      ${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé</span>':''}</div>
+    <div class="mt">${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé</span>':''}</div>
   </div>
 
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">DÉROULÉ</div>
     <div class="grid mt">
       <button class="btn secondary" onclick="startAct('briefing')">▶ BRIEFING DÉMARRAGE</button>
-      <button class="btn" onclick="act('assignGlitch')">🎲 Tirer Glitch</button>
       <button class="btn warn" onclick="act('completeWorld')">✅ Valider monde →</button>
       <button class="btn danger" onclick="if(confirm('Tout réinitialiser ?'))act('reset')">⟲ RESET</button>
     </div>
@@ -101,7 +99,7 @@ function render(){
     <div class="grid3 mt">
       <button class="btn secondary" onclick="startAct('reaction_race')">⚡ Réaction</button>
       <button class="btn secondary" onclick="startAct('quiz',{deck:'videogame'})">❓ Quiz JV</button>
-      <button class="btn secondary" onclick="startAct('blindtest')">🎵 Blind-test</button>
+      <button style="background:var(--neon);color:#fff" onclick="startAct('blindtest')">🎵 Blind-test</button>
       <button class="btn secondary" onclick="startAct('roue_des_gages')">🎰 Roue</button>
       <button class="btn secondary" onclick="startAct('boss_final',{hp:100})">👾 Boss</button>
       <button class="btn warn" onclick="startAct('pixel_pad',{len:4,target:7})">🧒 Défi Pixels</button>
@@ -310,15 +308,6 @@ function render(){
   </div>
 
   <div class="card">
-    <div class="pixel neon-cyan" style="font-size:11px">VOTE GLITCH</div>
-    <div class="grid mt">
-      <button class="btn" onclick="act('startVote')">🗳️ Ouvrir vote</button>
-      <button class="btn warn" onclick="tally()">📊 Dépouiller</button>
-    </div>
-    <div class="muted mt">Votes: <code>${esc(JSON.stringify(S.votes||{}))}</code></div>
-  </div>
-
-  <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">VIES</div>
     <div class="grid3 mt">
       ${S.players.map(p=>`<button class="btn danger" onclick="act('loseLife',{playerId:'${p.id}'})">💔 ${esc(p.name)} (${p.lives})</button>`).join('')}
@@ -376,8 +365,6 @@ function drawGage(){
   act('drawGage',{pool:document.getElementById('gagePool').value||null,
     targetId:document.getElementById('gageTarget').value||null});
 }
-function tally(){ act('tallyVotes').then(r=>{ if(r.result) alert(r.result.found?'TROUVÉ !':'Raté — le Glitch a survécu.'); }); }
-
 // Auto-connexion : si aucun mot de passe n'est configuré côté serveur, accès direct.
 connect('');
 </script>

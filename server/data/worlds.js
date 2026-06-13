@@ -46,8 +46,8 @@ export const WORLDS = [
     activite: 'reaction_race',
     gagePool: 'collectif',
     twist:
-      "ALERTE : un GLITCH s'est infiltré parmi les avatars. Il sabotera dans l'ombre. " +
-      "Méfiance… (le traître vient de recevoir sa première mission).",
+      "BRAVO ! Vous avez réveillé la BORNE. La réalité peut maintenant s'étendre… " +
+      "Prochain colis en approche !",
   },
   {
     id: 'w2',
@@ -74,8 +74,8 @@ export const WORLDS = [
     activite: 'blindtest',
     gagePool: 'solo',
     twist:
-      "Premier VOTE DE SUSPICION : qui vous semble louche ? (aucune élimination, " +
-      "juste pour semer le doute). Le sabotage du Glitch a laissé une trace…",
+      "Le labyrinthe est vaincu ! Mais l'aventure ne fait que commencer… " +
+      "Cap sur le prochain défi !",
   },
   {
     id: 'w3',
@@ -86,13 +86,11 @@ export const WORLDS = [
       "Mi-parcours. Un mini-boss bloque le passage. « Assemblez les FRAGMENTS. " +
       "Mais attention : tout n'est peut-être pas là… »",
     enigme:
-      "Le COLIS 3 contient des pièces de puzzle. Assemblées, elles forment un QR / un code. " +
-      "Si une pièce manque… c'est que le GLITCH est passé par là.",
+      "Le COLIS 3 contient des pièces de puzzle. Assemblées, elles forment un QR / un code.",
     code: 'PIXEL',
     codeNormalise: 'PIXEL',
     colisContenu: [
       'Des PIÈCES DE PUZZLE qui, assemblées, forment un visuel (ou un QR) révélant le mot-code : PIXEL.',
-      'SABOTAGE : retire 1 pièce avant de fermer le colis et glisse-la au GLITCH (ou cache-la 3 min) — il en manquera une.',
       'Une carte « cible » pour ZILDA (repère la pièce centrale).',
     ],
     indices: {
@@ -130,36 +128,34 @@ export const WORLDS = [
     activite: 'roue_des_gages',
     gagePool: 'vincent',
     twist:
-      "Le Glitch PANIQUE : le Game Master peut désormais le démasquer. " +
-      "Mission de sabotage RISQUÉE confiée au traître.",
+      "Vincent a éveillé son pouvoir ! L'équipe est plus forte que jamais. " +
+      "En route pour l'avant-dernier monde !",
   },
   {
     id: 'w5',
     num: 5,
-    titre: 'LA CHASSE AU GLITCH',
+    titre: 'DOSSIER 94100',
     colis: 5,
     intro:
-      "Niveau 5. « Le GLITCH est parmi vous depuis le début. Rassemblez les PREUVES " +
-      "et démasquez-le par un VOTE. »",
+      "Niveau 5. La BORNE bascule en mode ENQUÊTE. « L'affaire des parapheurs perdus " +
+      "attend toujours sa conclusion. Ouvrez les yeux, croisez les pièces, traquez le vrai coupable. »",
     enigme:
-      "Chaque joueur a reçu, au fil de la soirée, un fragment de preuve (dans les colis). " +
-      "Recoupez-les façon Cluedo, puis VOTEZ sur vos téléphones.",
-    code: 'VOTE', // résolu par le vote, pas par un code tapé
-    codeNormalise: 'VOTE',
-    resoluParVote: true,
+      "Une enquête policière en 8 actes. Chaque acte se résout en entrant un code " +
+      "sur votre téléphone. Croisez les pièces à conviction, lisez les documents sur la BORNE, " +
+      "éliminez les suspects, décodez le message final.",
+    code: '',
+    codeNormalise: '',
     colisContenu: [
-      'Les FRAGMENTS DE PREUVES à distribuer façon Cluedo (un par joueur), à recouper.',
-      'Une carte récap : « notez et comparez les HEURES inscrites sur les colis 2, 3 et 4 ».',
-      'Pas de code à taper : ce monde se résout par un VOTE sur les téléphones.',
+      'Aucun colis physique — l\'enquête se déroule entièrement sur les téléphones + la BORNE.',
     ],
     indices: {
-      lara_croute: ['Recoupe les heures notées sur les colis 2, 3 et 4.'],
+      lara_croute: ['Ouvre l\'enquête sur ton téléphone — tous les indices sont dans les actes.'],
     },
-    activite: 'vote_glitch',
+    activite: 'enquete',
     gagePool: 'collectif',
     twist:
-      "Démasqué (ou non), le Glitch révèle qu'il a CACHÉ le dernier code quelque part. " +
-      "Chasse express avant le boss final !",
+      "L'affaire est résolue ! Le verrou du dernier monde se brise. " +
+      "Préparez-vous pour le BOSS FINAL !",
   },
   {
     id: 'w6',

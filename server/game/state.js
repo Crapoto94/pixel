@@ -19,7 +19,6 @@ import { TronGame } from './tron.js';
 import { Game2048 } from './game2048.js';
 import { PongGame } from './pong.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord } from '../data/collab.js';
-import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
 import { DRAW_WORDS } from '../data/draw_words.js';
@@ -73,12 +72,8 @@ export class GameState {
     this.worldIndex = 0; // index dans WORLDS
     this.activity = null; // activité BORNE en cours (objet)
     this.currentGage = null; // gage affiché en ce moment
-    this.glitchId = null; // id du joueur traître (tiré au sort)
-    this.glitchRevealed = false;
     this.heroAwakened = false; // Vincent a-t-il reçu ses pouvoirs ?
     this.kidsDone = false; // les Pixels (enfants) ont-ils réussi leur défi ?
-    this.votes = {}; // { voterId: targetId }
-    this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
     this.photos = []; // [{id, playerId, playerName, avatar, missionIdx, missionLabel, url, uploadedAt}]
     this.photoVotes = {}; // { voterId: { belle: photoId|null, rigolote: photoId|null } }
     this.photoPhase = null; // null | 'vote' | 'results'
@@ -177,54 +172,6 @@ export class GameState {
   allReady() {
     const adults = this.players;
     return adults.length > 0 && adults.every((p) => p.ready);
-  }
-
-  // ---- Glitch (traître) --------------------------------------------
-  assignGlitch(rng = Math.random) {
-    const pool = this.players.filter((p) => p.glitchEligible);
-    if (pool.length === 0) return;
-    const chosen = pool[Math.floor(rng() * pool.length)];
-    this.glitchId = chosen.id;
-    this.generateClues(rng);
-    this.addLog('🐛 Le GLITCH a été désigné secrètement par le serveur.');
-    this.touch();
-  }
-
-  // Réseau d'indices : chaque joueur reçoit une mission + un indice secret.
-  generateClues(rng = Math.random) {
-    const shuffle = (arr) => [...arr].sort(() => rng() - 0.5);
-    const players = this.players;
-    const glitch = this.glitchId;
-    // Le pool réel de suspects = les joueurs éligibles (pas le héros ni l'hôte)
-    const suspects = players.filter((p) => p.glitchEligible);
-    const suspectInno = shuffle(suspects.filter((p) => p.id !== glitch)); // suspects innocents
-    const recipients = shuffle(players.filter((p) => p.id !== glitch));   // qui reçoit un indice d'enquête
-    this.clues = {};
-    players.forEach((p) => {
-      this.clues[p.id] = { mission: AVATAR_MISSION[p.avatar] || 'Amuse-toi et marque des points.', clue: null };
-    });
-
-    // 1) Indice « réduction » : le Glitch est X ou Y (Y = un VRAI suspect)
-    const decoy = suspectInno[0];
-    if (recipients[0] && decoy) {
-      const pair = shuffle([this.player(glitch).name, decoy.name]);
-      this.clues[recipients[0].id].clue = `🕵️ Le GLITCH est soit ${pair[0]}, soit ${pair[1]}. À toi de trancher.`;
-    }
-    // 2) Indices « disculpation » : nomme un suspect innocent (toujours vrai, fait avancer l'enquête)
-    [recipients[1], recipients[2]].forEach((recip, i) => {
-      const cleared = suspectInno[(i + 1) % suspectInno.length] || suspectInno[0];
-      if (recip && cleared) this.clues[recip.id].clue = `✅ Tu en es témoin : ${cleared.name} n'est PAS le Glitch.`;
-    });
-    // 3) Le Glitch reçoit une consigne de diversion
-    this.clues[glitch].clue = `😈 Tu es le GLITCH. Sème le doute : oriente discrètement les soupçons vers quelqu'un d'autre.`;
-    // 4) Les autres reçoivent un indice social (chacun sait un truc sur un autre)
-    players.forEach((p, i) => {
-      if (this.clues[p.id].clue) return;
-      const others = players.filter((q) => q.id !== p.id);
-      const target = others[Math.floor(rng() * others.length)];
-      const fact = SOCIAL_FACTS[Math.floor(rng() * SOCIAL_FACTS.length)];
-      this.clues[p.id].clue = `🔎 Tu sais un truc sur ${target.name} : il/elle ${fact}. Va lui en parler.`;
-    });
   }
 
   // ---- Défis photo -------------------------------------------------
@@ -375,7 +322,6 @@ export class GameState {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     // On quitte le briefing : on vide l'activité pour que la borne affiche le monde.
     if (this.activity && this.activity.type === 'briefing') this.activity = null;
-    // Le Glitch n'est PAS désigné ici : il s'infiltre à la fin du Monde 1.
     this.phase = 'world';
     this.worldIndex = 0;
     this.addLog('🕹️ INSERT COIN — la partie commence !');
@@ -391,8 +337,8 @@ export class GameState {
     if (!world || this.phase === 'finale' || this.phase === 'win') {
       return { ok: false, reason: 'Aucun monde actif.' };
     }
-    if (world.resoluParVote) {
-      return { ok: false, reason: 'Ce monde se résout par un VOTE, pas un code.' };
+    if (!world.code) {
+      return { ok: false, reason: 'Ce monde n\'a pas de code à saisir.' };
     }
     const p = this.player(playerId);
     // Énigme réservée au PLAYER ONE : seul le héros (Vincent) peut valider.
@@ -427,8 +373,6 @@ export class GameState {
     // Récompense : tous les joueurs connectés gagnent une pièce
     this.players.forEach((p) => { if (p.connected) p.coins += 1; });
 
-    // Le Glitch s'infiltre à la fin du Monde 1 (désignation différée et secrète)
-    if (world.id === 'w1' && !this.glitchId) this.assignGlitch();
     // Twist du monde
     if (world.id === 'w4') this.awakenHero();
     if (world.twist) this.addLog(`🌀 ${world.twist}`);
@@ -442,6 +386,9 @@ export class GameState {
       const next = this.currentWorld();
       if (next) {
         this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
+        if (next.activite === 'enquete') {
+          this.startActivity('enquete');
+        }
       }
     }
     this.touch();
@@ -494,39 +441,6 @@ export class GameState {
       this.addLog(`💔 ${p.name} perd une vie (${p.lives} restantes).`);
       this.touch();
     }
-  }
-
-  // ---- Votes (suspicion / élimination du Glitch) -------------------
-  startVote() {
-    this.votes = {};
-    this.phase = 'vote';
-    this.addLog('🗳️ VOTE ouvert : qui est le GLITCH ?');
-    this.touch();
-  }
-
-  castVote(voterId, targetId) {
-    this.votes[voterId] = targetId;
-    this.touch();
-  }
-
-  tallyVotes() {
-    const counts = {};
-    for (const target of Object.values(this.votes)) {
-      counts[target] = (counts[target] || 0) + 1;
-    }
-    let top = null;
-    let max = -1;
-    for (const [id, n] of Object.entries(counts)) {
-      if (n > max) { max = n; top = id; }
-    }
-    const found = top === this.glitchId;
-    this.glitchRevealed = true;
-    this.addLog(found
-      ? `🎯 Le groupe a démasqué le GLITCH : ${this.player(this.glitchId)?.name} !`
-      : `😈 Raté ! Le GLITCH (${this.player(this.glitchId)?.name}) a survécu.`);
-    this.phase = 'world';
-    this.touch();
-    return { found, top, counts };
   }
 
   // ---- Activités BORNE (reaction, buzzer, spotlight, roue...) -------
@@ -1008,6 +922,8 @@ export class GameState {
         a.done = true;
         a.frag = {};
         this.addLog('🔓 ENQUÊTE RÉSOLUE — l\'affaire des parapheurs perdus est élucidée !');
+        const cw = this.currentWorld();
+        if (cw && cw.id === 'w5') this.completeWorld();
       } else {
         this._enqueteDistribute();
       }
@@ -1564,8 +1480,6 @@ export class GameState {
       worldCount: WORLDS.length,
       heroAwakened: this.heroAwakened,
       kidsDone: this.kidsDone,
-      glitchRevealed: this.glitchRevealed,
-      glitchName: this.glitchRevealed ? this.player(this.glitchId)?.name : null,
       currentGage: this.currentGage,
       activity: this.activityPublic(me ? me.id : null),
       pacman: this.pacman ? this.pacman.publicState(me ? me.id : null) : null,
@@ -1588,7 +1502,6 @@ export class GameState {
 
   privateView(me, world) {
     const av = AVATARS[me.avatar];
-    const isGlitch = me.id === this.glitchId;
     const isHero = !!me.isHero;
     return {
       id: me.id,
@@ -1604,28 +1517,13 @@ export class GameState {
       gameMaster: isHero && this.heroAwakened,
       // Indices perso pour le monde courant
       indices: world && world.indices ? (world.indices[me.avatar] || null) : null,
-      // Missions du Glitch (visibles uniquement par lui)
-      glitchMission: isGlitch ? this.glitchMissionFor(world) : null,
-      // Carnet secret : mission perso + indice sur un autre joueur
-      mission: this.clues[me.id] ? this.clues[me.id].mission : null,
-      secretClue: this.clues[me.id] ? this.clues[me.id].clue : null,
+      // Carnet secret : mission perso (optionnelle)
+      mission: null,
+      secretClue: null,
       // Défis photo
       photoMissions: PHOTO_MISSIONS[me.avatar] || [],
       myPhotos: this.photos.filter(p => p.playerId === me.id).map(p => ({ missionIdx: p.missionIdx, url: p.url })),
       myPhotoVotes: this.photoVotes[me.id] || {},
     };
-  }
-
-  glitchMissionFor(world) {
-    if (!world) return null;
-    const missions = {
-      w1: "Sème le doute : accuse discrètement quelqu'un d'autre dès maintenant.",
-      w2: "Sabotage : donne une fausse direction dans le labyrinthe sans te griller.",
-      w3: "Cache ou 'perds' une pièce du puzzle pendant 3 minutes.",
-      w4: "Le Game Master est éveillé. Reste naturel, détourne les soupçons.",
-      w5: "C'est l'heure du vote. Fais accuser un innocent. Mens avec panache.",
-      w6: "Dernier sabotage : ralentis le boss final d'une bêtise… puis sauve-toi.",
-    };
-    return missions[world.id] || "Sabote discrètement et survis.";
   }
 }

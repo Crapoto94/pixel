@@ -1439,7 +1439,9 @@ function renderBossBorne(){
   const K=(label,o={})=>`<button class="kkey${o.wide?' wide':''}${o.xwide?' xwide':''}"${o.k?` data-k="${o.k}"`:''}>${label}</button>`;
   stage.innerHTML = `<div class="center">
     <h1 class="big neon-pink glow-box">👾 SYSTÈME PLANTÉ</h1>
-    <p class="big">La réalité est <b>FIGÉE</b>. <span class="neon-yellow">Forcez le redémarrage de l'ordinateur…</span></p>
+    <p class="big">Le système réclame le <span class="neon-yellow">CODE DE REDÉMARRAGE</span>. Tapez-le, puis ⏎.</p>
+    <div style="display:inline-block;background:#0a0420;border:2px solid var(--neon4);border-radius:8px;padding:8px 18px;font-family:'Courier New',monospace;font-size:30px;color:#2effd5;letter-spacing:6px;min-width:240px">&gt; <span id="bossCode">_</span></div>
+    <div id="bossFeedback" class="big" style="margin:6px 0;min-height:30px"></div>
     <div style="display:flex;align-items:flex-start;justify-content:center;flex-wrap:wrap;gap:10px">
       <div class="kbd">
         <div class="krow">${K('Échap')}${rows[0].map(c=>K(c)).join('')}${K('⌫',{wide:true})}</div>
@@ -1462,19 +1464,36 @@ function renderBossBorne(){
       </div>
     </div>
   </div>`;
-  const pressed=new Set(); let triggered=false;
+  const pressed=new Set(); let typed='';
   const menu=document.getElementById('rebootMenu');
-  function check(){ if(!triggered && pressed.has('CTRL') && pressed.has('ALT') && pressed.has('SUPR')){ triggered=true; if(window.SFX){try{SFX.twist();}catch(_){}} menu.style.display='flex'; } }
+  const disp=document.getElementById('bossCode');
+  const fb=document.getElementById('bossFeedback');
+  function reboot(){ fetch('/api/boss/reboot',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{}); }
+  function updateDisp(){ disp.textContent = typed || '_'; }
+  // chemin normal : Ctrl + Alt + Suppr maintenus en même temps → menu
+  function checkCombo(){ if(menu.style.display==='none' && pressed.has('CTRL') && pressed.has('ALT') && pressed.has('SUPR')){ if(window.SFX){try{SFX.twist();}catch(_){}} menu.style.display='flex'; } }
+  // saisie du code de redémarrage
+  function validateCode(){
+    if(typed.toUpperCase()==='REB00T'){ fb.style.color='#2effd5'; fb.textContent='✅ CODE ACCEPTÉ — REDÉMARRAGE…'; if(window.SFX){try{SFX.win();}catch(_){}} reboot(); }
+    else { fb.style.color='#ff2e88'; fb.textContent='❌ MAUVAIS CODE'; if(window.SFX){try{SFX.wrong();}catch(_){}} typed=''; updateDisp(); }
+  }
+  function codeKey(ch){
+    if(ch==='⌫'){ typed=typed.slice(0,-1); fb.textContent=''; }
+    else if(ch==='⏎'){ validateCode(); return; }
+    else if(/^[A-Z0-9]$/.test(ch)){ if(typed.length<12){ typed+=ch; fb.textContent=''; } }
+    else return;
+    updateDisp();
+  }
   stage.querySelectorAll('.kkey').forEach(el=>{
     const k=el.dataset.k;
-    const down=(e)=>{ e.preventDefault(); try{el.setPointerCapture(e.pointerId);}catch(_){} el.classList.add('kdown'); if(k){ pressed.add(k); check(); } };
+    const down=(e)=>{ e.preventDefault(); try{el.setPointerCapture(e.pointerId);}catch(_){} el.classList.add('kdown'); if(k){ pressed.add(k); checkCombo(); } else { codeKey(el.textContent); } };
     const up=()=>{ el.classList.remove('kdown'); if(k) pressed.delete(k); };
     el.addEventListener('pointerdown',down);
     el.addEventListener('pointerup',up);
     el.addEventListener('pointercancel',up);
   });
   const rb=document.getElementById('rebootBtn');
-  if(rb) rb.addEventListener('click',()=>{ fetch('/api/boss/reboot',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{}); });
+  if(rb) rb.addEventListener('click', reboot);
   tickerEl.textContent='BOSS FINAL — la borne est plantée…';
 }
 </script>

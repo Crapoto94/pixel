@@ -245,11 +245,24 @@ function render(){
   }
 
   else if (STATE.phase === 'win') {
-    html = `<div class="center glow-box">
-      <div class="huge pixel neon-yellow">YOU&nbsp;WIN!</div>
-      <p class="big">La réalité a redémarré. 🎉</p>
-      <div class="mt">${highScore()}</div>
-    </div>`;
+    if (STATE.winVideo) {
+      html = `<div class="center" style="padding-top:10px">
+        <h1 class="huge neon-yellow pixel blink">💥 BRAVO</h1>
+        <h2 class="big neon-pink" style="margin-top:0">BON ANNIVERSAIRE VINCENT !</h2>
+        <div style="margin-top:10px;max-width:560px;width:90%">
+          <div style="position:relative;padding-bottom:56.25%;height:0">
+            <iframe src="https://www.youtube.com/embed/${STATE.winVideo}?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:12px" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div class="mt">${highScore()}</div>
+      </div>`;
+    } else {
+      html = `<div class="center glow-box">
+        <div class="huge pixel neon-yellow">YOU&nbsp;WIN!</div>
+        <p class="big">La réalité a redémarré. 🎉</p>
+        <div class="mt">${highScore()}</div>
+      </div>`;
+    }
   }
 
   else if (STATE.world) {
@@ -328,38 +341,47 @@ function activityView(act){
     const hp = (act.data && act.data.hp != null) ? act.data.hp : 100;
     const won = act.done;
     const sub = act.data && act.data.sub;
-    // Phase 1 : Konami code
+    const cr = (act.data && act.data.cursorRow) || 0;
+    const cc = (act.data && act.data.cursorCol) || 0;
+    // Phase 1 : Konami
     if (!sub || sub === 'konami') {
       return `<div class="center">
         <h1 class="huge neon-pink glow-box">${won ? '💥 BOSS VAINCU !' : '👾 BOSS FINAL'}</h1>
         <div class="hpbar" style="max-width:700px;margin:18px auto"><div style="width:${Math.max(0,hp)}%;transition:width .5s"></div></div>
         <p class="big">Saisis le code avec ta manette</p>
-        ${won ? `<div class="huge neon-yellow pixel blink" style="margin-top:24px">YOU&nbsp;WIN!</div>` : ''}
       </div>`;
     }
-    // Phase 2 : clavier virtuel pour taper REBOOT
-    if (sub === 'reboot') {
-      const KEYBOARD = [['A','B','C','D','E','F','G'],['H','I','J','K','L','M','N'],['O','P','Q','R','S','T','U'],['V','W','X','Y','Z','⌫','→']];
-      const cr = act.data.cursorRow || 0;
-      const cc = act.data.cursorCol || 0;
-      const rebootSeq = act.data.rebootSeq || [];
-      const word = rebootSeq.join('');
+    // Phase 2 : clavier complet
+    if (sub === 'keyboard') {
+      const seq = act.data.comboSeq || [];
+      return keyboardBorne(act,`<p class="big">CTRL + ALT + SUPR</p><p class="muted" style="font-size:14px">Combo : ${seq.join(' + ') || '…'}</p>`);
+    }
+    // Phase 3 : menu REBOOT DU MONDE
+    if (sub === 'menu') {
+      const sel = act.data.menuSel === 0;
       return `<div class="center">
-        <h1 class="huge neon-pink glow-box">👾 CODE FINAL</h1>
-        <p class="big" style="margin-bottom:6px">Tape REBOOT sur le clavier</p>
-        <div style="background:rgba(0,0,0,.7);border:2px solid #ff2e88;border-radius:12px;padding:14px;display:inline-block">
-          <div style="font-family:'Courier New',monospace;font-size:32px;letter-spacing:8px;color:#fff;min-height:44px;margin-bottom:10px;background:#111;padding:6px 14px;border-radius:6px">${word || '______'}</div>
-          <div style="display:grid;grid-template-columns:repeat(7,48px);gap:4px;justify-content:center">
-            ${KEYBOARD.map((row,ri)=>row.map((ch,ci)=>{
-              const sel = (ri===cr && ci===cc);
-              const isSpecial = (ch==='⌫'||ch==='→');
-              const bg = sel ? (isSpecial ? '#ff2e88' : 'var(--neon2)') : '#222';
-              const col = sel ? '#fff' : (isSpecial ? '#ff8ab4' : '#ccc');
-              return `<div style="background:${bg};color:${col};width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;border-radius:6px;cursor:pointer;border:${sel?'2px solid #fff':'1px solid #444'}">${ch}</div>`;
-            }).join('')).join('')}
+        <h1 class="big neon-pink glow-box" style="font-size:28px">⚠️ ANOMALIE DÉTECTÉE</h1>
+        <div style="background:rgba(0,0,0,.8);border:2px solid #ff2e88;border-radius:12px;padding:20px;display:inline-block;margin-top:12px">
+          <div style="border:${sel?'2px solid #fff':'1px solid #444'};background:${sel?'#ff2e88':'#111'};color:#fff;padding:12px 32px;border-radius:8px;font-size:24px;font-weight:bold;cursor:pointer">🔴 REBOOT DU MONDE</div>
+        </div>
+        <p class="muted" style="margin-top:10px;font-size:14px">▲▼ = choisir &nbsp; A = valider</p>
+      </div>`;
+    }
+    // Phase 4 : saisie du code 42
+    if (sub === 'code') {
+      const word = (act.data.rebootSeq || []).join('');
+      return keyboardBorne(act,`<p class="big">Code secret : <span style="background:#111;padding:4px 12px;border-radius:4px;font-family:'Courier New',monospace">${word||'____'}</span></p><p class="muted" style="font-size:14px">Quelle est la réponse à l'univers ?</p>`);
+    }
+    // Victory
+    if (won) {
+      return `<div class="center" style="padding-top:10px">
+        <h1 class="huge neon-yellow pixel blink">💥 BRAVO</h1>
+        <h2 class="big neon-pink" style="margin-top:0">BON ANNIVERSAIRE VINCENT !</h2>
+        <div style="margin-top:10px;max-width:560px;width:90%">
+          <div id="win-player" style="position:relative;padding-bottom:56.25%;height:0">
+            <iframe src="https://www.youtube.com/embed/6EEGmdH9Vu0?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:12px" allow="autoplay; encrypted-media" allowfullscreen></iframe>
           </div>
         </div>
-        <p class="muted" style="margin-top:10px;font-size:14px">▲▼◄► = déplacer &nbsp; A = sélectionner &nbsp; B = effacer</p>
       </div>`;
     }
     return `<div class="center"><h1 class="big">👾 BOSS FINAL</h1></div>`;
@@ -1429,6 +1451,29 @@ function syncYT(s){
 
 const EMOJI = { player_one:'👑', wilsonik:'🦔', riu:'👊', zilda:'🗡️', super_mariano:'🍄', lara_croute:'🏺', glouton:'🟡' };
 function avatarEmoji(a){ return EMOJI[a] || '🎮'; }
+
+function keyboardBorne(act, header) {
+  const KEYBOARD = [['1','2','3','4','5','6','7'],['8','9','0','A','B','C','D'],['E','F','G','H','I','J','K'],['L','M','N','O','P','Q','R'],['S','T','U','V','W','X','Y'],['Z','.','⌫','CTRL','ALT','SUPR','→']];
+  const cr = (act.data && act.data.cursorRow) || 0;
+  const cc = (act.data && act.data.cursorCol) || 0;
+  return `<div class="center">
+    <h1 class="big neon-pink glow-box">👾 BOSS FINAL</h1>
+    ${header || ''}
+    <div style="background:rgba(0,0,0,.7);border:2px solid #ff2e88;border-radius:12px;padding:14px;display:inline-block;margin-top:6px">
+      <div style="display:grid;grid-template-columns:repeat(7,50px);gap:4px;justify-content:center">
+        ${KEYBOARD.map((row,ri)=>row.map((ch,ci)=>{
+          const sel = (ri===cr && ci===cc);
+          const isSpecial = (ch==='⌫'||ch==='→'||ch==='CTRL'||ch==='ALT'||ch==='SUPR');
+          const bg = sel ? (isSpecial ? '#ff2e88' : 'var(--neon2)') : '#222';
+          const col = sel ? '#fff' : (isSpecial ? '#ff8ab4' : '#ccc');
+          const fs = ch==='CTRL'||ch==='ALT'||ch==='SUPR' ? '13px' : '18px';
+          return `<div style="background:${bg};color:${col};width:46px;height:44px;display:flex;align-items:center;justify-content:center;font-size:${fs};font-weight:bold;border-radius:6px;border:${sel?'2px solid #fff':'1px solid #444'}">${ch}</div>`;
+        }).join('')).join('')}
+      </div>
+    </div>
+    <p class="muted" style="margin-top:10px;font-size:14px">▲▼◄► = déplacer &nbsp; A = sélectionner</p>
+  </div>`;
+}
 </script>
 </body>
 </html>

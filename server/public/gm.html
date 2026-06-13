@@ -178,6 +178,10 @@ function render(){
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">📸 DÉFIS PHOTO</div>
     <div class="muted mt" style="font-size:13px">Photos : <code>${S.photos ? S.photos.length : 0}</code> soumises</div>
+    ${S.photos && S.photos.length ? `<div class="mt" style="font-size:13px">${[...new Map(S.photos.map(p=>[p.playerName,p])).keys()].map(name=>{
+      const count = S.photos.filter(p=>p.playerName===name).length;
+      return esc(name)+': <b>'+count+'</b>';
+    }).join(' · ')}</div>` : ''}
     <div class="grid3 mt">
       <button class="btn warn" onclick="act('setPhotoPhase',{phase:'vote'})">📸 Ouvrir vote</button>
       <button class="btn secondary" onclick="act('setPhotoPhase',{phase:'results'})">🏆 Résultats</button>

@@ -1064,21 +1064,21 @@ export class GameState {
     }
   }
 
-  // ---- Boss final : entrée du Konami Code → REBOOT sur la BORNE ----
+  // ---- Boss final : Konami Code → CTRL+ALT+SUPR → REBOOT DU MONDE → code 42 ----
   bossInput(key) {
     const a = this.activity;
     if (!a || a.type !== 'boss_final' || a.done) return { ok: false };
     if (!a.data) a.data = {};
-    // Phase 1 : entrée du Konami Code
+
+    // Phase 1 : Konami Code (inchangé)
     if (!a.data.sub || a.data.sub === 'konami') {
       a.data.sub = 'konami';
       const KONAMI = ['HAUT','HAUT','BAS','BAS','GAUCHE','DROITE','GAUCHE','DROITE','B','A'];
       const maxLen = KONAMI.length;
       if (!a.data.seq) a.data.seq = [];
       const seq = a.data.seq;
-      const pos = seq.length;
-      if (pos >= maxLen) { a.data.seq = []; return { ok: false }; }
-      if (key !== KONAMI[pos]) {
+      if (seq.length >= maxLen) { a.data.seq = []; return { ok: false }; }
+      if (key !== KONAMI[seq.length]) {
         a.data.seq = [];
         a.data.wrongCount = (a.data.wrongCount || 0) + 1;
         this.touch();
@@ -1087,52 +1087,104 @@ export class GameState {
       seq.push(key);
       a.data.hp = Math.round((1 - seq.length / maxLen) * 100);
       if (seq.length >= maxLen) {
-        // Konami réussi → ouvre le clavier virtuel pour taper REBOOT
-        a.data.sub = 'reboot';
-        a.data.rebootSeq = [];
+        // Konami réussi → clavier virtuel
+        a.data.sub = 'keyboard';
         a.data.cursorRow = 0;
         a.data.cursorCol = 0;
+        a.data.comboSeq = [];
         a.data.hp = 0;
-        this.addLog('👾 KONAMI CODE OK — entrez REBOOT sur le clavier de la BORNE !');
+        this.addLog('👾 KONAMI OK — entre CTRL+ALT+SUPR sur le clavier !');
       }
       this.touch();
       return { ok: true, pos: seq.length, total: maxLen };
     }
-    // Phase 2 : clavier virtuel sur la BORNE pour taper REBOOT
-    if (a.data.sub === 'reboot') {
-      const KEYBOARD = [
-        ['A','B','C','D','E','F','G'],
-        ['H','I','J','K','L','M','N'],
-        ['O','P','Q','R','S','T','U'],
-        ['V','W','X','Y','Z','⌫','→'],
-      ];
-      const rows = KEYBOARD.length, cols = KEYBOARD[0].length;
+
+    // Keyboard helper
+    const KEYBOARD = [
+      ['1','2','3','4','5','6','7'],
+      ['8','9','0','A','B','C','D'],
+      ['E','F','G','H','I','J','K'],
+      ['L','M','N','O','P','Q','R'],
+      ['S','T','U','V','W','X','Y'],
+      ['Z','.','⌫','CTRL','ALT','SUPR','→'],
+    ];
+    const NB_ROWS = KEYBOARD.length, NB_COLS = KEYBOARD[0].length;
+
+    // Phase 2 : clavier — combo CTRL+ALT+SUPR
+    if (a.data.sub === 'keyboard') {
       if (key === 'HAUT') a.data.cursorRow = Math.max(0, a.data.cursorRow - 1);
-      else if (key === 'BAS') a.data.cursorRow = Math.min(rows - 1, a.data.cursorRow + 1);
+      else if (key === 'BAS') a.data.cursorRow = Math.min(NB_ROWS - 1, a.data.cursorRow + 1);
       else if (key === 'GAUCHE') a.data.cursorCol = Math.max(0, a.data.cursorCol - 1);
-      else if (key === 'DROITE') a.data.cursorCol = Math.min(cols - 1, a.data.cursorCol + 1);
+      else if (key === 'DROITE') a.data.cursorCol = Math.min(NB_COLS - 1, a.data.cursorCol + 1);
       else if (key === 'A') {
-        const letter = KEYBOARD[a.data.cursorRow][a.data.cursorCol];
-        if (letter === '⌫') {
-          a.data.rebootSeq.pop();
-        } else if (letter === '→') {
-          // Valide le mot tapé
-          const word = (a.data.rebootSeq || []).join('');
-          if (word === 'REBOOT') {
-            a.done = true;
-            this.addLog('👾 CODE REBOOT VALIDÉ — le boss est vaincu !');
-            this.completeWorld();
+        const sel = KEYBOARD[a.data.cursorRow][a.data.cursorCol];
+        if (sel === 'CTRL' || sel === 'ALT' || sel === 'SUPR') {
+          const expected = ['CTRL','ALT','SUPR'];
+          const next = a.data.comboSeq.length;
+          if (sel === expected[next]) {
+            a.data.comboSeq.push(sel);
+            if (a.data.comboSeq.length >= 3) {
+              a.data.sub = 'menu';
+              a.data.menuSel = 0;
+              this.addLog('👾 CTRL+ALT+SUPR — menu REBOOT ouvert !');
+            }
+          } else if (sel === 'CTRL') {
+            a.data.comboSeq = ['CTRL'];
           } else {
-            a.data.rebootSeq = [];
-            this.addLog('🔴 Code incorrect, réessaie.');
+            a.data.comboSeq = [];
           }
-        } else {
-          if ((a.data.rebootSeq || []).length < 10) a.data.rebootSeq.push(letter);
         }
       }
       this.touch();
       return { ok: true };
     }
+
+    // Phase 3 : menu REBOOT DU MONDE
+    if (a.data.sub === 'menu') {
+      if (key === 'HAUT' || key === 'GAUCHE') a.data.menuSel = Math.max(0, (a.data.menuSel||0) - 1);
+      else if (key === 'BAS' || key === 'DROITE') a.data.menuSel = Math.min(0, (a.data.menuSel||0) + 1);
+      else if (key === 'A' && a.data.menuSel === 0) {
+        a.data.sub = 'code';
+        a.data.rebootSeq = [];
+        a.data.cursorRow = 0;
+        a.data.cursorCol = 0;
+      }
+      this.touch();
+      return { ok: true };
+    }
+
+    // Phase 4 : saisie du code secret 42
+    if (a.data.sub === 'code') {
+      if (key === 'HAUT') a.data.cursorRow = Math.max(0, a.data.cursorRow - 1);
+      else if (key === 'BAS') a.data.cursorRow = Math.min(NB_ROWS - 1, a.data.cursorRow + 1);
+      else if (key === 'GAUCHE') a.data.cursorCol = Math.max(0, a.data.cursorCol - 1);
+      else if (key === 'DROITE') a.data.cursorCol = Math.min(NB_COLS - 1, a.data.cursorCol + 1);
+      else if (key === 'A') {
+        const sel = KEYBOARD[a.data.cursorRow][a.data.cursorCol];
+        if (sel === '⌫') {
+          (a.data.rebootSeq || []).pop();
+        } else if (sel === '→') {
+          const word = (a.data.rebootSeq || []).join('');
+          if (word === '42') {
+            a.done = true;
+            this.winVideo = '6EEGmdH9Vu0';
+            this.addLog('💥 BRAVO, BON ANNIVERSAIRE VINCENT !');
+            this.completeWorld();
+          } else {
+            a.data.rebootSeq = [];
+            this.addLog('🔴 Code secret incorrect. La réponse est l\'univers…');
+          }
+        } else if (!['CTRL','ALT','SUPR'].includes(sel)) {
+          if ((a.data.rebootSeq || []).length < 10) {
+            if (!a.data.rebootSeq) a.data.rebootSeq = [];
+            a.data.rebootSeq.push(sel);
+          }
+        }
+      }
+      this.touch();
+      return { ok: true };
+    }
+
     return { ok: false };
   }
 
@@ -1582,6 +1634,7 @@ export class GameState {
       tron: this.tron ? this.tron.publicState() : null,
       g2048: this.g2048 ? this.g2048.publicState() : null,
       pong: this.pong ? this.pong.publicState() : null,
+      winVideo: this.winVideo || null,
       photoPhase: this.photoPhase,
       photos: this.photoPhase ? this.photos : [],
       photoResults: this.photoPhase === 'results' ? this.photoResults() : null,

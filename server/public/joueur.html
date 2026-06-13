@@ -185,6 +185,23 @@ function render() {
     return;
   }
 
+  // --- Victoire : vidéo anniversaire ---
+  if (STATE.phase === 'win') {
+    if (STATE.winVideo) {
+      html += `<div class="card center glow-box" style="border-color:var(--neon3)">
+        <h1 class="neon-yellow pixel">💥 BRAVO !</h1>
+        <h2 class="neon-pink">BON ANNIVERSAIRE VINCENT !</h2>
+        <div style="margin-top:8px;max-width:100%">
+          <div style="position:relative;padding-bottom:56.25%;height:0">
+            <iframe src="https://www.youtube.com/embed/${STATE.winVideo}?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="card center glow-box"><h1 class="neon-yellow pixel">YOU WIN!</h1><p class="big">La réalité a redémarré. 🎉</p></div>`;
+    }
+  }
+
   // --- Lobby ---
   if (STATE.phase === 'lobby') {
     html += `
@@ -888,14 +905,21 @@ let _bossSeq = [];
 function bossGamepadView(act) {
   if (act.done) {
     return `<div class="card center glow-box" style="border-color:var(--neon3)">
-      <div class="pill neon-yellow">💥 BOSS VAINCU !</div>
-      <h2 class="neon-cyan">CODE VALIDÉ</h2>
+      <div class="pill neon-yellow">💥 BRAVO !</div>
+      <h2 class="neon-cyan">BON ANNIVERSAIRE VINCENT !</h2>
       <p class="big">🎉 REGARDE LA BORNE !</p>
+      <div style="margin-top:8px;max-width:100%">
+        <div style="position:relative;padding-bottom:56.25%;height:0">
+          <iframe src="https://www.youtube.com/embed/6EEGmdH9Vu0?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+      </div>
     </div>`;
   }
   const sub = act.data && act.data.sub;
   let label = 'Utilise ta manette pour entrer le code sur la BORNE.';
-  if (sub === 'reboot') label = 'Déplace le curseur sur le clavier de la BORNE avec les flèches, A = sélectionner, B = effacer.';
+  if (sub === 'keyboard') label = 'Sélectionne les touches CTRL, ALT et SUPR dans l\'ordre sur le clavier de la BORNE.';
+  else if (sub === 'menu') label = 'Choisis une option dans le menu sur la BORNE.';
+  else if (sub === 'code') label = 'Tape le code secret sur le clavier de la BORNE — quelle est la réponse à l\'univers ?';
   return `<div class="card glow-box center" style="border-color:var(--neon3);background:#1a0008">
     <div class="pill neon-pink">👾 BOSS FINAL</div>
     <p class="muted" style="font-size:13px">${label}</p>

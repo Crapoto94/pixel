@@ -39,7 +39,6 @@ export const CONFIG = {
 //  - token : identifiant secret dans l'URL perso /j/<token> (QR code).
 //    Garde-les difficiles à deviner. Régénère-les avec `npm run qr`.
 //  - avatar : doit correspondre à une clé de data/avatars.
-//  - glitchEligible : false pour Marc (hôte) et Vincent (héros).
 //  - isHero : Vincent uniquement (déclenche le twist du Monde 4).
 // ---------------------------------------------------------------------
 export const PLAYERS = [
@@ -48,7 +47,6 @@ export const PLAYERS = [
     name: 'Vincent',
     avatar: 'player_one',
     token: 'PXL-VNCT-7777',
-    glitchEligible: false,
     isHero: true,
   },
   {
@@ -56,35 +54,30 @@ export const PLAYERS = [
     name: 'Willy',
     avatar: 'wilsonik',
     token: 'PXL-WLLY-2310',
-    glitchEligible: true,
   },
   {
     id: 'stephane',
     name: 'Stéphane',
     avatar: 'riu',
     token: 'PXL-STPH-6660',
-    glitchEligible: true,
   },
   {
     id: 'jessica',
     name: 'Jessica',
     avatar: 'zilda',
     token: 'PXL-JSSC-2199',
-    glitchEligible: true,
   },
   {
     id: 'marie-anne',
     name: 'Marie-Anne',
     avatar: 'super_mariano',
     token: 'PXL-MRNN-1985',
-    glitchEligible: true,
   },
   {
     id: 'marc',
     name: 'Marc',
     avatar: 'lara_croute',
     token: 'PXL-MARC-0001',
-    glitchEligible: false,
     isHost: true,
   },
   // ---- Slot optionnel : décommente si le papa/maman de Vincent vient ----
@@ -93,7 +86,7 @@ export const PLAYERS = [
   //   name: 'Parent',
   //   avatar: 'glouton',
   //   token: 'PXL-PRNT-0042',
-  //   glitchEligible: true,
+  //
   // },
 ];
 

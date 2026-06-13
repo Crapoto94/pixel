@@ -114,16 +114,27 @@ if (/[?&]debug=1/.test(location.search)) {
 }
 
 // --- Activation du son au 1er clic n'importe où (obligatoire sur navigateur) ---
-let SOUND_ON = false;
+let SOUND_ON = false, YT_BLESSED = false;
 function enableSound(){
-  if (SOUND_ON) return;
-  if (window.SFX) { SFX.unlock(); SFX.coin(); if (SFX.pacPreload) SFX.pacPreload(); }
-  SOUND_ON = true;
-  const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
-  // Engagement audio DANS le geste : unMute + setVolume + playVideo (sinon le
-  // navigateur peut couper le son juste après l'avoir lancé).
-  if (ytAmb) { try { ytAmb.unMute(); ytAmb.setVolume(70); ytAmb.playVideo(); } catch(_){} }
-  else initYT(); // API pas encore prête, on démarre normalement
+  if (!SOUND_ON) {
+    if (window.SFX) { SFX.unlock(); SFX.coin(); if (SFX.pacPreload) SFX.pacPreload(); }
+    SOUND_ON = true;
+    const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
+  }
+  // BÉNÉDICTION des lecteurs YouTube : il faut dé-muter CHAQUE lecteur DANS un
+  // geste utilisateur, sinon Chrome coupe le son ~1 s après un unMute() lancé
+  // plus tard depuis un callback SSE (cas du blind-test et de Pac-Man).
+  // On dé-mute → joue → re-mute instantanément ; seul l'ambiance reste audible.
+  if (!YT_BLESSED) {
+    if (ytAmb || ytBt || ytPac) {
+      YT_BLESSED = true;
+      try { if (ytBt)  { ytBt.unMute();  ytBt.playVideo();  ytBt.mute(); } } catch(_){}            // reste en lecture muette (moisson des titres)
+      try { if (ytPac) { ytPac.unMute(); ytPac.playVideo(); ytPac.mute(); ytPac.pauseVideo(); } } catch(_){} // muet + en pause jusqu'à Pac-Man
+      try { if (ytAmb) { ytAmb.unMute(); ytAmb.setVolume(70); ytAmb.playVideo(); } } catch(_){}
+    } else {
+      initYT(); // API pas prête : on initialise, la bénédiction aura lieu au prochain geste
+    }
+  }
 }
 document.getElementById('soundhint').addEventListener('click', enableSound);
 ['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: false }));

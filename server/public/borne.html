@@ -168,7 +168,6 @@ function render(){
     && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
   if (briefTimer && !_inBrief){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
-    if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
   }
   // --- BRIEFING : déroulé scénario + attendus par joueur ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='briefing'){
@@ -530,7 +529,8 @@ function setupBriefing(){
   if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
   briefKey = STATE.activity.startedAt;
   briefSlides = null; briefIdx = 0;
-  if (SOUND_ON && window.SFX && SFX.briefMusic) SFX.briefMusic(); // musique chiptune de fond (comme hier)
+  // Musique de fond = la vraie playlist jeux vidéo (ytAmb).
+  try { if (ytAmb){ ytAmb.unMute(); ytAmb.setVolume(60); ytAmb.playVideo(); } } catch(_){}
   stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
   tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
   fetch('/api/briefing').then(r=>r.json()).then(d=>{
@@ -1464,8 +1464,9 @@ function syncYT(s){
   }
   const isBT = a && a.type === 'blindtest';
   const isPac = a && a.type === 'pacman';
-  // Une chanson blind-test est posée uniquement quand le QCM est affiché.
-  const songOn = isBT && a.sub === 'question' && !!a.playVideoId;
+  // La chanson joue pendant la question ET la révélation (sinon elle se coupe
+  // dès que tout le monde a répondu → sub passe à 'reveal' → ytBt muté ~1s).
+  const songOn = isBT && (a.sub === 'question' || a.sub === 'reveal') && !!a.playVideoId;
   // Diffusion vidéo : l'iframe fournit le son → on coupe tout le reste.
   if (a && a.type === 'videoshow') {
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}

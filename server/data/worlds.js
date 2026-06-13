@@ -179,8 +179,8 @@ export const WORLDS = [
       "BOSS FINAL. La BORNE elle-même est le boss. « Vous ne sortirez jamais d'ici… " +
       "à moins de me REBOOTER. Mais d'abord : prouvez que vous êtes LA TEAM. »",
     enigme:
-      "Chacun a une MANETTE. Saisissez TOUS la SÉQUENCE LÉGENDAIRE (un pour tous, tous pour " +
-      "un !). Une fois la porte ouverte, tapez la COMMANDE de redémarrage… en LEET.",
+      "Affrontement final contre la BORNE. À vous de trouver comment forcer le système… " +
+      "puis quelle COMMANDE lui rendra la raison.",
     code: 'R38007', // REBOOT en leet-speak (R-3-B-0-0-7)
     codeNormalise: 'R38007',
     colisContenu: [
@@ -190,7 +190,7 @@ export const WORLDS = [
       'Le CADEAU / coffre de Vincent à déverrouiller au moment du « YOU WIN ! ».',
     ],
     indices: {
-      player_one: ['Une fois que tout le monde a saisi le Konami : la commande est REBOOT… mais en LEET.'],
+      player_one: ['La BORNE ne comprend pas le langage des humains… seulement celui des vrais hackers.'],
     },
     activite: 'boss_final',
     gagePool: 'collectif',

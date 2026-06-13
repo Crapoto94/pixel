@@ -327,12 +327,42 @@ function activityView(act){
   if (act.type==='boss_final'){
     const hp = (act.data && act.data.hp != null) ? act.data.hp : 100;
     const won = act.done;
-    return `<div class="center">
-      <h1 class="huge neon-pink glow-box">${won ? '💥 BOSS VAINCU !' : '👾 BOSS FINAL'}</h1>
-      <div class="hpbar" style="max-width:700px;margin:18px auto"><div style="width:${Math.max(0,hp)}%;transition:width .5s"></div></div>
-      <p class="big">${won ? '✅ CODE VALIDÉ — REBOOT EN COURS…' : 'Saisis le code avec ta manette'}</p>
-      ${won ? `<div class="huge neon-yellow pixel blink" style="margin-top:24px">YOU&nbsp;WIN!</div>` : ''}
-    </div>`;
+    const sub = act.data && act.data.sub;
+    // Phase 1 : Konami code
+    if (!sub || sub === 'konami') {
+      return `<div class="center">
+        <h1 class="huge neon-pink glow-box">${won ? '💥 BOSS VAINCU !' : '👾 BOSS FINAL'}</h1>
+        <div class="hpbar" style="max-width:700px;margin:18px auto"><div style="width:${Math.max(0,hp)}%;transition:width .5s"></div></div>
+        <p class="big">Saisis le code avec ta manette</p>
+        ${won ? `<div class="huge neon-yellow pixel blink" style="margin-top:24px">YOU&nbsp;WIN!</div>` : ''}
+      </div>`;
+    }
+    // Phase 2 : clavier virtuel pour taper REBOOT
+    if (sub === 'reboot') {
+      const KEYBOARD = [['A','B','C','D','E','F','G'],['H','I','J','K','L','M','N'],['O','P','Q','R','S','T','U'],['V','W','X','Y','Z','⌫','→']];
+      const cr = act.data.cursorRow || 0;
+      const cc = act.data.cursorCol || 0;
+      const rebootSeq = act.data.rebootSeq || [];
+      const word = rebootSeq.join('');
+      return `<div class="center">
+        <h1 class="huge neon-pink glow-box">👾 CODE FINAL</h1>
+        <p class="big" style="margin-bottom:6px">Tape REBOOT sur le clavier</p>
+        <div style="background:rgba(0,0,0,.7);border:2px solid #ff2e88;border-radius:12px;padding:14px;display:inline-block">
+          <div style="font-family:'Courier New',monospace;font-size:32px;letter-spacing:8px;color:#fff;min-height:44px;margin-bottom:10px;background:#111;padding:6px 14px;border-radius:6px">${word || '______'}</div>
+          <div style="display:grid;grid-template-columns:repeat(7,48px);gap:4px;justify-content:center">
+            ${KEYBOARD.map((row,ri)=>row.map((ch,ci)=>{
+              const sel = (ri===cr && ci===cc);
+              const isSpecial = (ch==='⌫'||ch==='→');
+              const bg = sel ? (isSpecial ? '#ff2e88' : 'var(--neon2)') : '#222';
+              const col = sel ? '#fff' : (isSpecial ? '#ff8ab4' : '#ccc');
+              return `<div style="background:${bg};color:${col};width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;border-radius:6px;cursor:pointer;border:${sel?'2px solid #fff':'1px solid #444'}">${ch}</div>`;
+            }).join('')).join('')}
+          </div>
+        </div>
+        <p class="muted" style="margin-top:10px;font-size:14px">▲▼◄► = déplacer &nbsp; A = sélectionner &nbsp; B = effacer</p>
+      </div>`;
+    }
+    return `<div class="center"><h1 class="big">👾 BOSS FINAL</h1></div>`;
   }
   return `<div class="center"><h1 class="big">ACTIVITÉ</h1></div>`;
 }

@@ -893,9 +893,12 @@ function bossGamepadView(act) {
       <p class="big">🎉 REGARDE LA BORNE !</p>
     </div>`;
   }
+  const sub = act.data && act.data.sub;
+  let label = 'Utilise ta manette pour entrer le code sur la BORNE.';
+  if (sub === 'reboot') label = 'Déplace le curseur sur le clavier de la BORNE avec les flèches, A = sélectionner, B = effacer.';
   return `<div class="card glow-box center" style="border-color:var(--neon3);background:#1a0008">
     <div class="pill neon-pink">👾 BOSS FINAL</div>
-    <p class="muted" style="font-size:13px">Utilise ta manette pour entrer le code sur la BORNE.</p>
+    <p class="muted" style="font-size:13px">${label}</p>
     <div class="dpad" style="max-width:240px">
       <div class="empty"></div><button class="tbtn" onclick="bossPress('HAUT')">▲</button><div class="empty"></div>
       <button class="tbtn" onclick="bossPress('GAUCHE')">◄</button><div class="empty"></div><button class="tbtn" onclick="bossPress('DROITE')">►</button>

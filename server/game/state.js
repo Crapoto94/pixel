@@ -1064,32 +1064,76 @@ export class GameState {
     }
   }
 
-  // ---- Boss final : entrée du Konami Code -------------------------
+  // ---- Boss final : entrée du Konami Code → REBOOT sur la BORNE ----
   bossInput(key) {
     const a = this.activity;
     if (!a || a.type !== 'boss_final' || a.done) return { ok: false };
-    const KONAMI = ['HAUT','HAUT','BAS','BAS','GAUCHE','DROITE','GAUCHE','DROITE','B','A'];
-    const maxLen = KONAMI.length;
     if (!a.data) a.data = {};
-    if (!a.data.seq) a.data.seq = [];
-    const seq = a.data.seq;
-    const pos = seq.length;
-    if (pos >= maxLen) { a.data.seq = []; return { ok: false }; }
-    if (key !== KONAMI[pos]) {
-      a.data.seq = [];
-      a.data.wrongCount = (a.data.wrongCount || 0) + 1;
+    // Phase 1 : entrée du Konami Code
+    if (!a.data.sub || a.data.sub === 'konami') {
+      a.data.sub = 'konami';
+      const KONAMI = ['HAUT','HAUT','BAS','BAS','GAUCHE','DROITE','GAUCHE','DROITE','B','A'];
+      const maxLen = KONAMI.length;
+      if (!a.data.seq) a.data.seq = [];
+      const seq = a.data.seq;
+      const pos = seq.length;
+      if (pos >= maxLen) { a.data.seq = []; return { ok: false }; }
+      if (key !== KONAMI[pos]) {
+        a.data.seq = [];
+        a.data.wrongCount = (a.data.wrongCount || 0) + 1;
+        this.touch();
+        return { ok: false };
+      }
+      seq.push(key);
+      a.data.hp = Math.round((1 - seq.length / maxLen) * 100);
+      if (seq.length >= maxLen) {
+        // Konami réussi → ouvre le clavier virtuel pour taper REBOOT
+        a.data.sub = 'reboot';
+        a.data.rebootSeq = [];
+        a.data.cursorRow = 0;
+        a.data.cursorCol = 0;
+        a.data.hp = 0;
+        this.addLog('👾 KONAMI CODE OK — entrez REBOOT sur le clavier de la BORNE !');
+      }
       this.touch();
-      return { ok: false };
+      return { ok: true, pos: seq.length, total: maxLen };
     }
-    seq.push(key);
-    a.data.hp = Math.round((1 - seq.length / maxLen) * 100);
-    if (seq.length >= maxLen) {
-      a.done = true;
-      this.addLog('👾 CODE VALIDÉ — le boss est vaincu !');
-      this.completeWorld();
+    // Phase 2 : clavier virtuel sur la BORNE pour taper REBOOT
+    if (a.data.sub === 'reboot') {
+      const KEYBOARD = [
+        ['A','B','C','D','E','F','G'],
+        ['H','I','J','K','L','M','N'],
+        ['O','P','Q','R','S','T','U'],
+        ['V','W','X','Y','Z','⌫','→'],
+      ];
+      const rows = KEYBOARD.length, cols = KEYBOARD[0].length;
+      if (key === 'HAUT') a.data.cursorRow = Math.max(0, a.data.cursorRow - 1);
+      else if (key === 'BAS') a.data.cursorRow = Math.min(rows - 1, a.data.cursorRow + 1);
+      else if (key === 'GAUCHE') a.data.cursorCol = Math.max(0, a.data.cursorCol - 1);
+      else if (key === 'DROITE') a.data.cursorCol = Math.min(cols - 1, a.data.cursorCol + 1);
+      else if (key === 'A') {
+        const letter = KEYBOARD[a.data.cursorRow][a.data.cursorCol];
+        if (letter === '⌫') {
+          a.data.rebootSeq.pop();
+        } else if (letter === '→') {
+          // Valide le mot tapé
+          const word = (a.data.rebootSeq || []).join('');
+          if (word === 'REBOOT') {
+            a.done = true;
+            this.addLog('👾 CODE REBOOT VALIDÉ — le boss est vaincu !');
+            this.completeWorld();
+          } else {
+            a.data.rebootSeq = [];
+            this.addLog('🔴 Code incorrect, réessaie.');
+          }
+        } else {
+          if ((a.data.rebootSeq || []).length < 10) a.data.rebootSeq.push(letter);
+        }
+      }
+      this.touch();
+      return { ok: true };
     }
-    this.touch();
-    return { ok: true, pos: seq.length, total: maxLen };
+    return { ok: false };
   }
 
   stopActivity() {

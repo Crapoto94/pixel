@@ -917,19 +917,10 @@ function bossGamepadView(act) {
   }
   return `<div class="card glow-box center" style="border-color:var(--neon3);background:#1a0008">
     <div class="pill neon-pink">👾 BOSS FINAL</div>
-    <div class="dpad" style="max-width:240px">
-      <div class="empty"></div><button class="tbtn" onclick="bossPress('HAUT')">▲</button><div class="empty"></div>
-      <button class="tbtn" onclick="bossPress('GAUCHE')">◄</button><div class="empty"></div><button class="tbtn" onclick="bossPress('DROITE')">►</button>
-      <div class="empty"></div><button class="tbtn" onclick="bossPress('BAS')">▼</button><div class="empty"></div>
-    </div>
-    <div class="row" style="gap:10px;justify-content:center;margin-top:10px">
-      <button class="tbtn" style="background:#ff2e88;color:#fff;max-width:80px" onclick="bossPress('B')">B</button>
-      <button class="tbtn" style="background:#38ff9c;color:#03010a;max-width:80px" onclick="bossPress('A')">A</button>
-    </div>
+    <h2 class="neon-cyan">LA BORNE EST PLANTÉE 📺</h2>
+    <p class="big">Tous autour de la borne !</p>
+    <p>La réalité est <b>figée</b>. Trouvez ensemble comment <b>forcer le redémarrage</b> d'un ordinateur bloqué… directement sur le clavier de la BORNE.</p>
   </div>`;
-}
-function bossPress(key) {
-  api('/api/boss/input', { key }).then(r => { if (!r.ok) poll(); else poll(); });
 }
 
 function quizController(act) {

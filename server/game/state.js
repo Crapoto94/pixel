@@ -612,15 +612,12 @@ export class GameState {
       this.activity.winnerIds = [];
       this._scheduleRoue();
     }
-    // Boss final : entrée du Konami Code sur la BORNE via manettes téléphone
+    // Boss final : clavier AZERTY sur la BORNE. Le redémarrage se déclenche au
+    // combo Ctrl+Alt+Suppr (détecté côté borne en multi-touch). Aucun indice donné.
     if (type === 'boss_final') {
-      this.activity.data = {
-        seq: [],
-        hp: 100,
-        wrongCount: 0,
-      };
+      this.activity.data = { rebooted: false };
       this.activity.done = false;
-      this.addLog('👾 BOSS FINAL — entrez le code sur la BORNE avec vos manettes !');
+      this.addLog('👾 BOSS FINAL — la BORNE est plantée. Trouvez comment forcer le redémarrage…');
     }
     // Diffusion vidéo : tout le monde (borne + téléphones) joue une vidéo
     // YouTube avec un bandeau (danse des canards, anecdotes, etc.).
@@ -1064,7 +1061,21 @@ export class GameState {
     }
   }
 
-  // ---- Boss final : Konami Code → CTRL+ALT+SUPR → REBOOT DU MONDE → code 42 ----
+  // ---- Boss final : la BORNE détecte Ctrl+Alt+Suppr → REDÉMARRER → victoire ----
+  bossReboot() {
+    const a = this.activity;
+    if (!a || a.type !== 'boss_final' || a.done) return { ok: false };
+    a.data = a.data || {};
+    a.data.rebooted = true;
+    a.done = true;
+    this.winVideo = '6EEGmdH9Vu0';
+    this.addLog('💥 REDÉMARRAGE DE LA RÉALITÉ — BON ANNIVERSAIRE VINCENT !');
+    this.completeWorld();
+    this.touch();
+    return { ok: true };
+  }
+
+  // (legacy) ancien boss au gamepad — conservé mais plus utilisé par la borne.
   bossInput(key) {
     const a = this.activity;
     if (!a || a.type !== 'boss_final' || a.done) return { ok: false };

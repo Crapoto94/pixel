@@ -196,6 +196,12 @@ app.post('/api/boss/input', (req, res) => {
   res.json(r);
 });
 
+// Boss final : la BORNE déclenche le redémarrage (combo Ctrl+Alt+Suppr détecté
+// côté borne en multi-touch). Pas de token : action de la borne elle-même.
+app.post('/api/boss/reboot', (req, res) => {
+  res.json(game.bossReboot());
+});
+
 // --- Photos joueurs --------------------------------------------------
 app.post('/api/photo/upload', photoUpload.single('photo'), (req, res) => {
   const token = req.body?.token;

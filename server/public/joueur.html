@@ -278,6 +278,10 @@ function controllerView(act) {
   if (act.type === 'enquete') {
     return enqueteController(act);
   }
+  // BOSS FINAL : manette pour entrer le Konami Code sur la BORNE
+  if (act.type === 'boss_final') {
+    return bossGamepadView(act);
+  }
   // ROUE DES GAGES : détail du défi puis vote du meilleur
   if (act.type === 'roue_des_gages') {
     return roueController(act);
@@ -877,6 +881,42 @@ function enqueteCode(){
       : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
     poll();
   });
+}
+
+// ---- Boss Final : manette Konami Code --------------------------------
+let _bossSeq = [];
+function bossGamepadView(act) {
+  if (act.done) {
+    return `<div class="card center glow-box" style="border-color:var(--neon3)">
+      <div class="pill neon-yellow">💥 BOSS VAINCU !</div>
+      <h2 class="neon-cyan">KONAMI CODE VALIDÉ</h2>
+      <p class="big">🎉 REGARDE LA BORNE !</p>
+    </div>`;
+  }
+  const seq = (act.data && act.data.seq) || [];
+  const pos = seq.length;
+  const KONAMI_LABELS = ['↑','↑','↓','↓','←','→','←','→','B','A'];
+  const filled = KONAMI_LABELS.map((s, i) =>
+    `<span style="display:inline-block;width:28px;height:30px;line-height:30px;margin:2px;border:2px solid ${i < pos ? 'var(--ok)' : '#ffffff33'};border-radius:4px;background:${i < pos ? 'var(--ok)' : 'transparent'};color:${i < pos ? '#03010a' : '#ffffff66'};font-size:16px;font-weight:bold">${s}</span>`
+  ).join('');
+  return `<div class="card glow-box center" style="border-color:var(--neon3);background:#1a0008">
+    <div class="pill neon-pink">👾 BOSS FINAL — KONAMI CODE</div>
+    <p class="muted" style="font-size:13px">Chaque joueur a sa manette. Entrez le code ensemble sur la BORNE !</p>
+    <div style="margin:10px auto">${filled}</div>
+    <div class="dpad" style="max-width:240px">
+      <div class="empty"></div><button class="tbtn" onclick="bossPress('HAUT')">▲</button><div class="empty"></div>
+      <button class="tbtn" onclick="bossPress('GAUCHE')">◄</button><div class="empty"></div><button class="tbtn" onclick="bossPress('DROITE')">►</button>
+      <div class="empty"></div><button class="tbtn" onclick="bossPress('BAS')">▼</button><div class="empty"></div>
+    </div>
+    <div class="row" style="gap:10px;justify-content:center;margin-top:10px">
+      <button class="tbtn" style="background:#ff2e88;color:#fff;max-width:80px" onclick="bossPress('B')">B</button>
+      <button class="tbtn" style="background:#38ff9c;color:#03010a;max-width:80px" onclick="bossPress('A')">A</button>
+    </div>
+    <p class="muted mt" style="font-size:11px">⬆⬆⬇⬇⬅➡⬅➡ 🅱🅰</p>
+  </div>`;
+}
+function bossPress(key) {
+  api('/api/boss/input', { key }).then(r => { if (!r.ok) poll(); else poll(); });
 }
 
 function quizController(act) {

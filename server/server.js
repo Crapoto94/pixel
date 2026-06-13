@@ -190,6 +190,12 @@ app.post('/api/answer', (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/boss/input', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  const r = game.bossInput(req.body.key);
+  res.json(r);
+});
+
 // --- Photos joueurs --------------------------------------------------
 app.post('/api/photo/upload', photoUpload.single('photo'), (req, res) => {
   const token = req.body?.token;

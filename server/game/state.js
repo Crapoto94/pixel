@@ -109,7 +109,7 @@ export class GameState {
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
       g2048Timer, g2048, pongTimer, pong,
-      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, ...data } = this;
+      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _winTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -337,6 +337,10 @@ export class GameState {
     if (!world || this.phase === 'finale' || this.phase === 'win') {
       return { ok: false, reason: 'Aucun monde actif.' };
     }
+    // Le Monde 6 (boss final) : les codes téléphone sont des leurres
+    if (world.id === 'w6') {
+      return { ok: false, reason: 'Code incorrect. Le code REBOOT doit être saisi sur la BORNE avec le Konami Code.' };
+    }
     if (!world.code) {
       return { ok: false, reason: 'Ce monde n\'a pas de code à saisir.' };
     }
@@ -380,14 +384,22 @@ export class GameState {
     // Avancer
     if (world.isFinale) {
       this.phase = 'win';
+      this.activity = null;
       this.addLog('🏆 YOU WIN ! La réalité a redémarré.');
+      // Message de félicitations + transition automatique vers les résultats photos
+      this.addLog('🎉 BRAVO À TOUS LES PIXELS ! Vous avez sauvé la réalité !');
+      if (this._winTimer) clearTimeout(this._winTimer);
+      this._winTimer = setTimeout(() => {
+        this._winTimer = null;
+        this.setPhotoPhase('results');
+      }, 8000);
     } else {
       this.worldIndex += 1;
       const next = this.currentWorld();
       if (next) {
         this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
-        if (next.activite === 'enquete') {
-          this.startActivity('enquete');
+        if (next.activite === 'enquete' || next.activite === 'boss_final') {
+          this.startActivity(next.activite);
         }
       }
     }
@@ -599,6 +611,16 @@ export class GameState {
       this.activity.votes = {};                 // voterId -> targetId
       this.activity.winnerIds = [];
       this._scheduleRoue();
+    }
+    // Boss final : entrée du Konami Code sur la BORNE via manettes téléphone
+    if (type === 'boss_final') {
+      this.activity.data = {
+        seq: [],
+        hp: 100,
+        wrongCount: 0,
+      };
+      this.activity.done = false;
+      this.addLog('👾 BOSS FINAL — entrez le Konami Code sur la BORNE !');
     }
     // Diffusion vidéo : tout le monde (borne + téléphones) joue une vidéo
     // YouTube avec un bandeau (danse des canards, anecdotes, etc.).
@@ -1042,6 +1064,34 @@ export class GameState {
     }
   }
 
+  // ---- Boss final : entrée du Konami Code -------------------------
+  bossInput(key) {
+    const a = this.activity;
+    if (!a || a.type !== 'boss_final' || a.done) return { ok: false };
+    const KONAMI = ['HAUT','HAUT','BAS','BAS','GAUCHE','DROITE','GAUCHE','DROITE','B','A'];
+    const maxLen = KONAMI.length;
+    if (!a.data) a.data = {};
+    if (!a.data.seq) a.data.seq = [];
+    const seq = a.data.seq;
+    const pos = seq.length;
+    if (pos >= maxLen) { a.data.seq = []; return { ok: false }; }
+    if (key !== KONAMI[pos]) {
+      a.data.seq = [];
+      a.data.wrongCount = (a.data.wrongCount || 0) + 1;
+      this.touch();
+      return { ok: false };
+    }
+    seq.push(key);
+    a.data.hp = Math.round((1 - seq.length / maxLen) * 100);
+    if (seq.length >= maxLen) {
+      a.done = true;
+      this.addLog('👾 KONAMI CODE VALIDÉ — le boss est vaincu !');
+      this.completeWorld();
+    }
+    this.touch();
+    return { ok: true, pos: seq.length, total: maxLen };
+  }
+
   stopActivity() {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
@@ -1052,13 +1102,14 @@ export class GameState {
     if (this.pongTimer) { clearInterval(this.pongTimer); this.pongTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
+    if (this._winTimer) { clearTimeout(this._winTimer); this._winTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;
     this.g2048 = null;
     this.pong = null;
     if (this.activity) this.activity.state = 'done';
-    this.phase = 'world';
+    if (this.phase !== 'win') this.phase = 'world';
     this.touch();
   }
 

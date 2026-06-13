@@ -165,25 +165,21 @@ export const WORLDS = [
     isFinale: true,
     intro:
       "BOSS FINAL. La BORNE elle-même est le boss. « Vous ne sortirez jamais d'ici… " +
-      "à moins de me REBOOTER. »",
+      "à moins de me REBOOTER. Entrez le CODE KONAMI sur la BORNE pour tout reboot. »",
     enigme:
-      "Affrontement collectif : enchaînez les QTE (épreuves rapides) affichées sur la BORNE. " +
-      "Tous vos pouvoirs et objets servent ici. VINCENT porte le COUP FINAL.",
-    code: 'REBOOT',
-    codeNormalise: 'REBOOT',
+      "Le Konami Code est la clé du reboot. Chaque joueur a une manette sur son téléphone. " +
+      "Appuyez sur les touches dans l'ordre : ↑ ↑ ↓ ↓ ← → ← → B A. La BORNE affiche la progression. " +
+      "Si une erreur se glisse, la séquence se réinitialise.",
+    code: '',
+    codeNormalise: '',
     colisContenu: [
-      'La CARTE DORÉE FINALE à scanner sur la borne quand la barre de vie du boss atteint zéro.',
-      'Le mot-code REBOOT caché (coup final).',
-      'Le CADEAU / coffre de Vincent à déverrouiller au moment du « YOU WIN ! ».',
+      'Aucun colis — le boss se bat à coup de Konami Code !',
     ],
-    indices: {
-      player_one: ['Quand la barre de vie du boss est à zéro : scanne la CARTE DORÉE sur la BORNE.'],
-    },
+    indices: {},
     activite: 'boss_final',
     gagePool: 'collectif',
     twist:
-      "YOU WIN ! La réalité redémarre. Le coffre final / cadeau de Vincent se déverrouille. " +
-      "Feu d'artifice 8-bit + classement HIGH SCORE.",
+      "YOU WIN ! La réalité redémarre. Feu d'artifice 8-bit + classement HIGH SCORE.",
   },
 ];
 

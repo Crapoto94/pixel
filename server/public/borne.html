@@ -89,6 +89,30 @@ fetch('/api/build').then(r=>r.json()).then(d=>{
   const el = document.getElementById('buildtag'); if (el) el.textContent = 'build ' + (d.build||'?');
 }).catch(()=>{});
 
+// Diagnostic lecteurs YouTube — UNIQUEMENT si l'URL contient ?debug=1.
+// Affiche en direct l'état (lecture/pause/muet) de chaque lecteur pour pouvoir
+// diagnostiquer le son sur le VRAI appareil (iPad/PC) où la console est inaccessible.
+if (/[?&]debug=1/.test(location.search)) {
+  const dbg = document.createElement('div');
+  dbg.style.cssText = 'position:fixed;top:18px;left:5px;z-index:9999;font-family:monospace;font-size:11px;color:#2effd5;background:#000a;padding:4px 6px;border-radius:4px;white-space:pre;pointer-events:none';
+  document.body.appendChild(dbg);
+  const ST = { '-1':'unstart','0':'end','1':'PLAY','2':'pause','3':'buf','5':'cued' };
+  const line = (name, p) => {
+    if (!p || !p.getPlayerState) return name + ': —';
+    try { return name + ': ' + (ST[p.getPlayerState()]||'?') + (p.isMuted&&p.isMuted()?' M':'') + ' t' + (p.getCurrentTime?p.getCurrentTime().toFixed(0):'?'); }
+    catch(_) { return name + ': err'; }
+  };
+  setInterval(() => {
+    dbg.textContent = [
+      'son:' + (typeof SOUND_ON!=='undefined'&&SOUND_ON?'ON':'off'),
+      line('amb', typeof ytAmb!=='undefined'?ytAmb:null),
+      line('bt',  typeof ytBt!=='undefined'?ytBt:null),
+      line('pac', typeof ytPac!=='undefined'?ytPac:null),
+      line('show',typeof ytShow!=='undefined'?ytShow:null),
+    ].join('\n');
+  }, 500);
+}
+
 // --- Activation du son au 1er clic n'importe où (obligatoire sur navigateur) ---
 let SOUND_ON = false;
 function enableSound(){

@@ -383,6 +383,9 @@ function renderVideoPlayer(me) {
       <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
       <div style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
         <div style="aspect-ratio:9/16"><div id="videoplayer" style="width:100%;height:100%"></div></div>
+        <div id="vid-tap-overlay" onclick="vidTapStart()" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(0,0,0,.45)">
+          <div style="font-size:64px;line-height:1;filter:drop-shadow(0 0 12px #ff2e88)">▶</div>
+        </div>
         ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
           font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}
       </div>
@@ -390,10 +393,17 @@ function renderVideoPlayer(me) {
     </div>`;
   phoneShowStart(a.intro || PHONE_INTRO, a.video || '7kyY29BHTZs');
 }
+function vidTapStart(){
+  const ov = document.getElementById('vid-tap-overlay');
+  if (ov) ov.style.display = 'none';
+  try { if (ytPhone) { ytPhone.unMute(); ytPhone.setVolume(100); ytPhone.playVideo(); } } catch(_){}
+}
 function destroyPhonePlayer(){ try { if (ytPhone) { ytPhone.destroy(); ytPhone = null; } } catch(_){ ytPhone = null; } }
 // Sting d'intro (son à fond) puis vidéo principale en boucle, sur le téléphone.
 function phoneShowStart(intro, main){
   if (!(window.YT && YT.Player)){ // pas d'API : on joue directement la vidéo principale
+    const ov = document.getElementById('vid-tap-overlay');
+    if (ov) ov.remove();
     const el = document.getElementById('videoplayer');
     if (el) el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
       src="https://www.youtube.com/embed/${main}?autoplay=1&playsinline=1&loop=1&playlist=${main}&rel=0"
@@ -407,7 +417,12 @@ function phoneShowStart(intro, main){
     events:{
       onReady(e){ try{ e.target.playVideo(); }catch(_){} },
       onStateChange(e){
-        if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} }
+        if (e.data === YT.PlayerState.PLAYING){
+          // autoplay a réussi → on cache l'overlay et on coupe le mute
+          const ov = document.getElementById('vid-tap-overlay');
+          if (ov) ov.style.display = 'none';
+          try{ e.target.unMute(); e.target.setVolume(100); }catch(_){}
+        }
         if (e.data === YT.PlayerState.ENDED){
           if (!ytPhone._main){ ytPhone._main = true; try{ e.target.loadVideoById(main); e.target.unMute(); e.target.setVolume(100); }catch(_){} }
           else { try{ e.target.seekTo(0, true); e.target.playVideo(); }catch(_){} }

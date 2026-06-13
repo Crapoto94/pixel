@@ -577,14 +577,15 @@ function startShowPlayer(intro, main, startAt, autoStop){
     return;
   }
   destroyShowPlayer();
+  // Sur desktop la borne a toujours une interaction utilisateur → pas besoin du hack mute+unmute
+  // (mute:1 + unMute() dans onStateChange cause un arrêt sur Chrome PC)
   if (!intro){
     ytShow = new YT.Player('ytshow', {
       height:'100%', width:'100%', videoId: main,
-      playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0, start: startAt },
+      playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0, start: startAt },
       events:{
-        onReady(e){ try{ e.target.playVideo(); }catch(_){} },
+        onReady(e){ try{ e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
         onStateChange(e){
-          if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} }
           if (e.data === YT.PlayerState.ENDED){
             if (autoStop) { fetch('/api/end-video', {method:'POST'}).catch(()=>{}); return; }
             try{ e.target.seekTo(startAt, true); e.target.playVideo(); }catch(_){}
@@ -596,15 +597,14 @@ function startShowPlayer(intro, main, startAt, autoStop){
   }
   ytShow = new YT.Player('ytshow', {
     height:'100%', width:'100%', videoId: intro,
-    playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
+    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
     events:{
-      onReady(e){ try{ e.target.playVideo(); }catch(_){} },
+      onReady(e){ try{ e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
       onStateChange(e){
-        if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} }
         if (e.data === YT.PlayerState.ENDED){
           if (!ytShow._main){
             ytShow._main = true;
-            try{ e.target.loadVideoById({videoId: main, startSeconds: startAt}); e.target.unMute(); e.target.setVolume(100); }catch(_){}
+            try{ e.target.loadVideoById({videoId: main, startSeconds: startAt}); }catch(_){}
           } else {
             if (autoStop) { fetch('/api/end-video', {method:'POST'}).catch(()=>{}); return; }
             try{ e.target.seekTo(startAt, true); e.target.playVideo(); }catch(_){}

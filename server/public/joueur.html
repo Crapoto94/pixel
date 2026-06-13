@@ -374,14 +374,15 @@ function controllerView(act) {
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
 }
 
-// Sur mobile (touch), YouTube bloque l'autoplay — même iframe muted.
-// Solution : overlay "APPUYER" sur notre UI, player créé APRÈS le tap
-// (geste utilisateur → autoplay garanti, sting + son immédiat).
+// Sur iOS, playVideo() n'est autorisé QUE dans le handler du geste utilisateur
+// (pas dans onReady qui est asynchrone). Solution :
+//   1. Pré-charger le player (autoplay:0) sous l'overlay pendant que l'user voit le bouton
+//   2. Au tap : appeler playVideo() DIRECTEMENT dans le onclick (contexte geste valide)
 const _isMobile = navigator.maxTouchPoints > 0;
-let _pendingVideo = null; // {intro, main} en attente du tap
+let _pendingVideo = null;
 
 function renderVideoPlayer(me) {
-  if (videoKey === STATE.activity.startedAt) return; // une seule fois (sinon la vidéo redémarre)
+  if (videoKey === STATE.activity.startedAt) return;
   videoKey = STATE.activity.startedAt;
   const a = STATE.activity;
   _pendingVideo = { intro: a.intro || PHONE_INTRO, main: a.video || '7kyY29BHTZs' };
@@ -391,29 +392,57 @@ function renderVideoPlayer(me) {
       <div id="vid-wrap" style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
         <div style="aspect-ratio:9/16"><div id="videoplayer" style="width:100%;height:100%"></div></div>
         ${_isMobile ? `
-        <div id="vid-tap-overlay" onclick="vidTapStart()" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;gap:16px">
+        <div id="vid-tap-overlay" onclick="vidTapStart()" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;gap:16px;z-index:5">
           <div style="font-size:72px;color:#ff2e88;filter:drop-shadow(0 0 16px #ff2e88)">▶</div>
           <div style="font-family:var(--pixel);color:#fff;font-size:13px;text-align:center;line-height:1.6">APPUYER<br>POUR LANCER</div>
         </div>` : ''}
-        ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
+        ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;z-index:6;background:rgba(212,0,0,.92);color:#fff;
           font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}
       </div>
       ${a.footer?`<p class="muted" style="font-size:13px">${a.footer}</p>`:''}
     </div>`;
-  // Desktop : lancement immédiat sans geste
-  if (!_isMobile) phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
+  if (_isMobile && window.YT && YT.Player) {
+    // Pré-charge silencieusement sous l'overlay (autoplay:0)
+    _phonePreload(_pendingVideo.intro, _pendingVideo.main);
+  } else if (!_isMobile) {
+    phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
+  }
+}
+
+function _phonePreload(intro, main){
+  destroyPhonePlayer();
+  ytPhone = new YT.Player('videoplayer', {
+    height:'100%', width:'100%', videoId: intro,
+    playerVars:{ autoplay:0, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
+    events:{
+      onReady(){ ytPhone._preloaded = true; },
+      onStateChange(e){
+        if (e.data === YT.PlayerState.ENDED){
+          if (!ytPhone._main){ ytPhone._main = true; try{ ytPhone.loadVideoById(main); }catch(_){} }
+          else { try{ ytPhone.seekTo(0,true); ytPhone.playVideo(); }catch(_){} }
+        }
+      }
+    }
+  });
 }
 
 function vidTapStart(){
   const ov = document.getElementById('vid-tap-overlay');
   if (ov) ov.remove();
-  if (_pendingVideo) phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
+  if (ytPhone && ytPhone._preloaded) {
+    // Player prêt : play dans le contexte du geste → iOS autorise le son
+    try{ ytPhone.unMute(); ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
+  } else if (ytPhone) {
+    // Pas encore prêt : on marque, onReady lancera
+    ytPhone._tapPending = true;
+  } else if (_pendingVideo) {
+    // Pas d'API YT : iframe directe
+    phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
+  }
 }
 
 function destroyPhonePlayer(){ try { if (ytPhone) { ytPhone.destroy(); ytPhone = null; } } catch(_){ ytPhone = null; } }
 
-// Sting d'intro (son à fond) puis vidéo principale en boucle.
-// Appelé après geste utilisateur → autoplay + son garanti sur tous les appareils.
 function phoneShowStart(intro, main){
   const el = document.getElementById('videoplayer');
   if (!el) return;
@@ -432,7 +461,7 @@ function phoneShowStart(intro, main){
       onStateChange(e){
         if (e.data === YT.PlayerState.ENDED){
           if (!ytPhone._main){ ytPhone._main = true; try{ e.target.loadVideoById(main); }catch(_){} }
-          else { try{ e.target.seekTo(0, true); e.target.playVideo(); }catch(_){} }
+          else { try{ e.target.seekTo(0,true); e.target.playVideo(); }catch(_){} }
         }
       }
     }

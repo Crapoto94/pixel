@@ -293,18 +293,27 @@ function render(){
 
   stage.innerHTML = html;
   tickerEl.textContent = (STATE.log||[]).map(l=>l.msg).join('   ◆   ') || 'PIXEL PANIC';
-  // Win video : utilise l'API YouTube pour détecter la fin
+  // Win video : fullscreen + coupe le son ambiant
   const wv = STATE.winVideo;
   const el = document.getElementById('win-video-player');
   if (wv && el && !el._ytInit) {
     el._ytInit = true;
+    // Fullscreen
+    try { document.documentElement.requestFullscreen(); } catch(_){}
+    // Coupe tous les autres sons
+    try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.pauseVideo(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     if (window.YT && YT.Player) {
       new YT.Player('win-video-player', {
         height:'100%', width:'100%', videoId: wv,
-        playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
+        playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:1 },
         events:{
-          onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} },
-          onStateChange(e){ if (e.data === YT.PlayerState.ENDED) { fetch('/api/end-video',{method:'POST'}).catch(()=>{}); } }
+          onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+          onStateChange(e){
+            if (e.data === YT.PlayerState.ENDED) {
+              try{ if (document.fullscreenElement) document.exitFullscreen(); }catch(_){}
+              fetch('/api/end-video',{method:'POST'}).catch(()=>{});
+            }
+          }
         }
       });
     } else {

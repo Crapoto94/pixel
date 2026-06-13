@@ -619,7 +619,8 @@ export class GameState {
       this.activity.verdict = null;    // 'ok' | 'ko'
     }
     // Blind-test : toujours dynamique (titres tirés de la playlist YouTube).
-    // La 1ère chanson est lancée quand le GM appuie sur « ❓ ».
+    // La 1ère chanson démarre automatiquement (si les titres sont déjà collectés ;
+    // sinon le GM dispose d'un bouton de secours « Lancer la 1ère chanson »).
     if (type === 'blindtest') {
       this.activity.dynamicBlindtest = true;
       this.activity.generatedQuestion = null;
@@ -628,6 +629,7 @@ export class GameState {
       this.activity.firstCorrectName = null;
       this.activity.total = 15; // 15 morceaux par séance
       this.activity.asked = 0;  // morceaux déjà joués
+      this.blindtestAsk();      // pioche et lance la 1ère chanson tout de suite
     }
     // Enquête collaborative (escape) : 5 actes, indices sur la borne, codes par téléphone
     if (type === 'enquete') {

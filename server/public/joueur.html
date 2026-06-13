@@ -411,20 +411,20 @@ function renderVideoPlayer(me) {
 
 function _phonePreload(intro, main){
   destroyPhonePlayer();
+  // Pas de mute:1 → pas besoin d'unMute() (qui échoue sur iOS).
+  // playVideo() dans le tap joue directement avec le son.
   ytPhone = new YT.Player('videoplayer', {
     height:'100%', width:'100%', videoId: intro,
-    playerVars:{ autoplay:0, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
+    playerVars:{ autoplay:0, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
     events:{
       onReady(){
         ytPhone._preloaded = true;
-        // Si le tap a eu lieu avant onReady, retenter (parfois suffisant)
         if (ytPhone._tapPending){
-          try{ ytPhone.unMute(); ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
+          try{ ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
         }
       },
       onStateChange(e){
         if (e.data === YT.PlayerState.PLAYING){
-          // Vidéo lancée : on retire l'overlay s'il est encore là
           const ov = document.getElementById('vid-tap-overlay');
           if (ov) ov.remove();
         }
@@ -438,9 +438,6 @@ function _phonePreload(intro, main){
 }
 
 function vidTapStart(){
-  // On transforme l'overlay en indicateur "chargement" (ne le retire PAS encore)
-  // → l'overlay disparaît seulement quand onStateChange(PLAYING) confirme la lecture.
-  // Ainsi on ne voit jamais le logo YouTube entre le tap et la lecture effective.
   const ov = document.getElementById('vid-tap-overlay');
   if (ov){
     ov.style.pointerEvents = 'none';
@@ -448,10 +445,8 @@ function vidTapStart(){
   }
   if (ytPhone){
     ytPhone._tapPending = true;
-    // Appel synchrone dans le onclick → iOS propage le contexte geste via postMessage
-    try{ ytPhone.unMute(); ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
+    try{ ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
   } else if (_pendingVideo){
-    // Fallback sans API YT
     phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
     setTimeout(()=>{ const o=document.getElementById('vid-tap-overlay'); if(o) o.remove(); }, 800);
   }

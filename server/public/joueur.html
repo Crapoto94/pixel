@@ -220,10 +220,13 @@ function render() {
           <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE</div>
           <p>Donne tes touches à <b>VINCENT (Player One)</b> — lui seul peut valider la séquence sur la borne.</p>
         </div>`;
+      } else if (w.heroOnly) {
+        // Monde 1 (Konami) : Vincent (PLAYER ONE) entre la séquence sur une MANETTE NES.
+        html += konamiPadHTML();
       } else {
         html += `
-        <input id="codeInput" type="text" placeholder="CODE" ${w.heroOnly?'autocomplete="off"':''} />
-        <button class="btn secondary mt" onclick="submitCode()">${w.heroOnly?'👑 VALIDER LA SÉQUENCE':'VALIDER LE CODE'}</button>
+        <input id="codeInput" type="text" placeholder="CODE" />
+        <button class="btn secondary mt" onclick="submitCode()">VALIDER LE CODE</button>
         <div id="codeMsg" class="center mt"></div>`;
       }
     }
@@ -1028,6 +1031,64 @@ function submitCode(){
 function gmGage(){
   const t = document.getElementById('gmTarget').value;
   api('/api/gm/gage', { targetId: t });
+}
+
+// =================== MANETTE NES — Séquence légendaire (Monde 1, Konami) ===================
+let _konamiSeq = [];
+const _KON_LABEL = { up:'▲', down:'▼', left:'◀', right:'▶', b:'B', a:'A' };
+const _KON_TOKEN = { up:'HAUT', down:'BAS', left:'GAUCHE', right:'DROITE', b:'B', a:'A' };
+function konamiSeqText(){ return _konamiSeq.length ? _konamiSeq.map(k=>_KON_LABEL[k]).join('  ') : '· · · · · · · · · ·'; }
+function _konamiRefresh(){ const d = document.getElementById('konamiSeq'); if (d) d.textContent = konamiSeqText(); }
+function konamiPush(k){
+  _konamiSeq.push(k);
+  _konamiRefresh();
+  try { if (navigator.vibrate) navigator.vibrate(25); } catch(_){}
+}
+function konamiClear(){
+  _konamiSeq = [];
+  _konamiRefresh();
+  const m = document.getElementById('codeMsg'); if (m) m.innerHTML = '';
+}
+function konamiSubmit(){
+  const code = _konamiSeq.map(k=>_KON_TOKEN[k]).join(' ');
+  api('/api/code', { code }).then(r=>{
+    const m = document.getElementById('codeMsg');
+    if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ SÉQUENCE VALIDÉE !</span>'
+                              : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'SÉQUENCE REFUSÉE')}</span>`;
+    _konamiSeq = [];
+    if (!r.ok) _konamiRefresh();
+  });
+}
+function konamiPadHTML(){
+  const dpad = 'width:38px;height:38px;background:#1a1a1a;color:#fff;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0';
+  const ab = 'width:48px;height:48px;border-radius:50%;background:#c01b3a;color:#fff;border:3px solid #7c1226;font-family:var(--pixel);font-size:13px;cursor:pointer';
+  return `<div class="card" style="border-color:var(--neon3);background:#1a1400">
+    <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE</div>
+    <p class="muted" style="font-size:12px;margin:4px 0 8px">Rassemble les touches de tous les joueurs et entre la séquence sur la manette. Toi seul (PLAYER ONE) peux valider.</p>
+    <div id="konamiSeq" style="font-size:18px;color:var(--neon3);text-align:center;letter-spacing:2px;min-height:24px;margin-bottom:10px;word-break:break-word">${konamiSeqText()}</div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:20px;background:#cfcfcf;border:3px solid #222;border-radius:14px;padding:14px;max-width:330px;margin:0 auto">
+      <div style="display:grid;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px)">
+        <span></span>
+        <button onclick="konamiPush('up')" style="${dpad}">▲</button>
+        <span></span>
+        <button onclick="konamiPush('left')" style="${dpad}">◀</button>
+        <span style="background:#1a1a1a"></span>
+        <button onclick="konamiPush('right')" style="${dpad}">▶</button>
+        <span></span>
+        <button onclick="konamiPush('down')" style="${dpad}">▼</button>
+        <span></span>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button onclick="konamiPush('b')" style="${ab}">B</button>
+        <button onclick="konamiPush('a')" style="${ab}">A</button>
+      </div>
+    </div>
+    <div class="grid mt" style="max-width:330px;margin:10px auto 0">
+      <button class="btn" onclick="konamiClear()">⟲ Effacer</button>
+      <button class="btn secondary" onclick="konamiSubmit()">👑 VALIDER</button>
+    </div>
+    <div id="codeMsg" class="center mt"></div>
+  </div>`;
 }
 </script>
 </body>

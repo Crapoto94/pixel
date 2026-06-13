@@ -1416,6 +1416,11 @@ function initYT(){
 
 function syncYT(s){
   const a = s.activity;
+  // Vidéo anniversaire : tout couper
+  if (s.winVideo) {
+    try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+    return;
+  }
   const isBT = a && a.type === 'blindtest';
   const isPac = a && a.type === 'pacman';
   // Une chanson blind-test est posée uniquement quand le QCM est affiché.

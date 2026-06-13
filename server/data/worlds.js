@@ -165,15 +165,14 @@ export const WORLDS = [
     isFinale: true,
     intro:
       "BOSS FINAL. La BORNE elle-même est le boss. « Vous ne sortirez jamais d'ici… " +
-      "à moins de me REBOOTER. Entrez le CODE KONAMI sur la BORNE pour tout reboot. »",
+      "à moins de me REBOOTER. Vous connaissez le code. Entrez-le sur la BORNE avec votre manette. »",
     enigme:
-      "Le Konami Code est la clé du reboot. Chaque joueur a une manette sur son téléphone. " +
-      "Appuyez sur les touches dans l'ordre : ↑ ↑ ↓ ↓ ← → ← → B A. La BORNE affiche la progression. " +
-      "Si une erreur se glisse, la séquence se réinitialise.",
+      "Le code pour rebooter le système… vous l'avez déjà saisi en début de soirée. " +
+      "Rassemblez-vous, utilisez la manette sur votre téléphone, et entrez-le sur la BORNE.",
     code: '',
     codeNormalise: '',
     colisContenu: [
-      'Aucun colis — le boss se bat à coup de Konami Code !',
+      'Aucun colis — le boss se bat au clavier !',
     ],
     indices: {},
     activite: 'boss_final',

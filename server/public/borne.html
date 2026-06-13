@@ -325,20 +325,12 @@ function activityView(act){
     </div>`;
   }
   if (act.type==='boss_final'){
-    const seq = (act.data && act.data.seq) || [];
     const hp = (act.data && act.data.hp != null) ? act.data.hp : 100;
-    const wrongCount = (act.data && act.data.wrongCount) || 0;
-    const KONAMI_DISPLAY = ['↑','↑','↓','↓','←','→','←','→','B','A'];
-    const filled = KONAMI_DISPLAY.map((s, i) =>
-      `<span style="display:inline-block;width:40px;height:44px;line-height:44px;margin:4px;border:2px solid ${i < seq.length ? 'var(--ok)' : '#ffffff33'};border-radius:8px;background:${i < seq.length ? 'var(--ok)' : '#03010a'};color:${i < seq.length ? '#03010a' : '#ffffff66'};font-size:22px;font-weight:bold">${s}</span>`
-    ).join('');
     const won = act.done;
     return `<div class="center">
       <h1 class="huge neon-pink glow-box">${won ? '💥 BOSS VAINCU !' : '👾 BOSS FINAL'}</h1>
       <div class="hpbar" style="max-width:700px;margin:18px auto"><div style="width:${Math.max(0,hp)}%;transition:width .5s"></div></div>
-      <p class="big">${won ? '✅ KONAMI CODE VALIDÉ — REBOOT EN COURS…' : 'Entrez le Konami Code sur vos téléphones ↑↑↓↓←→←→BA'}</p>
-      <div style="margin:20px auto;max-width:600px">${filled}</div>
-      ${wrongCount > 0 ? `<p class="muted">❌ Erreurs : ${wrongCount}</p>` : ''}
+      <p class="big">${won ? '✅ CODE VALIDÉ — REBOOT EN COURS…' : 'Saisis le code avec ta manette'}</p>
       ${won ? `<div class="huge neon-yellow pixel blink" style="margin-top:24px">YOU&nbsp;WIN!</div>` : ''}
     </div>`;
   }

@@ -339,7 +339,7 @@ export class GameState {
     }
     // Le Monde 6 (boss final) : les codes téléphone sont des leurres
     if (world.id === 'w6') {
-      return { ok: false, reason: 'Code incorrect. Le code REBOOT doit être saisi sur la BORNE avec le Konami Code.' };
+      return { ok: false, reason: 'Code incorrect. Le code doit être saisi sur la BORNE avec la manette.' };
     }
     if (!world.code) {
       return { ok: false, reason: 'Ce monde n\'a pas de code à saisir.' };
@@ -620,7 +620,7 @@ export class GameState {
         wrongCount: 0,
       };
       this.activity.done = false;
-      this.addLog('👾 BOSS FINAL — entrez le Konami Code sur la BORNE !');
+      this.addLog('👾 BOSS FINAL — entrez le code sur la BORNE avec vos manettes !');
     }
     // Diffusion vidéo : tout le monde (borne + téléphones) joue une vidéo
     // YouTube avec un bandeau (danse des canards, anecdotes, etc.).
@@ -1085,7 +1085,7 @@ export class GameState {
     a.data.hp = Math.round((1 - seq.length / maxLen) * 100);
     if (seq.length >= maxLen) {
       a.done = true;
-      this.addLog('👾 KONAMI CODE VALIDÉ — le boss est vaincu !');
+      this.addLog('👾 CODE VALIDÉ — le boss est vaincu !');
       this.completeWorld();
     }
     this.touch();

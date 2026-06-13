@@ -7,6 +7,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { mkdirSync } from 'fs';
+import { execSync } from 'child_process';
 import multer from 'multer';
 import QRCode from 'qrcode';
 import { CONFIG, PLAYERS, NPCS } from './config.js';
@@ -19,6 +20,16 @@ import { WORLDS } from './data/worlds.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Numéro de build : hash court du commit Git en cours (pour vérifier le déploiement).
+const BUILD = (() => {
+  try {
+    const hash = execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim();
+    let dirty = '';
+    try { if (execSync('git status --porcelain', { cwd: __dirname }).toString().trim()) dirty = '*'; } catch (_) {}
+    return hash + dirty;
+  } catch (_) { return 'dev'; }
+})();
 
 // Dossier uploads (photos joueurs)
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
@@ -88,6 +99,12 @@ app.get('/api/briefing', (req, res) => {
   res.json({ scenario: SCENARIO_SLIDES, players });
 });
 app.get('/j/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'joueur.html')));
+
+// Numéro de build (hash Git) — affiché discrètement sur la borne
+app.get('/api/build', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ build: BUILD });
+});
 
 // Config YouTube exposée publiquement (IDs de playlists, pas de secret)
 app.get('/api/ytconfig', (req, res) => {
@@ -428,7 +445,7 @@ app.post('/api/gm/action', (req, res) => {
 });
 
 app.listen(CONFIG.port, () => {
-  console.log(`\n🕹️  PIXEL PANIC en ligne`);
+  console.log(`\n🕹️  PIXEL PANIC en ligne  (build ${BUILD})`);
   console.log(`   Borne   : http://localhost:${CONFIG.port}/borne`);
   console.log(`   GM      : http://localhost:${CONFIG.port}/gm`);
   console.log(`   Joueur  : http://localhost:${CONFIG.port}/j/<token>`);

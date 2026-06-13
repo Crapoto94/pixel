@@ -54,9 +54,12 @@
 </style>
 </head>
 <body class="scanlines">
-<div id="yt-amb" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
-<div id="yt-bt"  style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
-<div id="yt-pac" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="buildtag" style="position:fixed;top:3px;left:5px;z-index:9999;font-family:monospace;font-size:10px;color:#ffffff55;pointer-events:none;user-select:none"></div>
+<!-- Lecteurs YouTube de fond : DANS le viewport (tout petits, invisibles) pour que
+     le navigateur ne les mette pas en pause (un player hors écran est throttlé/coupé). -->
+<div id="yt-amb" style="position:fixed;bottom:0;right:0;width:2px;height:2px;opacity:0;pointer-events:none"></div>
+<div id="yt-bt"  style="position:fixed;bottom:0;right:2px;width:2px;height:2px;opacity:0;pointer-events:none"></div>
+<div id="yt-pac" style="position:fixed;bottom:0;right:4px;width:2px;height:2px;opacity:0;pointer-events:none"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
@@ -81,6 +84,11 @@ pollBorne();
 setInterval(() => { if (Date.now() - lastSse > 1500) pollBorne(); }, 1000);
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
+// Numéro de build affiché en haut à gauche (vérification du commit testé)
+fetch('/api/build').then(r=>r.json()).then(d=>{
+  const el = document.getElementById('buildtag'); if (el) el.textContent = 'build ' + (d.build||'?');
+}).catch(()=>{});
+
 // --- Activation du son au 1er clic n'importe où (obligatoire sur navigateur) ---
 let SOUND_ON = false;
 function enableSound(){
@@ -88,7 +96,9 @@ function enableSound(){
   if (window.SFX) { SFX.unlock(); SFX.coin(); if (SFX.pacPreload) SFX.pacPreload(); }
   SOUND_ON = true;
   const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
-  if (ytAmb) { try { ytAmb.unMute(); } catch(_){} } // déjà en train de jouer, on retire juste le mute
+  // Engagement audio DANS le geste : unMute + setVolume + playVideo (sinon le
+  // navigateur peut couper le son juste après l'avoir lancé).
+  if (ytAmb) { try { ytAmb.unMute(); ytAmb.setVolume(70); ytAmb.playVideo(); } catch(_){} }
   else initYT(); // API pas encore prête, on démarre normalement
 }
 document.getElementById('soundhint').addEventListener('click', enableSound);
@@ -122,7 +132,7 @@ let drawKey = null;
 let bossKey = null;
 let winKey = null;
 let pacEventSeen = 0;
-let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0, _briefMusicOn = false;
+let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
   if(!STATE) return;
   // Vidéo finale : on ne reconstruit le lecteur QU'UNE FOIS (sinon il redémarre
@@ -135,10 +145,6 @@ function render(){
   // Nettoyage du briefing dès qu'on ne l'affiche PLUS (passage au monde, stop…)
   const _inBrief = STATE.phase==='activity' && STATE.activity
     && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
-  if (_briefMusicOn && !_inBrief){
-    _briefMusicOn = false;
-    if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
-  }
   if (briefTimer && !_inBrief){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
   }
@@ -502,7 +508,8 @@ function setupBriefing(){
   if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
   briefKey = STATE.activity.startedAt;
   briefSlides = null; briefIdx = 0;
-  if (SOUND_ON && window.SFX && SFX.briefMusic){ SFX.briefMusic(); _briefMusicOn = true; }
+  // Musique de fond = la vraie playlist jeux vidéo (ytAmb), pas de chiptune généré.
+  try { if (ytAmb){ ytAmb.unMute(); ytAmb.setVolume(60); ytAmb.playVideo(); } } catch(_){}
   stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
   tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
   fetch('/api/briefing').then(r=>r.json()).then(d=>{

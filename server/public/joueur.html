@@ -21,8 +21,10 @@
 </head>
 <body class="scanlines">
 
-<!-- Lecteur YouTube persistant (créé au 1er tap → iOS le "déverrouille" pour toute la session) -->
-<div id="phone-yt-bg" style="display:none;position:fixed;inset:0;z-index:40;background:#000;flex-direction:column;align-items:stretch">
+<!-- Lecteur YouTube persistant (créé au 1er tap → iOS le "déverrouille" pour toute
+     la session). TOUJOURS rendu (opacity, pas display:none, sinon iOS le met en
+     pause) : on bascule juste opacity 0↔1 pour le montrer/cacher. -->
+<div id="phone-yt-bg" style="position:fixed;inset:0;z-index:40;background:#000;display:flex;flex-direction:column;align-items:stretch;opacity:0;pointer-events:none;transition:opacity .2s">
   <div id="phone-yt-slot" style="flex:1;position:relative"></div>
   <div id="phone-yt-chyron" style="display:none;background:rgba(212,0,0,.92);color:#fff;font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center"></div>
 </div>
@@ -75,7 +77,7 @@ let pacKey = null;
 let mosKey = null;
 let videoKey = null, ytReady = false, ytPhone = null;
 const PHONE_INTRO = 'Y0r3bg8hKG4';
-window.onYouTubeIframeAPIReady = function(){ ytReady = true; };
+window.onYouTubeIframeAPIReady = function(){ ytReady = true; if (window._wantUnlock){ window._wantUnlock = false; phoneUnlock(); } };
 let tetKey = null;
 let tronKey = null;
 let g2048Key = null;
@@ -397,32 +399,41 @@ let _ytPhoneReady = false;
 function phoneUnlock(){
   const splash = document.getElementById('phone-splash');
   if (splash) splash.remove();
-  // Création du player PENDANT le onclick → geste valide pour iOS
-  if (window.YT && YT.Player){
-    const container = document.createElement('div');
-    container.id = 'phone-yt-player';
-    container.style.cssText = 'width:100%;height:100%';
-    document.getElementById('phone-yt-slot').appendChild(container);
-    ytPhone = new YT.Player('phone-yt-player', {
-      height:'100%', width:'100%', videoId: 'Y0r3bg8hKG4',
-      playerVars:{ autoplay:0, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
-      events:{
-        onReady(){ _ytPhoneReady = true; try{ ytPhone.stopVideo(); }catch(_){} },
-        onStateChange(e){
-          if (e.data === YT.PlayerState.ENDED){
-            // fin du sting → vidéo principale (si définie)
-            if (ytPhone._mainVideo && !ytPhone._mainLoaded){
-              ytPhone._mainLoaded = true;
-              try{ ytPhone.loadVideoById(ytPhone._mainVideo); }catch(_){}
-            } else {
-              // vidéo principale : boucle
-              try{ ytPhone.seekTo(0,true); ytPhone.playVideo(); }catch(_){}
-            }
+  if (!(window.YT && YT.Player)){
+    // API pas prête : on réessaiera quand elle l'est (rare). On marque l'intention.
+    window._wantUnlock = true;
+    return;
+  }
+  // CLÉ iOS : pour que le player puisse plus tard jouer AVEC LE SON sans nouveau
+  // tap, il doit avoir DÉMARRÉ une lecture audible PENDANT ce geste. On crée donc
+  // le player en autoplay NON muet, on laisse le sting démarrer ~1 s (ça « bénit »
+  // l'iframe), puis on coupe. Ensuite loadVideoById joue avec le son tout seul.
+  const container = document.createElement('div');
+  container.id = 'phone-yt-player';
+  container.style.cssText = 'width:100%;height:100%';
+  document.getElementById('phone-yt-slot').appendChild(container);
+  ytPhone = new YT.Player('phone-yt-player', {
+    height:'100%', width:'100%', videoId: 'Y0r3bg8hKG4',
+    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
+    events:{
+      onReady(){
+        _ytPhoneReady = true;
+        try{ ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
+        // Coupe l'engagement après ~1,2 s sauf si une vidéo est déjà demandée
+        setTimeout(()=>{ if (!ytPhone._mainVideo){ try{ ytPhone.stopVideo(); }catch(_){} } }, 1200);
+      },
+      onStateChange(e){
+        if (e.data === YT.PlayerState.ENDED){
+          if (ytPhone._mainVideo && !ytPhone._mainLoaded){
+            ytPhone._mainLoaded = true;
+            try{ ytPhone.loadVideoById(ytPhone._mainVideo); ytPhone.setVolume(100); }catch(_){}
+          } else if (ytPhone._mainVideo){
+            try{ ytPhone.seekTo(0,true); ytPhone.playVideo(); }catch(_){} // boucle
           }
         }
       }
-    });
-  }
+    }
+  });
 }
 
 function renderVideoPlayer(me) {
@@ -431,20 +442,22 @@ function renderVideoPlayer(me) {
   const a = STATE.activity;
   const bg = document.getElementById('phone-yt-bg');
   const chyron = document.getElementById('phone-yt-chyron');
-  if (bg){ bg.style.display = 'flex'; }
+  if (bg){ bg.style.opacity = '1'; bg.style.pointerEvents = 'auto'; }
   if (chyron){ chyron.textContent = a.chyron || ''; chyron.style.display = a.chyron ? 'block' : 'none'; }
   app.innerHTML = `<div class="card center"><p class="muted" style="font-size:13px">${a.topLabel||'📺 VIDÉO'}</p></div>`;
   if (_ytPhoneReady && ytPhone){
+    // Sting d'intro puis vidéo principale (gérée dans onStateChange ENDED)
     ytPhone._mainVideo = a.video || '7kyY29BHTZs';
     ytPhone._mainLoaded = false;
-    try{ ytPhone.setVolume(100); ytPhone.loadVideoById(a.intro || a.video || '7kyY29BHTZs'); }catch(_){}
+    const first = a.intro || PHONE_INTRO || ytPhone._mainVideo;
+    try{ ytPhone.setVolume(100); ytPhone.loadVideoById(first); }catch(_){}
   }
 }
 
 function hidePhoneVideo(){
   const bg = document.getElementById('phone-yt-bg');
-  if (bg) bg.style.display = 'none';
-  try{ if (ytPhone && _ytPhoneReady) ytPhone.stopVideo(); }catch(_){}
+  if (bg){ bg.style.opacity = '0'; bg.style.pointerEvents = 'none'; }
+  try{ if (ytPhone && _ytPhoneReady){ ytPhone._mainVideo = null; ytPhone.stopVideo(); } }catch(_){}
   videoKey = null;
 }
 

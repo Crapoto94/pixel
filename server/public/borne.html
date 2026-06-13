@@ -114,8 +114,34 @@ let pongKey = null;
 let drawKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
+let winBuilt = false, ytWin = null;
+function buildWinVideo(){
+  const el = document.getElementById('win-video-player');
+  if (!el) return;
+  try { document.documentElement.requestFullscreen(); } catch(_){}
+  // Coupe tout le son de fond — la vidéo anniversaire prend la main.
+  try { if (ytAmb){ytAmb.pauseVideo();ytAmb.mute();} if (ytBt){ytBt.pauseVideo();ytBt.mute();} if (ytPac){ytPac.pauseVideo();ytPac.mute();} } catch(_){}
+  if (window.YT && YT.Player){
+    ytWin = new YT.Player('win-video-player', {
+      height:'100%', width:'100%', videoId:'6EEGmdH9Vu0',
+      playerVars:{ autoplay:1, controls:1, playsinline:1, rel:0, modestbranding:1, fs:1 },
+      events:{ onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} } }
+    });
+  } else {
+    el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
+      src="https://www.youtube.com/embed/6EEGmdH9Vu0?autoplay=1&playsinline=1&rel=0"
+      allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+  }
+}
 function render(){
   if(!STATE) return;
+  // Victoire (fin du Monde 6) : lecteur vidéo PLEIN ÉCRAN, construit UNE SEULE FOIS.
+  if (STATE.phase === 'win'){ if (winBuilt) return; }
+  else if (winBuilt){
+    winBuilt = false;
+    try { if (ytWin){ ytWin.destroy(); ytWin = null; } } catch(_){ ytWin = null; }
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch(_){}
+  }
   // Nettoyage du briefing si on en sort
   if (briefTimer && !(STATE.activity && STATE.activity.type==='briefing')){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
@@ -251,10 +277,8 @@ function render(){
   }
 
   else if (STATE.phase === 'win') {
-    html = `<div class="center glow-box">
-      <div class="huge pixel neon-yellow">YOU&nbsp;WIN!</div>
-      <p class="big">La réalité a redémarré. 🎉</p>
-      <div class="mt">${highScore()}</div>
+    html = `<div style="position:fixed;inset:0;z-index:9000;background:#000">
+      <div id="win-video-player" style="width:100%;height:100%"></div>
     </div>`;
   }
 
@@ -271,6 +295,7 @@ function render(){
   }
 
   stage.innerHTML = html;
+  if (STATE.phase === 'win' && !winBuilt){ winBuilt = true; buildWinVideo(); }
   tickerEl.textContent = (STATE.log||[]).map(l=>l.msg).join('   ◆   ') || 'PIXEL PANIC';
 }
 

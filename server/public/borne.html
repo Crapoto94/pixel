@@ -120,10 +120,18 @@ let tronKey = null;
 let pongKey = null;
 let drawKey = null;
 let bossKey = null;
+let winKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
   if(!STATE) return;
+  // Vidéo finale : on ne reconstruit le lecteur QU'UNE FOIS (sinon il redémarre
+  // à chaque frame et ne joue jamais, et l'ambiance reprend).
+  if (STATE.phase === 'win' && STATE.winVideo) {
+    if (winKey === STATE.winVideo) return; // déjà construite et en lecture
+  } else {
+    winKey = null;
+  }
   // Nettoyage du briefing dès qu'on ne l'affiche PLUS (passage au monde, stop…)
   const _inBrief = STATE.phase==='activity' && STATE.activity
     && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
@@ -260,15 +268,11 @@ function render(){
 
   else if (STATE.phase === 'win') {
     if (STATE.winVideo) {
-      html = `<div class="center" style="padding-top:10px">
-        <h1 class="huge neon-yellow pixel blink">💥 BRAVO</h1>
-        <h2 class="big neon-pink" style="margin-top:0">BON ANNIVERSAIRE VINCENT !</h2>
-        <div style="margin-top:10px;max-width:560px;width:90%">
-          <div style="position:relative;padding-bottom:56.25%;height:0">
-            <div id="win-video-player" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:12px"></div>
-          </div>
+      html = `<div id="winOverlay" style="position:fixed;inset:0;background:#000;z-index:50000;display:flex;align-items:center;justify-content:center">
+        <div style="position:absolute;top:6px;left:0;right:0;text-align:center;z-index:2;pointer-events:none">
+          <span class="pixel neon-yellow blink" style="font-size:20px">🎉 BON ANNIVERSAIRE VINCENT !</span>
         </div>
-        <div class="mt">${highScore()}</div>
+        <div id="win-video-player" style="width:100vw;height:100vh"></div>
       </div>`;
     } else {
       html = `<div class="center glow-box">
@@ -293,22 +297,26 @@ function render(){
 
   stage.innerHTML = html;
   tickerEl.textContent = (STATE.log||[]).map(l=>l.msg).join('   ◆   ') || 'PIXEL PANIC';
-  // Win video : fullscreen + coupe le son ambiant
+  // Win video : plein écran (overlay) + coupe DÉFINITIVEMENT le son ambiant
   const wv = STATE.winVideo;
   const el = document.getElementById('win-video-player');
   if (wv && el && !el._ytInit) {
     el._ytInit = true;
-    // Fullscreen
+    winKey = wv; // construit une seule fois (cf. garde en haut de render)
+    // Plein écran navigateur (best-effort) ; l'overlay assure déjà le plein cadre.
     try { document.documentElement.requestFullscreen(); } catch(_){}
-    // Coupe tous les autres sons
-    try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.pauseVideo(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+    // Coupe tous les autres lecteurs YouTube (ambiance, rock, pac-man).
+    try { if (ytAmb){ ytAmb.pauseVideo(); ytAmb.mute(); } if (ytBt){ ytBt.pauseVideo(); ytBt.mute(); } if (ytPac){ ytPac.pauseVideo(); ytPac.mute(); } } catch(_){}
     if (window.YT && YT.Player) {
       new YT.Player('win-video-player', {
         height:'100%', width:'100%', videoId: wv,
-        playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:1 },
+        playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:1 },
         events:{
-          onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+          onReady(e){ try{ e.target.playVideo(); }catch(_){} },
           onStateChange(e){
+            if (e.data === YT.PlayerState.PLAYING) {
+              try{ e.target.unMute(); e.target.setVolume(100); }catch(_){}
+            }
             if (e.data === YT.PlayerState.ENDED) {
               try{ if (document.fullscreenElement) document.exitFullscreen(); }catch(_){}
               fetch('/api/end-video',{method:'POST'}).catch(()=>{});
@@ -318,7 +326,7 @@ function render(){
       });
     } else {
       // Fallback iframe si l'API n'est pas encore chargée
-      el.outerHTML = `<iframe src="https://www.youtube.com/embed/${wv}?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:12px" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      el.outerHTML = `<iframe src="https://www.youtube.com/embed/${wv}?autoplay=1&playsinline=1&controls=1" style="width:100vw;height:100vh;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
     }
   }
 }
@@ -572,10 +580,11 @@ function startShowPlayer(intro, main, startAt, autoStop){
   if (!intro){
     ytShow = new YT.Player('ytshow', {
       height:'100%', width:'100%', videoId: main,
-      playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0, start: startAt },
+      playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0, start: startAt },
       events:{
-        onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+        onReady(e){ try{ e.target.playVideo(); }catch(_){} },
         onStateChange(e){
+          if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} }
           if (e.data === YT.PlayerState.ENDED){
             if (autoStop) { fetch('/api/end-video', {method:'POST'}).catch(()=>{}); return; }
             try{ e.target.seekTo(startAt, true); e.target.playVideo(); }catch(_){}
@@ -587,10 +596,11 @@ function startShowPlayer(intro, main, startAt, autoStop){
   }
   ytShow = new YT.Player('ytshow', {
     height:'100%', width:'100%', videoId: intro,
-    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
+    playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
     events:{
-      onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+      onReady(e){ try{ e.target.playVideo(); }catch(_){} },
       onStateChange(e){
+        if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} }
         if (e.data === YT.PlayerState.ENDED){
           if (!ytShow._main){
             ytShow._main = true;

@@ -193,7 +193,7 @@ function render() {
         <h2 class="neon-pink">BON ANNIVERSAIRE VINCENT !</h2>
         <div style="margin-top:8px;max-width:100%">
           <div style="position:relative;padding-bottom:56.25%;height:0">
-            <iframe src="https://www.youtube.com/embed/${STATE.winVideo}?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <div id="phone-win-player" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px"></div>
           </div>
         </div>
       </div>`;
@@ -267,6 +267,24 @@ function render() {
   html += photoSection(me);
 
   app.innerHTML = html + footer();
+  // Vidéo anniversaire : initialisation YT Player (autoplay iPad = démarrer muet)
+  const _phoneWinId = STATE.winVideo ? (STATE.phase === 'win' ? 'phone-win-player' : 'phone-boss-player') : null;
+  if (_phoneWinId && !document.getElementById(_phoneWinId)._pwp) {
+    const el = document.getElementById(_phoneWinId);
+    if (el) {
+      el._pwp = true;
+      if (window.YT && YT.Player) {
+        new YT.Player(_phoneWinId, {
+          height:'100%', width:'100%', videoId: STATE.winVideo,
+          playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
+          events:{
+            onReady(e){ try{ e.target.playVideo(); }catch(_){} },
+            onStateChange(e){ if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} } }
+          }
+        });
+      }
+    }
+  }
 }
 
 function footer() {
@@ -385,10 +403,11 @@ function phoneShowStart(intro, main){
   destroyPhonePlayer();
   ytPhone = new YT.Player('videoplayer', {
     height:'100%', width:'100%', videoId: intro,
-    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
+    playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
     events:{
-      onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+      onReady(e){ try{ e.target.playVideo(); }catch(_){} },
       onStateChange(e){
+        if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} }
         if (e.data === YT.PlayerState.ENDED){
           if (!ytPhone._main){ ytPhone._main = true; try{ e.target.loadVideoById(main); e.target.unMute(); e.target.setVolume(100); }catch(_){} }
           else { try{ e.target.seekTo(0, true); e.target.playVideo(); }catch(_){} }
@@ -910,7 +929,7 @@ function bossGamepadView(act) {
       <p class="big">🎉 REGARDE LA BORNE !</p>
       <div style="margin-top:8px;max-width:100%">
         <div style="position:relative;padding-bottom:56.25%;height:0">
-          <iframe src="https://www.youtube.com/embed/6EEGmdH9Vu0?autoplay=1&playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <div id="phone-boss-player" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px"></div>
         </div>
       </div>
     </div>`;

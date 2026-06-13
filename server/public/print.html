@@ -258,12 +258,12 @@ function pixelBlock(){
   </div>`;
 }
 
-// --- W4 & W6 : cartes dorées ---
+// --- W4 & W6 : cartes dorées (code masqué si vide) ---
 function goldBlock(num, title, gt, code, note){
   return `<div class="enig">
     <div class="ehead">${esc(title)}</div>
     <div class="esub">${esc(note)}</div>
-    <div class="goldcard"><div class="gt">${esc(gt)}</div><div class="gcode">CODE : ${esc(code)}</div></div>
+    <div class="goldcard"><div class="gt">${esc(gt)}</div>${code?`<div class="gcode">CODE : ${esc(code)}</div>`:''}</div>
   </div>`;
 }
 
@@ -284,7 +284,7 @@ function buildEnigmes(){
     + goldBlock(4, 'MONDE 4 — LE RÉVEIL DU PLAYER ONE', 'PLAYER ONE · GAME MASTER', 'GAMEMASTER',
         "Carte DORÉE remise à VINCENT (déclenche ses pouvoirs). Code au dos.")
     + preuvesBlock()
-    + goldBlock(6, 'MONDE 6 — BOSS FINAL · REBOOT', 'CARTE REBOOT', 'REBOOT',
+    + goldBlock(6, 'MONDE 6 — BOSS FINAL · REBOOT', 'CARTE REBOOT', '',
         "À scanner/jouer quand la barre de vie du boss atteint zéro. Déverrouille le cadeau de Vincent.");
 }
 

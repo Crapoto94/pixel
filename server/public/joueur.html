@@ -915,14 +915,8 @@ function bossGamepadView(act) {
       </div>
     </div>`;
   }
-  const sub = act.data && act.data.sub;
-  let label = 'Utilise ta manette pour entrer le code sur la BORNE.';
-  if (sub === 'keyboard') label = 'Sélectionne les touches CTRL, ALT et SUPR dans l\'ordre sur le clavier de la BORNE.';
-  else if (sub === 'menu') label = 'Choisis une option dans le menu sur la BORNE.';
-  else if (sub === 'code') label = 'Tape le code secret sur le clavier de la BORNE — quelle est la réponse à l\'univers ?';
   return `<div class="card glow-box center" style="border-color:var(--neon3);background:#1a0008">
     <div class="pill neon-pink">👾 BOSS FINAL</div>
-    <p class="muted" style="font-size:13px">${label}</p>
     <div class="dpad" style="max-width:240px">
       <div class="empty"></div><button class="tbtn" onclick="bossPress('HAUT')">▲</button><div class="empty"></div>
       <button class="tbtn" onclick="bossPress('GAUCHE')">◄</button><div class="empty"></div><button class="tbtn" onclick="bossPress('DROITE')">►</button>

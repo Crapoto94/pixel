@@ -170,13 +170,22 @@ function solveMaze(W,C,R,s,e){
   const path=[]; let cur=idx(e[0],e[1]); while(cur!==-1){ path.push([cur%C,Math.floor(cur/C)]); if(cur===idx(s[0],s[1])) break; cur=prev[cur]; }
   return path.reverse();
 }
-function mazeSVG(W,C,R,cell,start,end,letters,showPath,path){
-  const ox=4, oy=4, w=C*cell+8, h=R*cell+8;
+const _ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function randLetter(){ return _ALPHA[Math.floor(Math.random()*26)]; }
+// Toutes les cellules portent une lettre ; les 🍄 marquent des cases (7 sur le
+// chemin = G-L-O-U-T-O-N, plus des leurres ailleurs). Le départ 🍒 et l'arrivée
+// 🏁 ne portent PAS de lettre (donc G≠départ, N≠arrivée).
+function mazeSVG(W,C,R,cell,start,end,letterMap,mushSet,pathOrder,showPath,path){
+  const ox=5, oy=5, w=C*cell+10, h=R*cell+10;
   let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
   s+=`<rect x="0" y="0" width="${w}" height="${h}" fill="#fffdf5"/>`;
   if(showPath && path){ let d=''; path.forEach((p,i)=>{ const x=ox+p[0]*cell+cell/2, y=oy+p[1]*cell+cell/2; d+=(i?'L':'M')+x+' '+y+' '; });
-    s+=`<path d="${d}" fill="none" stroke="#ffcf33" stroke-width="${cell*0.5}" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>`; }
-  s+=`<g stroke="#160a2e" stroke-width="2.4" stroke-linecap="round">`;
+    s+=`<path d="${d}" fill="none" stroke="#ffcf33" stroke-width="${cell*0.46}" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>`; }
+  // fond légèrement teinté sur les cases-champignon
+  for(const key of mushSet){ const [c,r]=key.split(',').map(Number); const x=ox+c*cell,y=oy+r*cell;
+    s+=`<rect x="${x+1.5}" y="${y+1.5}" width="${cell-3}" height="${cell-3}" rx="3" fill="#ffe3e3"/>`; }
+  // murs
+  s+=`<g stroke="#160a2e" stroke-width="2.2" stroke-linecap="round">`;
   for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const wl=W[r*C+c]; const x=ox+c*cell, y=oy+r*cell;
     if(wl.n) s+=`<line x1="${x}" y1="${y}" x2="${x+cell}" y2="${y}"/>`;
     if(wl.w) s+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+cell}"/>`;
@@ -184,32 +193,56 @@ function mazeSVG(W,C,R,cell,start,end,letters,showPath,path){
     if(r===R-1&&wl.s) s+=`<line x1="${x}" y1="${y+cell}" x2="${x+cell}" y2="${y+cell}"/>`;
   }
   s+=`</g>`;
-  // lettres sur le chemin
-  for(const L of letters){ const x=ox+L.c*cell+cell/2, y=oy+L.r*cell+cell/2;
-    s+=`<circle cx="${x}" cy="${y}" r="${cell*0.34}" fill="#fff" stroke="#7a5cff" stroke-width="2"/>`;
-    s+=`<text x="${x}" y="${y+cell*0.13}" font-size="${cell*0.42}" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#160a2e">${L.ch}</text>`; }
-  // départ (cerise) et arrivée (drapeau)
-  s+=`<text x="${ox+start[0]*cell+cell/2}" y="${oy+start[1]*cell+cell*0.72}" font-size="${cell*0.6}" text-anchor="middle">🍒</text>`;
-  s+=`<text x="${ox+end[0]*cell+cell/2}" y="${oy+end[1]*cell+cell*0.72}" font-size="${cell*0.6}" text-anchor="middle">🏁</text>`;
+  for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const key=c+','+r; const cx=ox+c*cell+cell/2, cy=oy+r*cell+cell/2;
+    if(c===start[0]&&r===start[1]){ s+=`<text x="${cx}" y="${cy+cell*0.2}" font-size="${cell*0.58}" text-anchor="middle">🍒</text>`; continue; }
+    if(c===end[0]&&r===end[1]){ s+=`<text x="${cx}" y="${cy+cell*0.2}" font-size="${cell*0.52}" text-anchor="middle">🏁</text>`; continue; }
+    if(mushSet.has(key)) s+=`<text x="${ox+c*cell+cell-2}" y="${oy+r*cell+cell*0.4}" font-size="${cell*0.32}" text-anchor="end">🍄</text>`;
+    const ch=letterMap.get(key)||'';
+    s+=`<text x="${cx}" y="${cy+cell*0.2}" font-size="${cell*0.4}" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#160a2e">${ch}</text>`;
+    if(showPath && pathOrder.has(key)){
+      s+=`<circle cx="${ox+c*cell+cell*0.22}" cy="${oy+r*cell+cell*0.24}" r="${cell*0.18}" fill="#7a5cff"/>`;
+      s+=`<text x="${ox+c*cell+cell*0.22}" y="${oy+r*cell+cell*0.31}" font-size="${cell*0.26}" text-anchor="middle" fill="#fff" font-weight="bold">${pathOrder.get(key)}</text>`;
+    }
+  }
   return s+`</svg>`;
 }
 function mazeBlock(){
-  const C=11,R=8,cell=30;
+  const C=13,R=9,cell=30;
   const word='GLOUTON';
-  let W,path; let tries=0;
-  do { W=genMaze(C,R); path=solveMaze(W,C,R,[C-1,R-1],[0,0]); tries++; } while(path.length<word.length+2 && tries<40);
-  const letters=[]; for(let i=0;i<word.length;i++){ const pi=Math.round(i*(path.length-1)/(word.length-1)); const cellPos=path[pi]; letters.push({c:cellPos[0],r:cellPos[1],ch:word[i]}); }
-  const player=mazeSVG(W,C,R,cell,[C-1,R-1],[0,0],letters,false,null);
-  const solution=mazeSVG(W,C,R,cell,[C-1,R-1],[0,0],letters,true,path);
+  const start=[C-1,R-1], end=[0,0];
+  let W,path,tries=0;
+  do { W=genMaze(C,R); path=solveMaze(W,C,R,start,end); tries++; } while(path.length<word.length+4 && tries<80);
+  // 7 cases INTÉRIEURES du chemin (jamais le départ ni l'arrivée) → G..N dans l'ordre
+  const interior = path.slice(1, path.length-1);
+  const used=new Set(); const idxs=[];
+  for(let i=0;i<word.length;i++){ let pi=Math.round(i*(interior.length-1)/(word.length-1));
+    while(used.has(pi)) pi=(pi+1)%interior.length; used.add(pi); idxs.push(pi); }
+  idxs.sort((a,b)=>a-b);
+  const letterMap=new Map(), mushSet=new Set(), pathOrder=new Map();
+  idxs.forEach((pi,i)=>{ const [c,r]=interior[pi]; const key=c+','+r; letterMap.set(key,word[i]); mushSet.add(key); pathOrder.set(key,i+1); });
+  // remplit TOUTES les autres cases de lettres-leurres
+  for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const key=c+','+r;
+    if((c===start[0]&&r===start[1])||(c===end[0]&&r===end[1])) continue;
+    if(!letterMap.has(key)) letterMap.set(key, randLetter());
+  }
+  // champignons LEURRES hors du chemin
+  const pathKeys=new Set(path.map(p=>p[0]+','+p[1]));
+  const off=[]; for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const key=c+','+r;
+    if(pathKeys.has(key)||(c===start[0]&&r===start[1])||(c===end[0]&&r===end[1])) continue; off.push(key); }
+  off.sort(()=>Math.random()-0.5);
+  for(let i=0;i<Math.min(10,off.length);i++) mushSet.add(off[i]);
+
+  const player=mazeSVG(W,C,R,cell,start,end,letterMap,mushSet,pathOrder,false,null);
+  const solution=mazeSVG(W,C,R,cell,start,end,letterMap,mushSet,pathOrder,true,path);
   return `<div class="enig">
     <div class="ehead">MONDE 2 — LE LABYRINTHE DE GLOUTON</div>
-    <div class="esub">À glisser dans l'enveloppe 2. Partez de la 🍒 (bas-droite), suivez le seul chemin jusqu'au 🏁 et lisez les lettres dans l'ordre rencontré → le mot-code.</div>
+    <div class="esub">À glisser dans l'enveloppe 2. Pars de la 🍒 (bas-droite), trouve le SEUL chemin jusqu'au 🏁. Note les lettres des 🍄 que tu croises <b>en chemin</b>, dans l'ordre → le mot-code (7 lettres). ⚠️ Des champignons-PIÈGES sont placés hors du chemin : ne compte que ceux du bon parcours !</div>
     <div style="display:flex;gap:10mm;flex-wrap:wrap;align-items:flex-start">
       <div><div style="font-size:11px;color:#555;margin-bottom:2mm">PLAN POUR LES JOUEURS</div>${player}</div>
       <div><div style="font-size:11px;color:#c0392b;margin-bottom:2mm">🔒 SOLUTION — CARTE SECRÈTE DE LARA CROÛTE (ne pas mettre avec le reste !)</div>${solution}
-        <div style="font-size:11px;color:#555;margin-top:1mm">Chemin doré = G·L·O·U·T·O·N. Glisse cette carte à Lara (ou imprime-la sur transparent / encre UV).</div></div>
+        <div style="font-size:11px;color:#555;margin-top:1mm">Chemin doré ; champignons numérotés 1→7 = G·L·O·U·T·O·N.</div></div>
     </div>
-    <div class="cut">Astuce : si tu veux un labyrinthe différent, recharge la page avant d'imprimer.</div>
+    <div class="cut">Recharge la page avant d'imprimer pour générer un labyrinthe différent.</div>
   </div>`;
 }
 
@@ -220,7 +253,7 @@ function pixelBlock(){
     <div class="ehead">MONDE 3 — BOSS DE MI-PARCOURS · PUZZLE « PIXEL »</div>
     <div class="esub">À glisser dans l'enveloppe 3. Découpe les 5 pièces ; assemblées dans l'ordre elles donnent le mot-code. La pièce 🎯 (centrale) est le repère de ZILDA.</div>
     <div class="tiles5">${tiles}</div>
-    <div style="margin-top:3mm"><span class="stamp">SABOTAGE : retire 1 pièce avant de fermer (ou confie-la au GLITCH)</span></div>
+    <div style="margin-top:3mm"><span class="stamp">SABOTAGE : retire 1 pièce avant de fermer</span></div>
     <div class="cut">✂️ Découper les 5 tuiles sur les pointillés.</div>
   </div>`;
 }
@@ -239,7 +272,7 @@ function preuvesBlock(){
   const stamps = [['COLIS 2','21 h 12'],['COLIS 3','22 h 30'],['COLIS 4','23 h 05']]
     .map(([c,h])=>`<span class="stamp">${c} — ${h}</span>`).join('');
   return `<div class="enig">
-    <div class="ehead">MONDE 5 — LA CHASSE AU GLITCH · PREUVES</div>
+    <div class="ehead">MONDE 5 — PREUVES</div>
     <div class="esub">À TAMPONNER/coller sur les colis 2, 3 et 4 (les joueurs recoupent les heures façon Cluedo). Les fragments de preuve perso sont distribués via les téléphones. Ce monde se résout par un VOTE.</div>
     <div>${stamps}</div>
     <div class="cut">Astuce : note les mêmes heures au dos des colis 2/3/4 quand tu les prépares.</div>

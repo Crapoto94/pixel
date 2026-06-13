@@ -116,10 +116,9 @@ let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
 function render(){
   if(!STATE) return;
-  // Nettoyage du briefing si on en sort (+ coupe la musique de fond)
+  // Nettoyage du briefing si on en sort
   if (briefTimer && !(STATE.activity && STATE.activity.type==='briefing')){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
-    if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
   }
   // --- BRIEFING : déroulé scénario + attendus par joueur ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='briefing'){
@@ -449,7 +448,8 @@ function setupBriefing(){
   if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
   briefKey = STATE.activity.startedAt;
   briefSlides = null; briefIdx = 0;
-  if (SOUND_ON && window.SFX && SFX.briefMusic) SFX.briefMusic(); // musique chiptune de fond
+  // Pas de chiptune : le fond musical du briefing = la playlist d'ambiance (ytAmb),
+  // gérée par syncYT. (On évite de jouer du 8-bit PAR-DESSUS l'ambiance.)
   stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
   tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
   fetch('/api/briefing').then(r=>r.json()).then(d=>{
@@ -1357,12 +1357,16 @@ function initYT(){
 
 function syncYT(s){
   const a = s.activity;
-  const isBT = a && a.type === 'blindtest';
-  const isPac = a && a.type === 'pacman';
+  // Musique d'activité UNIQUEMENT pendant la phase 'activity' et tant qu'elle
+  // n'est pas terminée — sinon le son (blind-test, Pac-Man) continue après
+  // « STOP activité » (activity.state='done', phase='world').
+  const live = s.phase === 'activity' && !!a && a.state !== 'done';
+  const isBT = live && a.type === 'blindtest';
+  const isPac = live && a.type === 'pacman';
   // Une chanson blind-test est posée uniquement quand le QCM est affiché.
   const songOn = isBT && a.sub === 'question' && !!a.playVideoId;
   // Diffusion vidéo : l'iframe fournit le son → on coupe tout le reste.
-  if (a && a.type === 'videoshow') {
+  if (live && a.type === 'videoshow') {
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }

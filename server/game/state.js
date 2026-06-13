@@ -19,7 +19,6 @@ import { TronGame } from './tron.js';
 import { Game2048 } from './game2048.js';
 import { PongGame } from './pong.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord } from '../data/collab.js';
-import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
 import { DRAW_WORDS } from '../data/draw_words.js';
@@ -73,12 +72,8 @@ export class GameState {
     this.worldIndex = 0; // index dans WORLDS
     this.activity = null; // activité BORNE en cours (objet)
     this.currentGage = null; // gage affiché en ce moment
-    this.glitchId = null; // id du joueur traître (tiré au sort)
-    this.glitchRevealed = false;
     this.heroAwakened = false; // Vincent a-t-il reçu ses pouvoirs ?
     this.kidsDone = false; // les Pixels (enfants) ont-ils réussi leur défi ?
-    this.votes = {}; // { voterId: targetId }
-    this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
     this.photos = []; // [{id, playerId, playerName, avatar, missionIdx, missionLabel, url, uploadedAt}]
     this.photoVotes = {}; // { voterId: { belle: photoId|null, rigolote: photoId|null } }
     this.photoPhase = null; // null | 'vote' | 'results'
@@ -114,7 +109,7 @@ export class GameState {
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
       g2048Timer, g2048, pongTimer, pong,
-      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, ...data } = this;
+      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _winTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -177,54 +172,6 @@ export class GameState {
   allReady() {
     const adults = this.players;
     return adults.length > 0 && adults.every((p) => p.ready);
-  }
-
-  // ---- Glitch (traître) --------------------------------------------
-  assignGlitch(rng = Math.random) {
-    const pool = this.players.filter((p) => p.glitchEligible);
-    if (pool.length === 0) return;
-    const chosen = pool[Math.floor(rng() * pool.length)];
-    this.glitchId = chosen.id;
-    this.generateClues(rng);
-    this.addLog('🐛 Le GLITCH a été désigné secrètement par le serveur.');
-    this.touch();
-  }
-
-  // Réseau d'indices : chaque joueur reçoit une mission + un indice secret.
-  generateClues(rng = Math.random) {
-    const shuffle = (arr) => [...arr].sort(() => rng() - 0.5);
-    const players = this.players;
-    const glitch = this.glitchId;
-    // Le pool réel de suspects = les joueurs éligibles (pas le héros ni l'hôte)
-    const suspects = players.filter((p) => p.glitchEligible);
-    const suspectInno = shuffle(suspects.filter((p) => p.id !== glitch)); // suspects innocents
-    const recipients = shuffle(players.filter((p) => p.id !== glitch));   // qui reçoit un indice d'enquête
-    this.clues = {};
-    players.forEach((p) => {
-      this.clues[p.id] = { mission: AVATAR_MISSION[p.avatar] || 'Amuse-toi et marque des points.', clue: null };
-    });
-
-    // 1) Indice « réduction » : le Glitch est X ou Y (Y = un VRAI suspect)
-    const decoy = suspectInno[0];
-    if (recipients[0] && decoy) {
-      const pair = shuffle([this.player(glitch).name, decoy.name]);
-      this.clues[recipients[0].id].clue = `🕵️ Le GLITCH est soit ${pair[0]}, soit ${pair[1]}. À toi de trancher.`;
-    }
-    // 2) Indices « disculpation » : nomme un suspect innocent (toujours vrai, fait avancer l'enquête)
-    [recipients[1], recipients[2]].forEach((recip, i) => {
-      const cleared = suspectInno[(i + 1) % suspectInno.length] || suspectInno[0];
-      if (recip && cleared) this.clues[recip.id].clue = `✅ Tu en es témoin : ${cleared.name} n'est PAS le Glitch.`;
-    });
-    // 3) Le Glitch reçoit une consigne de diversion
-    this.clues[glitch].clue = `😈 Tu es le GLITCH. Sème le doute : oriente discrètement les soupçons vers quelqu'un d'autre.`;
-    // 4) Les autres reçoivent un indice social (chacun sait un truc sur un autre)
-    players.forEach((p, i) => {
-      if (this.clues[p.id].clue) return;
-      const others = players.filter((q) => q.id !== p.id);
-      const target = others[Math.floor(rng() * others.length)];
-      const fact = SOCIAL_FACTS[Math.floor(rng() * SOCIAL_FACTS.length)];
-      this.clues[p.id].clue = `🔎 Tu sais un truc sur ${target.name} : il/elle ${fact}. Va lui en parler.`;
-    });
   }
 
   // ---- Défis photo -------------------------------------------------
@@ -373,7 +320,8 @@ export class GameState {
   // ---- Démarrage de partie -----------------------------------------
   startGame() {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
-    // Le Glitch n'est PAS désigné ici : il s'infiltre à la fin du Monde 1.
+    // On quitte le briefing : on vide l'activité pour que la borne affiche le monde.
+    if (this.activity && this.activity.type === 'briefing') this.activity = null;
     this.phase = 'world';
     this.worldIndex = 0;
     this.addLog('🕹️ INSERT COIN — la partie commence !');
@@ -389,8 +337,12 @@ export class GameState {
     if (!world || this.phase === 'finale' || this.phase === 'win') {
       return { ok: false, reason: 'Aucun monde actif.' };
     }
-    if (world.resoluParVote) {
-      return { ok: false, reason: 'Ce monde se résout par un VOTE, pas un code.' };
+    // Le Monde 6 (boss final) : les codes téléphone sont des leurres
+    if (world.id === 'w6') {
+      return { ok: false, reason: 'Code incorrect. Le code doit être saisi sur la BORNE avec la manette.' };
+    }
+    if (!world.code) {
+      return { ok: false, reason: 'Ce monde n\'a pas de code à saisir.' };
     }
     const p = this.player(playerId);
     // Énigme réservée au PLAYER ONE : seul le héros (Vincent) peut valider.
@@ -401,6 +353,17 @@ export class GameState {
     if (ok) {
       this.addLog(`✅ ${p ? p.name : '?'} a validé le code du Monde ${world.num} !`);
       this.completeWorld();
+      if (world.id === 'w1') {
+        this.startActivity('videoshow', {
+          video: 'hIovAaitgsI',
+          startAt: 0,
+          skipIntro: true,
+          topLabel: '🎉 BRAVO !',
+          chyron: 'Tu as trouvé le Konami Code !',
+          footer: 'Préparez-vous pour la suite…',
+          borneOnly: true,
+        });
+      }
       return { ok: true };
     }
     this.addLog(`❌ Code refusé pour le Monde ${world.num}.`);
@@ -414,8 +377,6 @@ export class GameState {
     // Récompense : tous les joueurs connectés gagnent une pièce
     this.players.forEach((p) => { if (p.connected) p.coins += 1; });
 
-    // Le Glitch s'infiltre à la fin du Monde 1 (désignation différée et secrète)
-    if (world.id === 'w1' && !this.glitchId) this.assignGlitch();
     // Twist du monde
     if (world.id === 'w4') this.awakenHero();
     if (world.twist) this.addLog(`🌀 ${world.twist}`);
@@ -423,15 +384,43 @@ export class GameState {
     // Avancer
     if (world.isFinale) {
       this.phase = 'win';
+      this.activity = null;
       this.addLog('🏆 YOU WIN ! La réalité a redémarré.');
+      this.addLog('🎉 BRAVO À TOUS LES PIXELS ! Vous avez sauvé la réalité !');
+      if (this.winVideo) {
+        // La vidéo anniversaire défile — le passage aux photos se fait à la fin de la vidéo
+      } else {
+        if (this._winTimer) clearTimeout(this._winTimer);
+        this._winTimer = setTimeout(() => {
+          this._winTimer = null;
+          this.setPhotoPhase('results');
+        }, 8000);
+      }
     } else {
       this.worldIndex += 1;
       const next = this.currentWorld();
       if (next) {
         this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
+        if (next.activite === 'enquete' || next.activite === 'boss_final') {
+          this.startActivity(next.activite);
+        }
       }
     }
     this.touch();
+  }
+
+  // Un joueur demande un indice : la borne diffuse une vidéo d'aide.
+  requestHint(playerId) {
+    const p = this.player(playerId);
+    this.addLog(`💡 ${p ? p.name : '?'} demande un indice !`);
+    this.startActivity('videoshow', {
+      video: 'hIovAaitgsI',
+      startAt: 0,
+      skipIntro: true,
+      topLabel: '💡 INDICE',
+      chyron: 'Un indice pour vous aider…',
+      borneOnly: true,
+    });
   }
 
   awakenHero() {
@@ -467,39 +456,6 @@ export class GameState {
       this.addLog(`💔 ${p.name} perd une vie (${p.lives} restantes).`);
       this.touch();
     }
-  }
-
-  // ---- Votes (suspicion / élimination du Glitch) -------------------
-  startVote() {
-    this.votes = {};
-    this.phase = 'vote';
-    this.addLog('🗳️ VOTE ouvert : qui est le GLITCH ?');
-    this.touch();
-  }
-
-  castVote(voterId, targetId) {
-    this.votes[voterId] = targetId;
-    this.touch();
-  }
-
-  tallyVotes() {
-    const counts = {};
-    for (const target of Object.values(this.votes)) {
-      counts[target] = (counts[target] || 0) + 1;
-    }
-    let top = null;
-    let max = -1;
-    for (const [id, n] of Object.entries(counts)) {
-      if (n > max) { max = n; top = id; }
-    }
-    const found = top === this.glitchId;
-    this.glitchRevealed = true;
-    this.addLog(found
-      ? `🎯 Le groupe a démasqué le GLITCH : ${this.player(this.glitchId)?.name} !`
-      : `😈 Raté ! Le GLITCH (${this.player(this.glitchId)?.name}) a survécu.`);
-    this.phase = 'world';
-    this.touch();
-    return { found, top, counts };
   }
 
   // ---- Activités BORNE (reaction, buzzer, spotlight, roue...) -------
@@ -634,6 +590,7 @@ export class GameState {
       this.activity.actIndex = 0;
       this.activity.hints = {};   // { actIndex: nbIndicesRévélés }
       this.activity.frag = {};    // { playerId: [pièces à conviction de l'acte courant] }
+      this.activity.fragVisible = false; // les pièces ne s'affichent QUE si le GM le décide
       this.activity.attempts = 0;
       this.activity.lastWrong = 0;
       this.activity.done = false;
@@ -658,6 +615,13 @@ export class GameState {
       this.activity.winnerIds = [];
       this._scheduleRoue();
     }
+    // Boss final : clavier AZERTY sur la BORNE. Le redémarrage se déclenche au
+    // combo Ctrl+Alt+Suppr (détecté côté borne en multi-touch). Aucun indice donné.
+    if (type === 'boss_final') {
+      this.activity.data = { rebooted: false };
+      this.activity.done = false;
+      this.addLog('👾 BOSS FINAL — la BORNE est plantée. Trouvez comment forcer le redémarrage…');
+    }
     // Diffusion vidéo : tout le monde (borne + téléphones) joue une vidéo
     // YouTube avec un bandeau (danse des canards, anecdotes, etc.).
     if (type === 'videoshow') {
@@ -665,20 +629,11 @@ export class GameState {
       this.activity.topLabel = opts.topLabel || '📺 VIDÉO';
       this.activity.chyron = opts.chyron || '';
       this.activity.footer = opts.footer || '';
+      this.activity.skipIntro = opts.skipIntro || false;
+      this.activity.startAt = opts.startAt || 0;
+      this.activity.borneOnly = opts.borneOnly || false;
     }
-    // Briefing : après le déroulé complet, on enchaîne AUTOMATIQUEMENT sur
-    // l'énigme 1 (lancement de la partie). La borne joue ~6,5 s par slide.
-    if (type === 'briefing') {
-      const slides = SCENARIO_SLIDES.length + 1 /* sep */ + PLAYERS.length + 1 /* PRÊTS ? */;
-      const ms = slides * 6500 + 1500;
-      this._briefTimer = setTimeout(() => {
-        this._briefTimer = null;
-        if (this.phase === 'activity' && this.activity && this.activity.type === 'briefing') {
-          this.addLog('🎬 Briefing terminé — lancement de l\'énigme 1 !');
-          this.startGame();
-        }
-      }, ms);
-    }
+    // Briefing : le MJ clique « Passer au Monde 1 » pour démarrer la partie.
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
     this.touch();
@@ -964,6 +919,7 @@ export class GameState {
     if (!a || a.type !== 'enquete') return;
     const act = ENQUETE.acts[a.actIndex];
     a.frag = {};
+    a.fragVisible = false; // nouvel acte → pièces re-masquées jusqu'à décision du GM
     if (!act) return;
     const players = this.players.filter((p) => p.connected);
     if (!players.length) return;
@@ -988,6 +944,8 @@ export class GameState {
         a.done = true;
         a.frag = {};
         this.addLog('🔓 ENQUÊTE RÉSOLUE — l\'affaire des parapheurs perdus est élucidée !');
+        const cw = this.currentWorld();
+        if (cw && cw.id === 'w5') this.completeWorld();
       } else {
         this._enqueteDistribute();
       }
@@ -1062,9 +1020,22 @@ export class GameState {
       // Le « mur d'enquête » : révélations des actes déjà résolus
       wall: acts.slice(0, idx).map((x) => ({ num: x.num, title: x.title, reveal: x.reveal })),
       lastWrong: a.lastWrong || 0,
-      myFragments: forPlayerId ? (a.frag?.[forPlayerId] || []) : [],
+      fragVisible: !!a.fragVisible,
+      // Les pièces à conviction ne sont envoyées QUE si le GM les a révélées.
+      myFragments: (forPlayerId && a.fragVisible) ? (a.frag?.[forPlayerId] || []) : [],
       finale: a.done ? ENQUETE.finale : null,
     };
+  }
+
+  // Le GM affiche / masque les pièces à conviction sur les téléphones.
+  enqueteRevealFrags(on) {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete') return;
+    a.fragVisible = (on === undefined) ? !a.fragVisible : !!on;
+    this.addLog(a.fragVisible
+      ? '🟨 Pièces à conviction RÉVÉLÉES sur les téléphones.'
+      : '⬛ Pièces à conviction masquées.');
+    this.touch();
   }
 
   // Bloc réservé GM : la solution de l'acte courant.
@@ -1085,6 +1056,157 @@ export class GameState {
     };
   }
 
+  // Fin automatique d'une diffusion vidéo (borneOnly).
+  endVideo() {
+    if (this.activity && this.activity.type === 'videoshow') {
+      this.addLog('📺 Fin de la vidéo.');
+      this.stopActivity();
+    }
+    if (this.phase === 'win' && this.winVideo) {
+      this.addLog('📺 Vidéo anniversaire terminée.');
+      this.winVideo = null;
+      this.setPhotoPhase('results');
+    }
+  }
+
+  // ---- Boss final : la BORNE détecte Ctrl+Alt+Suppr → REDÉMARRER → victoire ----
+  bossReboot() {
+    const a = this.activity;
+    if (!a || a.type !== 'boss_final' || a.done) return { ok: false };
+    a.data = a.data || {};
+    a.data.rebooted = true;
+    a.done = true;
+    this.winVideo = '6EEGmdH9Vu0';
+    this.addLog('💥 REDÉMARRAGE DE LA RÉALITÉ — BON ANNIVERSAIRE VINCENT !');
+    this.completeWorld();
+    this.touch();
+    return { ok: true };
+  }
+
+  // (legacy) ancien boss au gamepad — conservé mais plus utilisé par la borne.
+  bossInput(key) {
+    const a = this.activity;
+    if (!a || a.type !== 'boss_final' || a.done) return { ok: false };
+    if (!a.data) a.data = {};
+
+    // Phase 1 : Konami Code (inchangé)
+    if (!a.data.sub || a.data.sub === 'konami') {
+      a.data.sub = 'konami';
+      const KONAMI = ['HAUT','HAUT','BAS','BAS','GAUCHE','DROITE','GAUCHE','DROITE','B','A'];
+      const maxLen = KONAMI.length;
+      if (!a.data.seq) a.data.seq = [];
+      const seq = a.data.seq;
+      if (seq.length >= maxLen) { a.data.seq = []; return { ok: false }; }
+      if (key !== KONAMI[seq.length]) {
+        a.data.seq = [];
+        a.data.wrongCount = (a.data.wrongCount || 0) + 1;
+        this.touch();
+        return { ok: false };
+      }
+      seq.push(key);
+      a.data.hp = Math.round((1 - seq.length / maxLen) * 100);
+      if (seq.length >= maxLen) {
+        // Konami réussi → clavier virtuel
+        a.data.sub = 'keyboard';
+        a.data.cursorRow = 0;
+        a.data.cursorCol = 0;
+        a.data.comboSeq = [];
+        a.data.hp = 0;
+        this.addLog('👾 KONAMI OK — entre CTRL+ALT+SUPR sur le clavier !');
+      }
+      this.touch();
+      return { ok: true, pos: seq.length, total: maxLen };
+    }
+
+    // Keyboard helper
+    const KEYBOARD = [
+      ['1','2','3','4','5','6','7'],
+      ['8','9','0','A','B','C','D'],
+      ['E','F','G','H','I','J','K'],
+      ['L','M','N','O','P','Q','R'],
+      ['S','T','U','V','W','X','Y'],
+      ['Z','.','⌫','CTRL','ALT','SUPR','→'],
+    ];
+    const NB_ROWS = KEYBOARD.length, NB_COLS = KEYBOARD[0].length;
+
+    // Phase 2 : clavier — combo CTRL+ALT+SUPR
+    if (a.data.sub === 'keyboard') {
+      if (key === 'HAUT') a.data.cursorRow = Math.max(0, a.data.cursorRow - 1);
+      else if (key === 'BAS') a.data.cursorRow = Math.min(NB_ROWS - 1, a.data.cursorRow + 1);
+      else if (key === 'GAUCHE') a.data.cursorCol = Math.max(0, a.data.cursorCol - 1);
+      else if (key === 'DROITE') a.data.cursorCol = Math.min(NB_COLS - 1, a.data.cursorCol + 1);
+      else if (key === 'A') {
+        const sel = KEYBOARD[a.data.cursorRow][a.data.cursorCol];
+        if (sel === 'CTRL' || sel === 'ALT' || sel === 'SUPR') {
+          const expected = ['CTRL','ALT','SUPR'];
+          const next = a.data.comboSeq.length;
+          if (sel === expected[next]) {
+            a.data.comboSeq.push(sel);
+            if (a.data.comboSeq.length >= 3) {
+              a.data.sub = 'menu';
+              a.data.menuSel = 0;
+              this.addLog('👾 CTRL+ALT+SUPR — menu REBOOT ouvert !');
+            }
+          } else if (sel === 'CTRL') {
+            a.data.comboSeq = ['CTRL'];
+          } else {
+            a.data.comboSeq = [];
+          }
+        }
+      }
+      this.touch();
+      return { ok: true };
+    }
+
+    // Phase 3 : menu REBOOT DU MONDE
+    if (a.data.sub === 'menu') {
+      if (key === 'HAUT' || key === 'GAUCHE') a.data.menuSel = Math.max(0, (a.data.menuSel||0) - 1);
+      else if (key === 'BAS' || key === 'DROITE') a.data.menuSel = Math.min(0, (a.data.menuSel||0) + 1);
+      else if (key === 'A' && a.data.menuSel === 0) {
+        a.data.sub = 'code';
+        a.data.rebootSeq = [];
+        a.data.cursorRow = 0;
+        a.data.cursorCol = 0;
+      }
+      this.touch();
+      return { ok: true };
+    }
+
+    // Phase 4 : saisie du code secret 42
+    if (a.data.sub === 'code') {
+      if (key === 'HAUT') a.data.cursorRow = Math.max(0, a.data.cursorRow - 1);
+      else if (key === 'BAS') a.data.cursorRow = Math.min(NB_ROWS - 1, a.data.cursorRow + 1);
+      else if (key === 'GAUCHE') a.data.cursorCol = Math.max(0, a.data.cursorCol - 1);
+      else if (key === 'DROITE') a.data.cursorCol = Math.min(NB_COLS - 1, a.data.cursorCol + 1);
+      else if (key === 'A') {
+        const sel = KEYBOARD[a.data.cursorRow][a.data.cursorCol];
+        if (sel === '⌫') {
+          (a.data.rebootSeq || []).pop();
+        } else if (sel === '→') {
+          const word = (a.data.rebootSeq || []).join('');
+          if (word === '42') {
+            a.done = true;
+            this.winVideo = '6EEGmdH9Vu0';
+            this.addLog('💥 BRAVO, BON ANNIVERSAIRE VINCENT !');
+            this.completeWorld();
+          } else {
+            a.data.rebootSeq = [];
+            this.addLog('🔴 Code secret incorrect. La réponse est l\'univers…');
+          }
+        } else if (!['CTRL','ALT','SUPR'].includes(sel)) {
+          if ((a.data.rebootSeq || []).length < 10) {
+            if (!a.data.rebootSeq) a.data.rebootSeq = [];
+            a.data.rebootSeq.push(sel);
+          }
+        }
+      }
+      this.touch();
+      return { ok: true };
+    }
+
+    return { ok: false };
+  }
+
   stopActivity() {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
@@ -1095,13 +1217,14 @@ export class GameState {
     if (this.pongTimer) { clearInterval(this.pongTimer); this.pongTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
+    if (this._winTimer) { clearTimeout(this._winTimer); this._winTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;
     this.g2048 = null;
     this.pong = null;
     if (this.activity) this.activity.state = 'done';
-    this.phase = 'world';
+    if (this.phase !== 'win') this.phase = 'world';
     this.touch();
   }
 
@@ -1523,8 +1646,6 @@ export class GameState {
       worldCount: WORLDS.length,
       heroAwakened: this.heroAwakened,
       kidsDone: this.kidsDone,
-      glitchRevealed: this.glitchRevealed,
-      glitchName: this.glitchRevealed ? this.player(this.glitchId)?.name : null,
       currentGage: this.currentGage,
       activity: this.activityPublic(me ? me.id : null),
       pacman: this.pacman ? this.pacman.publicState(me ? me.id : null) : null,
@@ -1532,6 +1653,7 @@ export class GameState {
       tron: this.tron ? this.tron.publicState() : null,
       g2048: this.g2048 ? this.g2048.publicState() : null,
       pong: this.pong ? this.pong.publicState() : null,
+      winVideo: this.winVideo || null,
       photoPhase: this.photoPhase,
       photos: this.photoPhase ? this.photos : [],
       photoResults: this.photoPhase === 'results' ? this.photoResults() : null,
@@ -1547,7 +1669,6 @@ export class GameState {
 
   privateView(me, world) {
     const av = AVATARS[me.avatar];
-    const isGlitch = me.id === this.glitchId;
     const isHero = !!me.isHero;
     return {
       id: me.id,
@@ -1563,28 +1684,13 @@ export class GameState {
       gameMaster: isHero && this.heroAwakened,
       // Indices perso pour le monde courant
       indices: world && world.indices ? (world.indices[me.avatar] || null) : null,
-      // Missions du Glitch (visibles uniquement par lui)
-      glitchMission: isGlitch ? this.glitchMissionFor(world) : null,
-      // Carnet secret : mission perso + indice sur un autre joueur
-      mission: this.clues[me.id] ? this.clues[me.id].mission : null,
-      secretClue: this.clues[me.id] ? this.clues[me.id].clue : null,
+      // Carnet secret : mission perso (optionnelle)
+      mission: null,
+      secretClue: null,
       // Défis photo
       photoMissions: PHOTO_MISSIONS[me.avatar] || [],
       myPhotos: this.photos.filter(p => p.playerId === me.id).map(p => ({ missionIdx: p.missionIdx, url: p.url })),
       myPhotoVotes: this.photoVotes[me.id] || {},
     };
-  }
-
-  glitchMissionFor(world) {
-    if (!world) return null;
-    const missions = {
-      w1: "Sème le doute : accuse discrètement quelqu'un d'autre dès maintenant.",
-      w2: "Sabotage : donne une fausse direction dans le labyrinthe sans te griller.",
-      w3: "Cache ou 'perds' une pièce du puzzle pendant 3 minutes.",
-      w4: "Le Game Master est éveillé. Reste naturel, détourne les soupçons.",
-      w5: "C'est l'heure du vote. Fais accuser un innocent. Mens avec panache.",
-      w6: "Dernier sabotage : ralentis le boss final d'une bêtise… puis sauve-toi.",
-    };
-    return missions[world.id] || "Sabote discrètement et survis.";
   }
 }

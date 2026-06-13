@@ -374,74 +374,64 @@ function controllerView(act) {
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
 }
 
-// iOS/iPadOS : l'autoplay via YT.Player API est bloqué même muted.
-// iPad Safari dit "Macintosh" depuis iPadOS 13+, Chrome iPad dit aussi "Macintosh".
-// On détecte via maxTouchPoints > 1 couplé à un UA Mac, ou explicitement iPad/iPhone.
-const _isIOS = /iP(ad|hone|od)/i.test(navigator.userAgent) ||
-               (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+// Sur mobile (touch), YouTube bloque l'autoplay — même iframe muted.
+// Solution : overlay "APPUYER" sur notre UI, player créé APRÈS le tap
+// (geste utilisateur → autoplay garanti, sting + son immédiat).
+const _isMobile = navigator.maxTouchPoints > 0;
+let _pendingVideo = null; // {intro, main} en attente du tap
 
 function renderVideoPlayer(me) {
   if (videoKey === STATE.activity.startedAt) return; // une seule fois (sinon la vidéo redémarre)
   videoKey = STATE.activity.startedAt;
   const a = STATE.activity;
+  _pendingVideo = { intro: a.intro || PHONE_INTRO, main: a.video || '7kyY29BHTZs' };
   app.innerHTML = `
     <div class="center">
       <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
       <div id="vid-wrap" style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
         <div style="aspect-ratio:9/16"><div id="videoplayer" style="width:100%;height:100%"></div></div>
+        ${_isMobile ? `
+        <div id="vid-tap-overlay" onclick="vidTapStart()" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;gap:16px">
+          <div style="font-size:72px;color:#ff2e88;filter:drop-shadow(0 0 16px #ff2e88)">▶</div>
+          <div style="font-family:var(--pixel);color:#fff;font-size:13px;text-align:center;line-height:1.6">APPUYER<br>POUR LANCER</div>
+        </div>` : ''}
         ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
           font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}
       </div>
       ${a.footer?`<p class="muted" style="font-size:13px">${a.footer}</p>`:''}
     </div>`;
-  phoneShowStart(a.intro || PHONE_INTRO, a.video || '7kyY29BHTZs');
+  // Desktop : lancement immédiat sans geste
+  if (!_isMobile) phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
 }
+
+function vidTapStart(){
+  const ov = document.getElementById('vid-tap-overlay');
+  if (ov) ov.remove();
+  if (_pendingVideo) phoneShowStart(_pendingVideo.intro, _pendingVideo.main);
+}
+
 function destroyPhonePlayer(){ try { if (ytPhone) { ytPhone.destroy(); ytPhone = null; } } catch(_){ ytPhone = null; } }
 
-function _iosUnmute(){
-  // postMessage à l'iframe YouTube pour démuéter (fonctionne avec enablejsapi=1)
-  const fr = document.querySelector('#videoplayer iframe, #vid-wrap iframe');
-  if (fr) fr.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}','*');
-  const btn = document.getElementById('vid-unmute-btn');
-  if (btn) btn.remove();
-}
-
-// Sur iOS : iframe embed muted autoplay → bouton 🔊 pour le son.
-// Sur les autres : YT.Player API avec sting d'intro puis vidéo principale.
+// Sting d'intro (son à fond) puis vidéo principale en boucle.
+// Appelé après geste utilisateur → autoplay + son garanti sur tous les appareils.
 function phoneShowStart(intro, main){
   const el = document.getElementById('videoplayer');
   if (!el) return;
-
-  if (_isIOS || !(window.YT && YT.Player)){
-    // Autoplay muet via iframe embed — fonctionne sur iOS
-    el.outerHTML = `<iframe id="videoplayer" width="100%" height="100%" style="border:0"
-      src="https://www.youtube.com/embed/${main}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${main}&rel=0&enablejsapi=1"
+  if (!(window.YT && YT.Player)){
+    el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
+      src="https://www.youtube.com/embed/${main}?autoplay=1&playsinline=1&loop=1&playlist=${main}&rel=0"
       allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
-    // Bouton son positionné au-dessus de la vidéo
-    const wrap = document.getElementById('vid-wrap');
-    if (wrap){
-      const btn = document.createElement('button');
-      btn.id = 'vid-unmute-btn';
-      btn.textContent = '🔊 SON';
-      btn.onclick = _iosUnmute;
-      btn.style.cssText = 'position:absolute;top:10px;right:10px;z-index:10;background:#ff2e88;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:16px;font-weight:bold;cursor:pointer;box-shadow:0 0 12px #ff2e88';
-      wrap.appendChild(btn);
-    }
     return;
   }
-
   destroyPhonePlayer();
   ytPhone = new YT.Player('videoplayer', {
     height:'100%', width:'100%', videoId: intro,
-    playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
+    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
     events:{
-      onReady(e){ try{ e.target.playVideo(); }catch(_){} },
+      onReady(e){ try{ e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
       onStateChange(e){
-        if (e.data === YT.PlayerState.PLAYING){
-          try{ e.target.unMute(); e.target.setVolume(100); }catch(_){}
-        }
         if (e.data === YT.PlayerState.ENDED){
-          if (!ytPhone._main){ ytPhone._main = true; try{ e.target.loadVideoById(main); e.target.unMute(); e.target.setVolume(100); }catch(_){} }
+          if (!ytPhone._main){ ytPhone._main = true; try{ e.target.loadVideoById(main); }catch(_){} }
           else { try{ e.target.seekTo(0, true); e.target.playVideo(); }catch(_){} }
         }
       }

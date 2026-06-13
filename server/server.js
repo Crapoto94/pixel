@@ -233,6 +233,12 @@ app.post('/api/photo/vote', (req, res) => {
   res.json({ ok });
 });
 
+// Ouvre le vote photo (appelé par la BORNE à la fin de la vidéo finale, sans token)
+app.post('/api/photo/openvote', (req, res) => {
+  game.setPhotoPhase('vote');
+  res.json({ ok: true });
+});
+
 // --- Blind-test dynamique : collecte de titres via IFrame API ---------
 // La BORNE poste chaque titre détecté (onStateChange PLAYING)
 app.post('/api/blindtest/addtrack', (req, res) => {

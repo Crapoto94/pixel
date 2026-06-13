@@ -36,13 +36,14 @@
   .wheel { font-size: 70px; }
   .qchoice { font-size: clamp(18px, 2.9vh, 30px); padding: clamp(6px,1.1vh,14px) 18px; margin: clamp(5px,1vh,10px) 0;
              border:3px solid #fff3; border-radius:10px; box-shadow:0 4px 0 #0008; }
-  .padgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; max-width:560px;
-             margin:18px auto; }
-  .pad { aspect-ratio:1; border-radius:20px; border:6px solid #000; cursor:pointer;
-         box-shadow:0 8px 0 #0009; transition:filter .1s, transform .05s; filter:brightness(.45); }
+  .padgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:360px;
+             margin:16px auto; }
+  .pad { aspect-ratio:1; border-radius:14px; border:5px solid #000; cursor:pointer;
+         box-shadow:0 6px 0 #0009; transition:filter .1s, transform .05s; filter:brightness(.45); }
   .pad.lit { filter:brightness(1.6); }
   .pad:active { transform:translateY(4px); }
-  .pad0{background:#ff2e88} .pad1{background:#2effd5} .pad2{background:#7a5cff} .pad3{background:#ffe600}
+  .pad0{background:#ff2e88} .pad1{background:#2effd5} .pad2{background:#7a5cff}
+  .pad3{background:#ffe600} .pad4{background:#3c9cff} .pad5{background:#ff6b3c}
 </style>
 </head>
 <body class="scanlines">
@@ -114,7 +115,7 @@ let pongKey = null;
 let drawKey = null;
 let pacEventSeen = 0;
 let briefKey = null, briefTimer = null, briefSlides = null, briefIdx = 0;
-let winBuilt = false, ytWin = null;
+let winBuilt = false, ytWin = null, winPhotoTriggered = false;
 function buildWinVideo(){
   const el = document.getElementById('win-video-player');
   if (!el) return;
@@ -125,7 +126,11 @@ function buildWinVideo(){
     ytWin = new YT.Player('win-video-player', {
       height:'100%', width:'100%', videoId:'6EEGmdH9Vu0',
       playerVars:{ autoplay:1, controls:1, playsinline:1, rel:0, modestbranding:1, fs:1 },
-      events:{ onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} } }
+      events:{
+        onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
+        // À la FIN de la vidéo finale : « c'est pas fini » puis vote des photos.
+        onStateChange(e){ if (e.data === YT.PlayerState.ENDED) winVideoEnded(); }
+      }
     });
   } else {
     el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
@@ -133,12 +138,29 @@ function buildWinVideo(){
       allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
   }
 }
+// Après la vidéo finale : message « c'est pas fini » → ouverture du vote photo.
+function winVideoEnded(){
+  if (winPhotoTriggered) return;
+  winPhotoTriggered = true;
+  try { if (ytWin){ ytWin.destroy(); ytWin = null; } } catch(_){ ytWin = null; }
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch(_){}
+  stage.innerHTML = `<div class="center glow-box" style="min-height:60vh;display:flex;flex-direction:column;justify-content:center">
+    <h1 class="huge neon-pink blink">⚠️ ATTENTION, C'EST PAS FINI !</h1>
+    <p class="big neon-yellow">Nous devons voter pour les PHOTOS 📸</p>
+  </div>`;
+  tickerEl.textContent = "⚠️ C'EST PAS FINI — place au vote des photos !";
+  // Laisse le message à l'écran quelques secondes, puis ouvre le vote photo.
+  setTimeout(()=>{
+    try { fetch('/api/photo/openvote', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' }); } catch(_){}
+  }, 6000);
+}
 function render(){
   if(!STATE) return;
   // Victoire (fin du Monde 6) : lecteur vidéo PLEIN ÉCRAN, construit UNE SEULE FOIS.
-  if (STATE.phase === 'win'){ if (winBuilt) return; }
+  // On laisse toutefois passer le rendu si un vote photo est ouvert (après la vidéo).
+  if (STATE.phase === 'win'){ if (winBuilt && !STATE.photoPhase) return; }
   else if (winBuilt){
-    winBuilt = false;
+    winBuilt = false; winPhotoTriggered = false;
     try { if (ytWin){ ytWin.destroy(); ytWin = null; } } catch(_){ ytWin = null; }
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch(_){}
   }
@@ -1215,10 +1237,11 @@ function renderDrawBorne(){
 // atteindre une longueur cible. Plus dur (mémoire + vitesse) pour les enfants.
 function buildKidsPad(){
   const d = STATE.activity.data || {};
+  const NPADS = 6;                 // 6 cases / 6 couleurs
   const startLen = d.len || 4;     // longueur de départ
-  const target = d.target || 7;    // longueur à atteindre pour gagner
+  const target = d.target || 10;   // longueur à atteindre pour gagner (jusqu'à 10)
   // Séquence cible complète ; on en révèle de plus en plus.
-  let full = Array.from({length:target}, ()=>Math.floor(Math.random()*4));
+  let full = Array.from({length:target}, ()=>Math.floor(Math.random()*NPADS));
   let round = startLen;            // longueur du tour courant
   let input = [];
   let accepting = false;
@@ -1230,14 +1253,14 @@ function buildKidsPad(){
       <p class="big" id="kidsmsg">Robin & Juliette : regardez bien les couleurs…</p>
       <p class="neon-cyan" id="kidsprog"></p>
       <div class="padgrid">
-        ${[0,1,2,3].map(i=>`<div class="pad pad${i}" id="pad${i}"></div>`).join('')}
+        ${Array.from({length:NPADS},(_,i)=>`<div class="pad pad${i}" id="pad${i}"></div>`).join('')}
       </div>
       <button class="btn warn" style="max-width:320px;margin:0 auto" id="kidsreplay">🔁 REVOIR</button>
     </div>`;
 
   const msg = document.getElementById('kidsmsg');
   const prog = document.getElementById('kidsprog');
-  const pads = [0,1,2,3].map(i=>document.getElementById('pad'+i));
+  const pads = Array.from({length:NPADS},(_,i)=>document.getElementById('pad'+i));
 
   function flash(i, dur){
     return new Promise(r=>{

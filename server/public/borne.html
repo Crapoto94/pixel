@@ -55,15 +55,10 @@
 </head>
 <body class="scanlines">
 <div id="buildtag" style="position:fixed;top:3px;left:5px;z-index:9999;font-family:monospace;font-size:10px;color:#ffffff55;pointer-events:none;user-select:none"></div>
-<!-- Lecteurs YouTube de fond : Chrome met en PAUSE l'autoplay DÉ-MUTÉ d'un lecteur
-     non visible (caché / hors-écran / opacity:0). Donc on les garde RÉELLEMENT
-     visibles (taille réelle, dans le viewport, opacity:1) et on les masque à l'œil
-     avec un CACHE OPAQUE par-dessus. L'IntersectionObserver de YouTube est purement
-     géométrique : il ne détecte PAS l'occlusion → la lecture continue. -->
-<div id="yt-amb" style="position:fixed;right:0;bottom:0;width:320px;height:180px;z-index:1;pointer-events:none"></div>
-<div id="yt-bt"  style="position:fixed;right:0;bottom:0;width:320px;height:180px;z-index:1;pointer-events:none"></div>
-<div id="yt-pac" style="position:fixed;right:0;bottom:0;width:320px;height:180px;z-index:1;pointer-events:none"></div>
-<div id="yt-cover" style="position:fixed;right:0;bottom:0;width:322px;height:182px;z-index:2;background:#0a0118;pointer-events:none"></div>
+<!-- Lecteurs YouTube de fond (état d'hier soir — cachés 1×1). -->
+<div id="yt-amb" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-bt"  style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-pac" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
@@ -173,6 +168,7 @@ function render(){
     && STATE.activity.type==='briefing' && STATE.activity.state!=='done';
   if (briefTimer && !_inBrief){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
+    if (window.SFX && SFX.briefMusicStop) SFX.briefMusicStop();
   }
   // --- BRIEFING : déroulé scénario + attendus par joueur ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='briefing'){
@@ -534,8 +530,7 @@ function setupBriefing(){
   if (briefKey === STATE.activity.startedAt) return; // déjà en place, l'interval gère
   briefKey = STATE.activity.startedAt;
   briefSlides = null; briefIdx = 0;
-  // Musique de fond = la vraie playlist jeux vidéo (ytAmb), pas de chiptune généré.
-  try { if (ytAmb){ ytAmb.unMute(); ytAmb.setVolume(60); ytAmb.playVideo(); } } catch(_){}
+  if (SOUND_ON && window.SFX && SFX.briefMusic) SFX.briefMusic(); // musique chiptune de fond (comme hier)
   stage.innerHTML = '<div class="center"><div class="big pixel blink">CHARGEMENT…</div></div>';
   tickerEl.textContent = 'BRIEFING — ouvrez grand les yeux !';
   fetch('/api/briefing').then(r=>r.json()).then(d=>{
@@ -1414,7 +1409,7 @@ function initYT(){
   fetch('/api/ytconfig').then(r=>r.json()).then(cfg=>{
     if (cfg.ambiance) {
       ytAmb = new YT.Player('yt-amb', {
-        height:'180', width:'320',
+        height:'1', width:'1',
         playerVars:{ listType:'playlist', list:cfg.ambiance, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
           onReady(e){ e.target.setShuffle(true); e.target.playVideo(); }, // muet jusqu'au 1er clic
@@ -1424,7 +1419,7 @@ function initYT(){
     }
     if (cfg.blindtest) {
       ytBt = new YT.Player('yt-bt', {
-        height:'180', width:'320',
+        height:'1', width:'1',
         playerVars:{ listType:'playlist', list:cfg.blindtest, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
           onReady(e){ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); harvestTracks(e.target); }, // muet : on moissonne les titres
@@ -1449,7 +1444,7 @@ function initYT(){
     if (cfg.pacman && cfg.pacman.id) {
       const pid = cfg.pacman.id, pstart = cfg.pacman.start || 0;
       ytPac = new YT.Player('yt-pac', {
-        height:'180', width:'320', videoId: pid,
+        height:'1', width:'1', videoId: pid,
         playerVars:{ autoplay:1, loop:1, playlist:pid, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:pstart },
         events:{
           onReady(e){ e.target.mute(); }, // prêt, muet ; lancé pendant Pac-Man

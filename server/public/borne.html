@@ -55,14 +55,15 @@
 </head>
 <body class="scanlines">
 <div id="buildtag" style="position:fixed;top:3px;left:5px;z-index:9999;font-family:monospace;font-size:10px;color:#ffffff55;pointer-events:none;user-select:none"></div>
-<!-- Lecteurs YouTube de fond : YouTube met en PAUSE (~1 s) les lecteurs qu'il juge
-     non visibles (trop petits / hors écran). On les garde donc à TAILLE RÉELLE et
-     PARTIELLEMENT dans le viewport (un coin de ~6 px reste visible = suffisant pour
-     que la lecture continue), poussés dans le coin bas-droite sous l'overlay
-     scanlines → invisibles à l'œil. PAS de cache opaque (occlusion = pause). -->
-<div id="yt-amb" style="position:fixed;width:320px;height:180px;right:-314px;bottom:-174px;z-index:-1;pointer-events:none"></div>
-<div id="yt-bt"  style="position:fixed;width:320px;height:180px;right:-314px;bottom:-174px;z-index:-1;pointer-events:none"></div>
-<div id="yt-pac" style="position:fixed;width:320px;height:180px;right:-314px;bottom:-174px;z-index:-1;pointer-events:none"></div>
+<!-- Lecteurs YouTube de fond : Chrome met en PAUSE l'autoplay DÉ-MUTÉ d'un lecteur
+     non visible (caché / hors-écran / opacity:0). Donc on les garde RÉELLEMENT
+     visibles (taille réelle, dans le viewport, opacity:1) et on les masque à l'œil
+     avec un CACHE OPAQUE par-dessus. L'IntersectionObserver de YouTube est purement
+     géométrique : il ne détecte PAS l'occlusion → la lecture continue. -->
+<div id="yt-amb" style="position:fixed;right:0;bottom:0;width:320px;height:180px;z-index:1;pointer-events:none"></div>
+<div id="yt-bt"  style="position:fixed;right:0;bottom:0;width:320px;height:180px;z-index:1;pointer-events:none"></div>
+<div id="yt-pac" style="position:fixed;right:0;bottom:0;width:320px;height:180px;z-index:1;pointer-events:none"></div>
+<div id="yt-cover" style="position:fixed;right:0;bottom:0;width:322px;height:182px;z-index:2;background:#0a0118;pointer-events:none"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>

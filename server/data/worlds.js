@@ -21,6 +21,9 @@ export const WORLDS = [
     titre: 'TUTORIEL CORROMPU',
     colis: 1,
     heroOnly: true, // seul le PLAYER ONE (Vincent) peut VALIDER la séquence Konami
+    // Vidéo-indice diffusée sur la BORNE quand un joueur demande « un indice ».
+    // Clip de 59s sur le code Konami → on le joue en entier (depuis le début).
+    hintVideo: { video: 'hIovAaitgsI', start: 0 },
     intro:
       "La BORNE s'allume dans un grésillement. « SYSTÈME CORROMPU. Avatars détectés. " +
       "Pour réveiller la réalité, reconstituez la SÉQUENCE LÉGENDAIRE. »",

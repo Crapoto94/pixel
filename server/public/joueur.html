@@ -233,6 +233,13 @@ function render() {
         <div id="codeMsg" class="center mt"></div>`;
       }
     }
+    // Vidéo-indice : disponible si le monde en propose une (ex. Monde 1).
+    if (w.hintVideo) {
+      html += `<div class="center mt">
+        <button class="btn" onclick="askHint()">💡 Un indice ?</button>
+        <div id="hintMsg" class="muted mt" style="font-size:12px"></div>
+      </div>`;
+    }
     html += `</div>`;
   }
 
@@ -1034,6 +1041,13 @@ function submitCode(){
 function gmGage(){
   const t = document.getElementById('gmTarget').value;
   api('/api/gm/gage', { targetId: t });
+}
+// Demande d'indice : la borne diffuse la vidéo du monde courant.
+function askHint(){
+  api('/api/hint', {}).then(r=>{
+    const m = document.getElementById('hintMsg');
+    if (m) m.textContent = r.ok ? '📺 Indice lancé sur la borne — regardez l’écran !' : (r.reason || 'Pas d’indice ici.');
+  });
 }
 
 // =================== MANETTE NES — Séquence légendaire (Monde 1, Konami) ===================

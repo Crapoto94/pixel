@@ -82,6 +82,8 @@ export class GameState {
     this.w6Konami = {};  // { playerId: true } — qui a saisi la SÉQUENCE LÉGENDAIRE
     this.w6Hint = false; // indice « un pour tous et tous pour un » (dès le 1er code saisi)
     this.w6Reboot = false; // quelqu'un a tapé REBOOT → on guide vers le LEET
+    // Vidéo-indice diffusée sur la borne à la demande d'un joueur (ex. Monde 1)
+    this.hintVideo = null; // { video, start, at } ou null
     this.votes = {}; // { voterId: targetId }
     this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
     this.photos = []; // [{id, playerId, playerName, avatar, missionIdx, missionLabel, url, uploadedAt}]
@@ -457,6 +459,25 @@ export class GameState {
     }
     this.touch();
     return { ok: true, gateComplete: this.w6GateComplete() };
+  }
+
+  // ---- Vidéo-indice (diffusée sur la borne à la demande) -----------
+  // Un joueur clique « Un indice » : on diffuse la vidéo configurée sur le
+  // monde courant (ex. Monde 1) sur la BORNE, sans interrompre le jeu.
+  requestHintVideo(playerId) {
+    const world = this.currentWorld();
+    if (!world || !world.hintVideo) return { ok: false, reason: 'Aucun indice vidéo ici.' };
+    const p = this.player(playerId);
+    this.hintVideo = { ...world.hintVideo, at: Date.now() };
+    this.addLog(`💡 ${p ? p.name : '?'} demande un indice — vidéo sur la BORNE.`);
+    this.touch();
+    return { ok: true };
+  }
+
+  clearHintVideo() {
+    if (!this.hintVideo) return;
+    this.hintVideo = null;
+    this.touch();
   }
 
   completeWorld() {
@@ -1582,7 +1603,10 @@ export class GameState {
         isTwist: !!world.isTwist, isFinale: !!world.isFinale,
         resoluParVote: !!world.resoluParVote, heroOnly: !!world.heroOnly,
         konamiGate: !!world.konamiGate,
+        hintVideo: !!world.hintVideo,
       },
+      // Vidéo-indice en cours de diffusion sur la borne (ou null)
+      hintVideo: this.hintVideo,
       // Progression de la porte « Konami collectif » (Monde 6)
       w6: world && world.konamiGate ? {
         doneCount: this.players.filter((p) => p.connected && this.w6Konami[p.id]).length,

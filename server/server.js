@@ -173,6 +173,17 @@ app.post('/api/w6/konami', (req, res) => {
   res.json(game.submitW6Konami(p.id, req.body.code || ''));
 });
 
+// Vidéo-indice : un joueur demande un indice → la borne diffuse la vidéo du monde
+app.post('/api/hint', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  res.json(game.requestHintVideo(p.id));
+});
+// La borne signale la fin de la vidéo-indice (pas de token : c'est la borne)
+app.post('/api/hint/clear', (req, res) => {
+  game.clearHintVideo();
+  res.json({ ok: true });
+});
+
 app.post('/api/buzz', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.buzz(p.id);
@@ -401,6 +412,7 @@ app.post('/api/gm/action', (req, res) => {
     case 'roueOpenVote': game.roueOpenVote(); break;
     case 'roueTally': game.roueTally(); break;
     case 'mosaicReveal': game.mosaicReveal(payload.on !== false); break;
+    case 'clearHint': game.clearHintVideo(); break;
     case 'enqueteHint': game.enqueteHint(); break;
     case 'enqueteSkip': game.enqueteSkip(); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });

@@ -94,6 +94,7 @@ function render(){
       <button class="btn secondary" onclick="act('start')">▶ DÉMARRER</button>
       <button class="btn" onclick="act('assignGlitch')">🎲 Tirer Glitch</button>
       <button class="btn warn" onclick="act('completeWorld')">✅ Valider monde →</button>
+      ${S.hintVideo ? `<button class="btn" onclick="act('clearHint')">⏹ Couper l'indice 💡</button>` : ''}
       <button class="btn danger" onclick="if(confirm('Tout réinitialiser ?'))act('reset')">⟲ RESET</button>
     </div>
   </div>

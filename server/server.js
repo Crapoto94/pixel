@@ -7,7 +7,6 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { mkdirSync } from 'fs';
-import { execSync } from 'child_process';
 import multer from 'multer';
 import QRCode from 'qrcode';
 import { CONFIG, PLAYERS, NPCS } from './config.js';
@@ -20,16 +19,6 @@ import { WORLDS } from './data/worlds.js';
 import { GameState } from './game/state.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Numéro de build : hash court du commit Git en cours (pour vérifier le déploiement).
-const BUILD = (() => {
-  try {
-    const hash = execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim();
-    let dirty = '';
-    try { if (execSync('git status --porcelain', { cwd: __dirname }).toString().trim()) dirty = '*'; } catch (_) {}
-    return hash + dirty;
-  } catch (_) { return 'dev'; }
-})();
 
 // Dossier uploads (photos joueurs)
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
@@ -99,12 +88,6 @@ app.get('/api/briefing', (req, res) => {
   res.json({ scenario: SCENARIO_SLIDES, players });
 });
 app.get('/j/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'joueur.html')));
-
-// Numéro de build (hash Git) — affiché discrètement sur la borne
-app.get('/api/build', (req, res) => {
-  res.set('Cache-Control', 'no-store');
-  res.json({ build: BUILD });
-});
 
 // Config YouTube exposée publiquement (IDs de playlists, pas de secret)
 app.get('/api/ytconfig', (req, res) => {
@@ -184,20 +167,15 @@ app.post('/api/code', (req, res) => {
   res.json(game.submitCode(p.id, req.body.code || ''));
 });
 
-app.post('/api/hint', (req, res) => {
-  const p = requirePlayer(req, res); if (!p) return;
-  game.requestHint(p.id);
-  res.json({ ok: true });
-});
-
-app.post('/api/end-video', (req, res) => {
-  game.endVideo();
-  res.json({ ok: true });
-});
-
 app.post('/api/buzz', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.buzz(p.id);
+  res.json({ ok: true });
+});
+
+app.post('/api/vote', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.castVote(p.id, req.body.targetId);
   res.json({ ok: true });
 });
 
@@ -205,18 +183,6 @@ app.post('/api/answer', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.quizAnswer(p.id, req.body.choice);
   res.json({ ok: true });
-});
-
-app.post('/api/boss/input', (req, res) => {
-  const p = requirePlayer(req, res); if (!p) return;
-  const r = game.bossInput(req.body.key);
-  res.json(r);
-});
-
-// Boss final : la BORNE déclenche le redémarrage (combo Ctrl+Alt+Suppr détecté
-// côté borne en multi-touch). Pas de token : action de la borne elle-même.
-app.post('/api/boss/reboot', (req, res) => {
-  res.json(game.bossReboot());
 });
 
 // --- Photos joueurs --------------------------------------------------
@@ -363,19 +329,6 @@ app.post('/api/gm/gage', (req, res) => {
   res.json(game.drawGage(req.body.pool || null, req.body.targetId || null));
 });
 
-// Pouvoir « MAÎTRE DU JEU » : Vincent éveillé (ou l'hôte) lance/arrête une
-// activité depuis son téléphone (jeux, quiz, blind-test…).
-app.post('/api/gm/start', (req, res) => {
-  const p = requirePlayer(req, res); if (!p) return;
-  const allowed = p.isHost || (p.isHero && game.heroAwakened);
-  if (!allowed) return res.status(403).json({ error: 'Pouvoir non débloqué.' });
-  const { type, opts } = req.body;
-  if (type === 'stop') { game.stopActivity(); return res.json({ ok: true }); }
-  if (!type) return res.status(400).json({ error: 'type manquant' });
-  game.startActivity(type, opts || {});
-  res.json({ ok: true });
-});
-
 // --- API GM console (Marc) — protégée par mot de passe --------------
 function requireGM(req, res) {
   if (!CONFIG.gmPassword) return true; // pas de mot de passe configuré = accès libre
@@ -398,6 +351,9 @@ app.get('/api/gm/state', (req, res) => {
   const cw = game.currentWorld();
   res.json({
     ...game.publicState(),
+    glitchId: game.glitchId, // l'hôte a le droit de savoir
+    glitchName: game.player(game.glitchId)?.name || null,
+    votes: game.votes,
     quizMaster,
     enqueteMaster: game.enqueteMaster(),
     mosaicWord: game.activity && game.activity.type === 'mosaic' ? game.activity.word : null,
@@ -416,6 +372,7 @@ app.post('/api/gm/action', (req, res) => {
   const { action, payload = {} } = req.body;
   switch (action) {
     case 'start': game.startGame(); break;
+    case 'assignGlitch': game.assignGlitch(); break;
     case 'completeWorld': game.completeWorld(); break;
     case 'startActivity': game.startActivity(payload.type, payload.opts || {}); break;
     case 'stopActivity': game.stopActivity(); break;
@@ -425,6 +382,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'musicHint': game.musicHint(); break;
     case 'drawGage': game.drawGage(payload.pool || null, payload.targetId || null); break;
     case 'clearGage': game.clearGage(); break;
+    case 'startVote': game.startVote(); break;
+    case 'tallyVotes': return res.json({ ok: true, result: game.tallyVotes() });
     case 'loseLife': game.loseLife(payload.playerId); break;
     case 'reset': game.reset(); break;
     case 'setPhotoPhase': game.setPhotoPhase(payload.phase ?? null); break;
@@ -438,14 +397,13 @@ app.post('/api/gm/action', (req, res) => {
     case 'mosaicReveal': game.mosaicReveal(payload.on !== false); break;
     case 'enqueteHint': game.enqueteHint(); break;
     case 'enqueteSkip': game.enqueteSkip(); break;
-    case 'enqueteRevealFrags': game.enqueteRevealFrags(payload.on); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });
 });
 
 app.listen(CONFIG.port, () => {
-  console.log(`\n🕹️  PIXEL PANIC en ligne  (build ${BUILD})`);
+  console.log(`\n🕹️  PIXEL PANIC en ligne`);
   console.log(`   Borne   : http://localhost:${CONFIG.port}/borne`);
   console.log(`   GM      : http://localhost:${CONFIG.port}/gm`);
   console.log(`   Joueur  : http://localhost:${CONFIG.port}/j/<token>`);

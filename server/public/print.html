@@ -56,35 +56,11 @@
     border: 3px solid #160a2e; font-size: 26px; }
   .coin { background: #ffe07a; } .life { background: #ffd0e0; }
 
-  /* ===== Énigmes imprimables par monde ===== */
-  .enig { border: 3px solid #160a2e; border-radius: 12px; background: #fff; padding: 6mm 6mm 5mm;
-    width: 190mm; max-width: 100%; margin-bottom: 6mm; }
-  .enig .ehead { font-family: 'Press Start 2P'; font-size: 11px; color: #ff2e88; }
-  .enig .esub { font-size: 12px; color: #555; margin: 2mm 0 4mm; }
-  .enig .cut { font-size: 10px; color: #999; margin-top: 3mm; }
-  .keycards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3mm; }
-  .keycard { width: 52mm; border: 2px dashed #160a2e; border-radius: 8px; padding: 3mm 4mm; background: #f7f4ff; }
-  .keycard .kn { font-family: 'Press Start 2P'; font-size: 8px; color: #7a5cff; }
-  .keycard .kk { font-size: 30px; letter-spacing: 6px; margin-top: 2mm; text-align: center; }
-  .seqstrip { font-size: 34px; letter-spacing: 8px; text-align: center; margin: 3mm 0; }
-  .tiles5 { display: flex; gap: 0; margin-top: 3mm; }
-  .tile5 { width: 32mm; height: 38mm; border: 2px dashed #160a2e; display: flex; align-items: center; justify-content: center;
-    font-family: 'Press Start 2P'; font-size: 30px; color: #160a2e; background: #fff; position: relative; }
-  .tile5 .cible { position: absolute; top: 2mm; right: 2mm; font-size: 14px; }
-  .goldcard { width: 85mm; height: 60mm; border-radius: 10px; padding: 5mm;
-    background: linear-gradient(160deg, #fff7d6, #ffe07a); border: 3px solid #b8860b; box-shadow: 0 2px 0 #b8860b;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-  .goldcard .gt { font-family: 'Press Start 2P'; font-size: 12px; color: #7a5a00; }
-  .goldcard .gcode { font-family: 'Press Start 2P'; font-size: 16px; color: #b8860b; margin-top: 3mm;
-    border: 2px dashed #b8860b; padding: 2mm 4mm; border-radius: 6px; }
-  .stamp { display: inline-block; border: 3px solid #c0392b; color: #c0392b; border-radius: 8px;
-    padding: 3mm 5mm; font-family: 'Press Start 2P'; font-size: 11px; transform: rotate(-4deg); margin: 2mm; }
-
   @media print {
     body { background: #fff; }
     .bar { display: none; }
     .sheet { padding: 0; }
-    .card, .colis, .enig { page-break-inside: avoid; }
+    .card, .colis { page-break-inside: avoid; }
     h2 { page-break-before: always; }
     .sheet h2:first-of-type { page-break-before: avoid; }
   }
@@ -112,181 +88,6 @@ const ART = {
   glouton: `<svg class="art" viewBox="0 0 100 100"><path d="M52,50 L88,30 A42,42 0 1,0 88,70 Z" fill="#FFCC00" stroke="#b38f00" stroke-width="2"/><circle cx="50" cy="28" r="5" fill="#160a2e"/></svg>`,
 };
 function art(id){ return ART[id] || `<svg class="art" viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#7a5cff"/></svg>`; }
-
-// ====================== ÉNIGMES IMPRIMABLES ======================
-
-// --- W1 : carte MANETTE + séquence Konami + cartes-touches par joueur ---
-function konamiBlock(){
-  const ctrl = `<svg width="150" height="92" viewBox="0 0 150 92">
-    <rect x="2" y="10" width="146" height="72" rx="22" fill="#2a2a3a" stroke="#160a2e" stroke-width="3"/>
-    <!-- D-pad -->
-    <g fill="#cfd2e0" stroke="#160a2e" stroke-width="2">
-      <rect x="32" y="32" width="14" height="38" rx="3"/><rect x="20" y="44" width="38" height="14" rx="3"/>
-    </g>
-    <polygon points="39,34 35,40 43,40" fill="#160a2e"/><polygon points="39,68 35,62 43,62" fill="#160a2e"/>
-    <polygon points="23,51 29,47 29,55" fill="#160a2e"/><polygon points="55,51 49,47 49,55" fill="#160a2e"/>
-    <!-- A / B -->
-    <circle cx="112" cy="42" r="11" fill="#2effd5" stroke="#160a2e" stroke-width="2"/><text x="112" y="47" font-size="12" text-anchor="middle" font-family="Arial" font-weight="bold">B</text>
-    <circle cx="128" cy="58" r="11" fill="#ff2e88" stroke="#160a2e" stroke-width="2"/><text x="128" y="63" font-size="12" text-anchor="middle" fill="#fff" font-family="Arial" font-weight="bold">A</text>
-  </svg>`;
-  const keys = [
-    { n:'WILSONIK', k:'↑ ↑' }, { n:'RIU', k:'↓ ↓' }, { n:'ZILDA', k:'← →' },
-    { n:'SUPER MARIANO', k:'← →' }, { n:'LARA CROÛTE', k:'B A' },
-  ];
-  const kc = keys.map(x=>`<div class="keycard"><div class="kn">${esc(x.n)}</div><div class="kk">${x.k}</div></div>`).join('');
-  return `<div class="enig">
-    <div class="ehead">MONDE 1 — TUTORIEL CORROMPU · LA MANETTE LÉGENDAIRE</div>
-    <div class="esub">À glisser dans l'enveloppe 1. Reconstituez la séquence ; seul le PLAYER ONE (Vincent) la valide sur la borne.</div>
-    <div style="display:flex;align-items:center;gap:8mm;flex-wrap:wrap">
-      ${ctrl}
-      <div><div style="font-size:12px;color:#555">LA SÉQUENCE LÉGENDAIRE</div>
-        <div class="seqstrip">↑ ↑ ↓ ↓ ← → ← → B A</div></div>
-    </div>
-    <div style="font-size:11px;color:#888;margin-top:2mm">Cartes-touches à découper (1 par joueur — secours si pas de téléphone) :</div>
-    <div class="keycards">${kc}</div>
-    <div class="cut">✂️ Découper les cartes-touches sur les pointillés.</div>
-  </div>`;
-}
-
-// --- W2 : vrai LABYRINTHE généré (chemin = G-L-O-U-T-O-N) ---
-function genMaze(C,R){
-  const idx=(c,r)=>r*C+c;
-  const W=Array.from({length:C*R},()=>({n:true,e:true,s:true,w:true}));
-  const vis=Array(C*R).fill(false); const stack=[[0,0]]; vis[0]=true;
-  const D=[['n',0,-1,'s'],['e',1,0,'w'],['s',0,1,'n'],['w',-1,0,'e']];
-  while(stack.length){ const [c,r]=stack[stack.length-1]; const nb=[];
-    for(const [d,dc,dr,o] of D){ const nc=c+dc,nr=r+dr; if(nc>=0&&nc<C&&nr>=0&&nr<R&&!vis[idx(nc,nr)]) nb.push([d,nc,nr,o]); }
-    if(!nb.length){ stack.pop(); continue; }
-    const [d,nc,nr,o]=nb[Math.floor(Math.random()*nb.length)];
-    W[idx(c,r)][d]=false; W[idx(nc,nr)][o]=false; vis[idx(nc,nr)]=true; stack.push([nc,nr]);
-  }
-  return W;
-}
-function solveMaze(W,C,R,s,e){
-  const idx=(c,r)=>r*C+c; const q=[s]; const prev=Array(C*R).fill(-1); const seen=Array(C*R).fill(false); seen[idx(s[0],s[1])]=true;
-  const D=[['n',0,-1],['e',1,0],['s',0,1],['w',-1,0]];
-  while(q.length){ const [c,r]=q.shift(); if(c===e[0]&&r===e[1]) break;
-    for(const [d,dc,dr] of D){ if(W[idx(c,r)][d]) continue; const nc=c+dc,nr=r+dr; if(nc<0||nc>=C||nr<0||nr>=R||seen[idx(nc,nr)]) continue; seen[idx(nc,nr)]=true; prev[idx(nc,nr)]=idx(c,r); q.push([nc,nr]); } }
-  const path=[]; let cur=idx(e[0],e[1]); while(cur!==-1){ path.push([cur%C,Math.floor(cur/C)]); if(cur===idx(s[0],s[1])) break; cur=prev[cur]; }
-  return path.reverse();
-}
-const _ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-function randLetter(){ return _ALPHA[Math.floor(Math.random()*26)]; }
-// Toutes les cellules portent une lettre ; les 🍄 marquent des cases (7 sur le
-// chemin = G-L-O-U-T-O-N, plus des leurres ailleurs). Le départ 🍒 et l'arrivée
-// 🏁 ne portent PAS de lettre (donc G≠départ, N≠arrivée).
-function mazeSVG(W,C,R,cell,start,end,letterMap,mushSet,pathOrder,showPath,path){
-  const ox=5, oy=5, w=C*cell+10, h=R*cell+10;
-  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
-  s+=`<rect x="0" y="0" width="${w}" height="${h}" fill="#fffdf5"/>`;
-  if(showPath && path){ let d=''; path.forEach((p,i)=>{ const x=ox+p[0]*cell+cell/2, y=oy+p[1]*cell+cell/2; d+=(i?'L':'M')+x+' '+y+' '; });
-    s+=`<path d="${d}" fill="none" stroke="#ffcf33" stroke-width="${cell*0.46}" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>`; }
-  // fond légèrement teinté sur les cases-champignon
-  for(const key of mushSet){ const [c,r]=key.split(',').map(Number); const x=ox+c*cell,y=oy+r*cell;
-    s+=`<rect x="${x+1.5}" y="${y+1.5}" width="${cell-3}" height="${cell-3}" rx="3" fill="#ffe3e3"/>`; }
-  // murs
-  s+=`<g stroke="#160a2e" stroke-width="2.2" stroke-linecap="round">`;
-  for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const wl=W[r*C+c]; const x=ox+c*cell, y=oy+r*cell;
-    if(wl.n) s+=`<line x1="${x}" y1="${y}" x2="${x+cell}" y2="${y}"/>`;
-    if(wl.w) s+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+cell}"/>`;
-    if(c===C-1&&wl.e) s+=`<line x1="${x+cell}" y1="${y}" x2="${x+cell}" y2="${y+cell}"/>`;
-    if(r===R-1&&wl.s) s+=`<line x1="${x}" y1="${y+cell}" x2="${x+cell}" y2="${y+cell}"/>`;
-  }
-  s+=`</g>`;
-  for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const key=c+','+r; const cx=ox+c*cell+cell/2, cy=oy+r*cell+cell/2;
-    if(c===start[0]&&r===start[1]){ s+=`<text x="${cx}" y="${cy+cell*0.2}" font-size="${cell*0.58}" text-anchor="middle">🍒</text>`; continue; }
-    if(c===end[0]&&r===end[1]){ s+=`<text x="${cx}" y="${cy+cell*0.2}" font-size="${cell*0.52}" text-anchor="middle">🏁</text>`; continue; }
-    if(mushSet.has(key)) s+=`<text x="${ox+c*cell+cell-2}" y="${oy+r*cell+cell*0.4}" font-size="${cell*0.32}" text-anchor="end">🍄</text>`;
-    const ch=letterMap.get(key)||'';
-    s+=`<text x="${cx}" y="${cy+cell*0.2}" font-size="${cell*0.4}" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#160a2e">${ch}</text>`;
-    if(showPath && pathOrder.has(key)){
-      s+=`<circle cx="${ox+c*cell+cell*0.22}" cy="${oy+r*cell+cell*0.24}" r="${cell*0.18}" fill="#7a5cff"/>`;
-      s+=`<text x="${ox+c*cell+cell*0.22}" y="${oy+r*cell+cell*0.31}" font-size="${cell*0.26}" text-anchor="middle" fill="#fff" font-weight="bold">${pathOrder.get(key)}</text>`;
-    }
-  }
-  return s+`</svg>`;
-}
-function mazeBlock(){
-  const C=13,R=9,cell=30;
-  const word='GLOUTON';
-  const start=[C-1,R-1], end=[0,0];
-  let W,path,tries=0;
-  do { W=genMaze(C,R); path=solveMaze(W,C,R,start,end); tries++; } while(path.length<word.length+4 && tries<80);
-  // 7 cases INTÉRIEURES du chemin (jamais le départ ni l'arrivée) → G..N dans l'ordre
-  const interior = path.slice(1, path.length-1);
-  const used=new Set(); const idxs=[];
-  for(let i=0;i<word.length;i++){ let pi=Math.round(i*(interior.length-1)/(word.length-1));
-    while(used.has(pi)) pi=(pi+1)%interior.length; used.add(pi); idxs.push(pi); }
-  idxs.sort((a,b)=>a-b);
-  const letterMap=new Map(), mushSet=new Set(), pathOrder=new Map();
-  idxs.forEach((pi,i)=>{ const [c,r]=interior[pi]; const key=c+','+r; letterMap.set(key,word[i]); mushSet.add(key); pathOrder.set(key,i+1); });
-  // remplit TOUTES les autres cases de lettres-leurres
-  for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const key=c+','+r;
-    if((c===start[0]&&r===start[1])||(c===end[0]&&r===end[1])) continue;
-    if(!letterMap.has(key)) letterMap.set(key, randLetter());
-  }
-  // champignons LEURRES hors du chemin
-  const pathKeys=new Set(path.map(p=>p[0]+','+p[1]));
-  const off=[]; for(let r=0;r<R;r++) for(let c=0;c<C;c++){ const key=c+','+r;
-    if(pathKeys.has(key)||(c===start[0]&&r===start[1])||(c===end[0]&&r===end[1])) continue; off.push(key); }
-  off.sort(()=>Math.random()-0.5);
-  for(let i=0;i<Math.min(10,off.length);i++) mushSet.add(off[i]);
-
-  const player=mazeSVG(W,C,R,cell,start,end,letterMap,mushSet,pathOrder,false,null);
-  const solution=mazeSVG(W,C,R,cell,start,end,letterMap,mushSet,pathOrder,true,path);
-  return `<div class="enig">
-    <div class="ehead">MONDE 2 — LE LABYRINTHE DE GLOUTON</div>
-    <div class="esub">À glisser dans l'enveloppe 2. Pars de la 🍒 (bas-droite), trouve le SEUL chemin jusqu'au 🏁. Note les lettres des 🍄 que tu croises <b>en chemin</b>, dans l'ordre → le mot-code (7 lettres). ⚠️ Des champignons-PIÈGES sont placés hors du chemin : ne compte que ceux du bon parcours !</div>
-    <div style="display:flex;gap:10mm;flex-wrap:wrap;align-items:flex-start">
-      <div><div style="font-size:11px;color:#555;margin-bottom:2mm">PLAN POUR LES JOUEURS</div>${player}</div>
-      <div><div style="font-size:11px;color:#c0392b;margin-bottom:2mm">🔒 SOLUTION — CARTE SECRÈTE DE LARA CROÛTE (ne pas mettre avec le reste !)</div>${solution}
-        <div style="font-size:11px;color:#555;margin-top:1mm">Chemin doré ; champignons numérotés 1→7 = G·L·O·U·T·O·N.</div></div>
-    </div>
-    <div class="cut">Recharge la page avant d'imprimer pour générer un labyrinthe différent.</div>
-  </div>`;
-}
-
-// --- W3 : puzzle PIXEL à découper (retirer 1 pièce = sabotage) ---
-function pixelBlock(){
-  const tiles='PIXEL'.split('').map((ch,i)=>`<div class="tile5">${ch}${i===2?'<span class="cible">🎯</span>':''}</div>`).join('');
-  return `<div class="enig">
-    <div class="ehead">MONDE 3 — BOSS DE MI-PARCOURS · PUZZLE « PIXEL »</div>
-    <div class="esub">À glisser dans l'enveloppe 3. Découpe les 5 pièces ; assemblées dans l'ordre elles donnent le mot-code. La pièce 🎯 (centrale) est le repère de ZILDA.</div>
-    <div class="tiles5">${tiles}</div>
-    <div style="margin-top:3mm"><span class="stamp">SABOTAGE : retire 1 pièce avant de fermer</span></div>
-    <div class="cut">✂️ Découper les 5 tuiles sur les pointillés.</div>
-  </div>`;
-}
-
-// --- W4 & W6 : cartes dorées (code masqué si vide) ---
-function goldBlock(num, title, gt, code, note){
-  return `<div class="enig">
-    <div class="ehead">${esc(title)}</div>
-    <div class="esub">${esc(note)}</div>
-    <div class="goldcard"><div class="gt">${esc(gt)}</div>${code?`<div class="gcode">CODE : ${esc(code)}</div>`:''}</div>
-  </div>`;
-}
-
-// --- W5 : preuves (heures à recouper) ---
-function preuvesBlock(){
-  const stamps = [['COLIS 2','21 h 12'],['COLIS 3','22 h 30'],['COLIS 4','23 h 05']]
-    .map(([c,h])=>`<span class="stamp">${c} — ${h}</span>`).join('');
-  return `<div class="enig">
-    <div class="ehead">MONDE 5 — PREUVES</div>
-    <div class="esub">À TAMPONNER/coller sur les colis 2, 3 et 4 (les joueurs recoupent les heures façon Cluedo). Les fragments de preuve perso sont distribués via les téléphones. Ce monde se résout par un VOTE.</div>
-    <div>${stamps}</div>
-    <div class="cut">Astuce : note les mêmes heures au dos des colis 2/3/4 quand tu les prépares.</div>
-  </div>`;
-}
-
-function buildEnigmes(){
-  return konamiBlock() + mazeBlock() + pixelBlock()
-    + goldBlock(4, 'MONDE 4 — LE RÉVEIL DU PLAYER ONE', 'PLAYER ONE · GAME MASTER', 'GAMEMASTER',
-        "Carte DORÉE remise à VINCENT (déclenche ses pouvoirs). Code au dos.")
-    + preuvesBlock()
-    + goldBlock(6, 'MONDE 6 — BOSS FINAL · REBOOT', 'CARTE REBOOT', '',
-        "À scanner/jouer quand la barre de vie du boss atteint zéro. Déverrouille le cadeau de Vincent.");
-}
 
 fetch('/api/print').then(r=>r.json()).then(render).catch(e=>{
   document.getElementById('app').innerHTML = '<p style="padding:20px;color:#c00">Erreur de chargement : '+esc(String(e))+'</p>';
@@ -333,9 +134,6 @@ function render(data){
 
     <h2>② COLIS — contenu à préparer (1 carte par enveloppe)</h2>
     <div class="cards">${colis}</div>
-
-    <h2>②bis ÉNIGMES & MATÉRIEL À DÉCOUPER (à glisser dans les 6 enveloppes)</h2>
-    ${buildEnigmes()}
 
     <h2>③ Jetons à découper — 🪙 PIÈCES & ❤️ VIES</h2>
     <div class="tokens">${coins}${lives}</div>

@@ -1,6 +1,7 @@
 // =====================================================================
 //  Missions personnelles + indices sociaux (réseau « chacun sait un
-//  truc sur un autre »).
+//  truc sur un autre »). Le serveur génère le réseau d'indices au moment
+//  où le Glitch est désigné (fin du Monde 1).
 // =====================================================================
 
 // Mission perso par avatar (objectif fun de la soirée)

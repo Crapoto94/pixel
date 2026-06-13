@@ -62,6 +62,7 @@ export class GameState {
     if (this._roueTimer) { clearTimeout(this._roueTimer); this._roueTimer = null; }
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
+    if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.tron = null;   // partie Tron en cours
@@ -373,6 +374,7 @@ export class GameState {
   // ---- Démarrage de partie -----------------------------------------
   startGame() {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
+    this.activity = null; // on quitte le briefing pour de bon : aucun retour en arrière
     // Le Glitch n'est PAS désigné ici : il s'infiltre à la fin du Monde 1.
     this.phase = 'world';
     this.worldIndex = 0;
@@ -420,18 +422,32 @@ export class GameState {
     if (world.id === 'w4') this.awakenHero();
     if (world.twist) this.addLog(`🌀 ${world.twist}`);
 
-    // Avancer
+    // Finale : pas de danse, on enchaîne sur l'écran de victoire.
     if (world.isFinale) {
       this.phase = 'win';
       this.addLog('🏆 YOU WIN ! La réalité a redémarré.');
-    } else {
+      this.touch();
+      return;
+    }
+    // Célébration : message + 10 s de la danse des canards, PUIS monde suivant.
+    this.addLog(`✅ Monde ${world.num} réussi — petite danse de la victoire ! 🦆`);
+    this.startActivity('videoshow', {
+      video: '7kyY29BHTZs',
+      topLabel: '🎉 BRAVO !',
+      chyron: 'NIVEAU RÉUSSI 🎉<br>Cela mérite bien une petite danse !',
+      footer: 'Dansez la danse des canards 🦆',
+      skipIntro: true,
+    });
+    if (this._celebrateTimer) clearTimeout(this._celebrateTimer);
+    this._celebrateTimer = setTimeout(() => {
+      this._celebrateTimer = null;
+      this.activity = null;            // coupe la vidéo de célébration
       this.worldIndex += 1;
       const next = this.currentWorld();
-      if (next) {
-        this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
-      }
-    }
-    this.touch();
+      if (next) this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
+      this.phase = 'world';
+      this.touch();
+    }, 10000);
   }
 
   awakenHero() {
@@ -667,20 +683,12 @@ export class GameState {
       this.activity.topLabel = opts.topLabel || '📺 VIDÉO';
       this.activity.chyron = opts.chyron || '';
       this.activity.footer = opts.footer || '';
+      this.activity.skipIntro = opts.skipIntro || false; // true = pas de sting, la vidéo démarre direct
     }
-    // Briefing : après le déroulé complet, on enchaîne AUTOMATIQUEMENT sur
-    // l'énigme 1 (lancement de la partie). La borne joue ~6,5 s par slide.
-    if (type === 'briefing') {
-      const slides = SCENARIO_SLIDES.length + 1 /* sep */ + PLAYERS.length + 1 /* PRÊTS ? */;
-      const ms = slides * 6500 + 1500;
-      this._briefTimer = setTimeout(() => {
-        this._briefTimer = null;
-        if (this.phase === 'activity' && this.activity && this.activity.type === 'briefing') {
-          this.addLog('🎬 Briefing terminé — lancement de l\'énigme 1 !');
-          this.startGame();
-        }
-      }, ms);
-    }
+    // Briefing : les slides défilent en boucle sur la borne et le briefing
+    // RESTE affiché jusqu'à ce que le GM clique « ▶ DÉMARRER ». Pas d'auto-
+    // démarrage (sinon la partie repartait toute seule / revenait au briefing).
+    // (rien à planifier ici)
     this.phase = 'activity';
     this.addLog(`🎮 Activité BORNE : ${type}.`);
     this.touch();
@@ -1097,6 +1105,7 @@ export class GameState {
     if (this.pongTimer) { clearInterval(this.pongTimer); this.pongTimer = null; }
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
+    if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;
@@ -1269,6 +1278,7 @@ export class GameState {
     const a = this.activity;
     if (!a || a.type !== 'draw') return;
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
+    if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     const connected = this.players.filter((p) => p.connected).map((p) => p.id);
     a.order = (a.order || []).filter((id) => connected.includes(id));
     connected.forEach((id) => { if (!a.order.includes(id)) a.order.push(id); });
@@ -1327,6 +1337,7 @@ export class GameState {
 
   drawNext() {
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
+    if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     this._drawNewRound();
   }
   drawReveal() {

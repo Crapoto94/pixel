@@ -514,7 +514,7 @@ function renderVideoBorne(a){
   </div>`;
   tickerEl.textContent = (a.topLabel||'VIDÉO').replace(/<[^>]+>/g,'') + ' — ' + (a.chyron||'').replace(/<[^>]+>/g,' ');
   try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
-  startShowPlayer(a.intro || SHOW_INTRO, a.video || '7kyY29BHTZs');
+  startShowPlayer(a.skipIntro ? null : (a.intro || SHOW_INTRO), a.video || '7kyY29BHTZs');
 }
 function destroyShowPlayer(){ try { if (ytShow) { ytShow.destroy(); ytShow = null; } } catch(_){ ytShow = null; } }
 function startShowPlayer(intro, main){
@@ -527,14 +527,15 @@ function startShowPlayer(intro, main){
     return;
   }
   destroyShowPlayer();
+  // intro=null (skipIntro) → on démarre DIRECTEMENT sur la vidéo principale.
   ytShow = new YT.Player('ytshow', {
-    height:'100%', width:'100%', videoId: intro,
+    height:'100%', width:'100%', videoId: intro || main,
     playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
     events:{
       onReady(e){ try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} },
       onStateChange(e){
         if (e.data === YT.PlayerState.ENDED){
-          if (!ytShow._main){ // fin du sting → on lance la vidéo principale
+          if (intro && !ytShow._main){ // fin du sting → on lance la vidéo principale
             ytShow._main = true;
             try{ e.target.loadVideoById(main); e.target.unMute(); e.target.setVolume(100); }catch(_){}
           } else { // boucle la vidéo principale

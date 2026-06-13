@@ -82,13 +82,15 @@ function render(){
         : `<code style="color:var(--neon3);font-size:20px">${esc(S.worldCode||'?')}</code>`}
       <div class="muted" style="font-size:12px;margin-top:4px">Un joueur tape ce code sur son téléphone → le monde se valide. (Ou « ✅ Valider monde » pour forcer.)</div>
     </div>`:''}
-    <div class="mt">${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé</span>':''}</div>
+    <div class="mt"><b>🐛 GLITCH :</b> <code>${esc(S.glitchName||'(non assigné)')}</code>
+      ${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé</span>':''}</div>
   </div>
 
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">DÉROULÉ</div>
     <div class="grid mt">
-      <button class="btn secondary" onclick="startAct('briefing')">▶ BRIEFING DÉMARRAGE</button>
+      <button class="btn secondary" onclick="act('start')">▶ DÉMARRER</button>
+      <button class="btn" onclick="act('assignGlitch')">🎲 Tirer Glitch</button>
       <button class="btn warn" onclick="act('completeWorld')">✅ Valider monde →</button>
       <button class="btn danger" onclick="if(confirm('Tout réinitialiser ?'))act('reset')">⟲ RESET</button>
     </div>
@@ -99,7 +101,7 @@ function render(){
     <div class="grid3 mt">
       <button class="btn secondary" onclick="startAct('reaction_race')">⚡ Réaction</button>
       <button class="btn secondary" onclick="startAct('quiz',{deck:'videogame'})">❓ Quiz JV</button>
-      <button style="background:var(--neon);color:#fff" onclick="startAct('blindtest')">🎵 Blind-test</button>
+      <button class="btn secondary" onclick="startAct('blindtest')">🎵 Blind-test</button>
       <button class="btn secondary" onclick="startAct('roue_des_gages')">🎰 Roue</button>
       <button class="btn secondary" onclick="startAct('boss_final',{hp:100})">👾 Boss</button>
       <button class="btn warn" onclick="startAct('pixel_pad',{len:4,target:7})">🧒 Défi Pixels</button>
@@ -113,11 +115,8 @@ function render(){
       <button class="btn warn" onclick="mosaic()">🧩 Mosaïque</button>
       <button class="btn warn" onclick="startAct('enquete')">🕵️ Enquête</button>
       <button class="btn secondary" onclick="startAct('briefing')">📖 Briefing</button>
-      <button class="btn" style="background:var(--neon4);color:#fff" onclick="duckDance()">🦆 Danse des canards</button>
-      <button class="btn" style="background:var(--neon4);color:#fff" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
-      <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(1)">🎉 Fête 1</button>
-      <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(2)">🎉 Fête 2</button>
-      <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(3)">🎉 Fête 3</button>
+      <button class="btn warn" onclick="duckDance()">🦆 Danse des canards</button>
+      <button class="btn warn" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
     </div>
     <div class="pixel neon-cyan mt" style="font-size:11px">QUIZ — THÈMES</div>
     <div class="grid3 mt">
@@ -170,21 +169,9 @@ function render(){
     </div>`;
   })()}
 
-  ${S.activity && S.activity.type === 'briefing' ? `
-  <div class="card" style="border-color:var(--neon3)">
-    <div class="pixel neon-yellow" style="font-size:11px">📖 BRIEFING</div>
-    <div class="muted mt" style="font-size:13px">Le briefing est diffusé sur la BORNE.</div>
-    <button class="btn warn mt" onclick="act('start')">▶ Passer au Monde 1</button>
-    <button class="btn mt" onclick="act('stopActivity')">⏹ Stop briefing</button>
-  </div>` : ''}
-
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">📸 DÉFIS PHOTO</div>
     <div class="muted mt" style="font-size:13px">Photos : <code>${S.photos ? S.photos.length : 0}</code> soumises</div>
-    ${S.photos && S.photos.length ? `<div class="mt" style="font-size:13px">${[...new Map(S.photos.map(p=>[p.playerName,p])).keys()].map(name=>{
-      const count = S.photos.filter(p=>p.playerName===name).length;
-      return esc(name)+': <b>'+count+'</b>';
-    }).join(' · ')}</div>` : ''}
     <div class="grid3 mt">
       <button class="btn warn" onclick="act('setPhotoPhase',{phase:'vote'})">📸 Ouvrir vote</button>
       <button class="btn secondary" onclick="act('setPhotoPhase',{phase:'results'})">🏆 Résultats</button>
@@ -247,10 +234,6 @@ function render(){
         <button class="btn warn" ${em.hintsShown>=em.hintsTotal?'disabled':''} onclick="act('enqueteHint')">💡 Donner un indice</button>
         <button class="btn secondary" onclick="if(confirm('Débloquer cet acte sans le résoudre ?'))act('enqueteSkip')">⏭ Forcer l'acte</button>
       </div>
-      <button class="btn ${S.activity.fragVisible?'danger':'warn'} mt" onclick="act('enqueteRevealFrags',{on:${S.activity.fragVisible?'false':'true'}})">
-        ${S.activity.fragVisible?'⬛ Masquer les pièces à conviction':'🟨 Afficher les pièces à conviction'}
-      </button>
-      <div class="muted mt" style="font-size:12px">${S.activity.fragVisible?'Les joueurs voient leurs pièces sur leur téléphone.':'Les pièces sont cachées tant que tu ne les affiches pas.'}</div>
     </div>`;
   })() : ''}
 
@@ -315,6 +298,15 @@ function render(){
   </div>
 
   <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">VOTE GLITCH</div>
+    <div class="grid mt">
+      <button class="btn" onclick="act('startVote')">🗳️ Ouvrir vote</button>
+      <button class="btn warn" onclick="tally()">📊 Dépouiller</button>
+    </div>
+    <div class="muted mt">Votes: <code>${esc(JSON.stringify(S.votes||{}))}</code></div>
+  </div>
+
+  <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">VIES</div>
     <div class="grid3 mt">
       ${S.players.map(p=>`<button class="btn danger" onclick="act('loseLife',{playerId:'${p.id}'})">💔 ${esc(p.name)} (${p.lives})</button>`).join('')}
@@ -342,12 +334,6 @@ function duckDance(){
   startAct('videoshow',{video:'7kyY29BHTZs',topLabel:'🔴 BREAKING NEWS',
     chyron:'CONCOURS DE DANSE 🦆<br>DANSEZ TOUS LA DANSE DES CANARDS !',
     footer:'À VOS PLUMES — TOUT LE MONDE DANSE ! 🪿'});
-}
-function fete(n){
-  const videos = { 1:'HpCZqG7lxD8', 2:'NoxgPqw4rSY', 3:'dhCDATSf3Ss' };
-  startAct('videoshow',{video:videos[n],topLabel:'🎉 FÊTE '+n,
-    chyron:'FÊTE '+n+' 🎊<br>À LA SANTÉ DE VINCENT !',
-    footer:'🥂 TCHIN TCHIN !'});
 }
 function anecdote(n,video){
   startAct('videoshow',{video,topLabel:'💡 ANECDOTE #'+n,
@@ -378,6 +364,8 @@ function drawGage(){
   act('drawGage',{pool:document.getElementById('gagePool').value||null,
     targetId:document.getElementById('gageTarget').value||null});
 }
+function tally(){ act('tallyVotes').then(r=>{ if(r.result) alert(r.result.found?'TROUVÉ !':'Raté — le Glitch a survécu.'); }); }
+
 // Auto-connexion : si aucun mot de passe n'est configuré côté serveur, accès direct.
 connect('');
 </script>

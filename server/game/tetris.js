@@ -121,14 +121,13 @@ export class TetrisGame {
     }
   }
 
-  // Gravité : +10% plus rapide toutes les 30 s pour éviter les parties trop longues.
-  // baseGravity = 10 ticks (~1,1 s). Après 30 s → 9, 60 s → 8… min 1 (~0,11 s).
+  // Gravité qui ACCÉLÈRE très progressivement : un cran plus rapide toutes
+  // les ~18 s, de 10 ticks (~1,1 s) jusqu'à 2 ticks (~0,22 s).
   curGravity() {
     const elapsed = (Date.now() - this.startTime) / 1000;
-    const steps = Math.floor(elapsed / 30);
-    return Math.max(1, Math.floor(this.baseGravity * Math.pow(0.9, steps)));
+    return Math.max(2, this.baseGravity - Math.floor(elapsed / 18));
   }
-  level() { return Math.floor((Date.now() - this.startTime) / 30000) + 1; }
+  level() { return this.baseGravity - this.curGravity() + 1; }
 
   // --- Boucle de gravité ---------------------------------------------
   tick() {

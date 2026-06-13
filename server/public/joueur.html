@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="/static/arcade.css" />
 <script src="/static/fullscreen.js"></script>
 <script src="/static/pacman-render.js"></script>
-<script src="https://www.youtube.com/iframe_api"></script>
 <style>
   .dpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin:12px auto 0; }
   .dpad button { font-size:30px; padding:18px 0; border:3px solid #000; border-radius:12px;
@@ -20,22 +19,6 @@
 </style>
 </head>
 <body class="scanlines">
-
-<!-- Lecteur YouTube persistant (créé au 1er tap → iOS le "déverrouille" pour toute
-     la session). TOUJOURS rendu (opacity, pas display:none, sinon iOS le met en
-     pause) : on bascule juste opacity 0↔1 pour le montrer/cacher. -->
-<div id="phone-yt-bg" style="position:fixed;inset:0;z-index:40;background:#000;display:flex;flex-direction:column;align-items:stretch;opacity:0;pointer-events:none;transition:opacity .2s">
-  <div id="phone-yt-slot" style="flex:1;position:relative"></div>
-  <div id="phone-yt-chyron" style="display:none;background:rgba(212,0,0,.92);color:#fff;font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center"></div>
-</div>
-
-<!-- Splash de déverrouillage — affiché jusqu'au 1er tap -->
-<div id="phone-splash" onclick="phoneUnlock()" style="position:fixed;inset:0;z-index:100;background:#03010a;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:18px">
-  <div style="font-family:var(--pixel);color:#ff2e88;font-size:22px;text-align:center;filter:drop-shadow(0 0 20px #ff2e88);letter-spacing:3px">PIXEL PANIC</div>
-  <div style="font-size:80px;color:#ff2e88;filter:drop-shadow(0 0 20px #ff2e88)">▶</div>
-  <div style="font-family:var(--pixel);color:#fff;font-size:14px;text-align:center;line-height:1.8">APPUYER<br>POUR JOUER</div>
-</div>
-
 <div class="wrap" id="app">
   <div class="card center"><span class="pixel blink">CONNEXION…</span></div>
 </div>
@@ -75,9 +58,7 @@ function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>
 
 let pacKey = null;
 let mosKey = null;
-let videoKey = null, ytReady = false, ytPhone = null;
-const PHONE_INTRO = 'Y0r3bg8hKG4';
-window.onYouTubeIframeAPIReady = function(){ ytReady = true; if (window._wantUnlock){ window._wantUnlock = false; phoneUnlock(); } };
+let videoKey = null;
 let tetKey = null;
 let tronKey = null;
 let g2048Key = null;
@@ -153,14 +134,9 @@ function render() {
   mosKey = null;
   // --- DIFFUSION VIDÉO : vidéo plein écran + bandeau ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'videoshow') {
-    if (STATE.activity.borneOnly) {
-      if (videoKey) hidePhoneVideo();
-      app.innerHTML = `<div class="card center"><h2>${STATE.activity.topLabel||'📺 VIDÉO'}</h2><p class="muted">Regarde la BORNE.</p></div>` + footer();
-      return;
-    }
     renderVideoPlayer(me); return;
   }
-  if (videoKey) hidePhoneVideo(); // quitté : masque et stoppe
+  videoKey = null;
 
   const av = me.avatarInfo;
   const hearts = '❤️'.repeat(me.lives) + '🖤'.repeat(Math.max(0,3-me.lives));
@@ -188,6 +164,13 @@ function render() {
     return;
   }
 
+  // --- Vote du Glitch ---
+  if (STATE.phase === 'vote') {
+    html += voteView();
+    app.innerHTML = html + footer();
+    return;
+  }
+
   // --- Vote / résultats photo ---
   if (STATE.photoPhase === 'vote') {
     html += photoVoteView(me);
@@ -199,23 +182,6 @@ function render() {
     html += photoSection(me);
     app.innerHTML = html + footer();
     return;
-  }
-
-  // --- Victoire : vidéo anniversaire ---
-  if (STATE.phase === 'win') {
-    if (STATE.winVideo) {
-      html += `<div class="card center glow-box" style="border-color:var(--neon3)">
-        <h1 class="neon-yellow pixel">💥 BRAVO !</h1>
-        <h2 class="neon-pink">BON ANNIVERSAIRE VINCENT !</h2>
-        <div style="margin-top:8px;max-width:100%">
-          <div style="position:relative;padding-bottom:56.25%;height:0">
-            <div id="phone-win-player" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px"></div>
-          </div>
-        </div>
-      </div>`;
-    } else {
-      html += `<div class="card center glow-box"><h1 class="neon-yellow pixel">YOU WIN!</h1><p class="big">La réalité a redémarré. 🎉</p></div>`;
-    }
   }
 
   // --- Lobby ---
@@ -247,28 +213,41 @@ function render() {
       </div>`;
     }
 
-    if (w.id === 'w1' && me.isHero) {
-      html += `<button class="btn secondary mt" onclick="api('/api/hint',{})" style="background:var(--neon4);color:#fff">💡 Demander un indice (vidéo sur la BORNE)</button>`;
-    }
-
-    if (!w.resoluParVote && w.code) {
+    if (!w.resoluParVote) {
       if (w.heroOnly && !me.isHero) {
         // Énigme réservée au PLAYER ONE : les autres transmettent leurs touches.
         html += `<div class="card" style="border-color:var(--neon3);background:#1a1400">
           <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE</div>
           <p>Donne tes touches à <b>VINCENT (Player One)</b> — lui seul peut valider la séquence sur la borne.</p>
         </div>`;
-      } else if (w.heroOnly && me.isHero) {
-        // PLAYER ONE : une vraie manette pour taper la séquence (Konami).
-        html += konamiPadView();
       } else {
         html += `
-        <input id="codeInput" type="text" placeholder="CODE" />
-        <button class="btn secondary mt" onclick="submitCode()">VALIDER LE CODE</button>
+        <input id="codeInput" type="text" placeholder="CODE" ${w.heroOnly?'autocomplete="off"':''} />
+        <button class="btn secondary mt" onclick="submitCode()">${w.heroOnly?'👑 VALIDER LA SÉQUENCE':'VALIDER LE CODE'}</button>
         <div id="codeMsg" class="center mt"></div>`;
       }
     }
     html += `</div>`;
+  }
+
+  // --- Mission secrète du Glitch ---
+  if (me.glitchMission) {
+    html += `
+    <div class="card" style="border-color:var(--danger);background:#1a0008">
+      <div class="pill" style="color:var(--danger)">🐛 MISSION SECRÈTE — GLITCH</div>
+      <p>${esc(me.glitchMission)}</p>
+      <p class="muted">Personne d'autre ne voit ce message. Sabote… mais ne te fais pas griller.</p>
+    </div>`;
+  }
+
+  // --- Carnet secret : mission perso + indice sur un autre joueur ---
+  if (me.mission || me.secretClue) {
+    html += `<div class="card" style="border-color:var(--neon2);background:#021a16">
+      <div class="pill neon-cyan">🤫 TON CARNET SECRET</div>
+      ${me.mission ? `<p><b class="neon-cyan">Ta mission :</b> ${esc(me.mission)}</p>` : ''}
+      ${me.secretClue ? `<p><b class="neon-cyan">Ton indice :</b> ${esc(me.secretClue)}</p>` : ''}
+      <p class="muted">Pour toi seul·e. Sers-t'en au bon moment 😉</p>
+    </div>`;
   }
 
   // --- Panneau Game Master (Vincent éveillé) ou hôte (Marc) ---
@@ -283,24 +262,6 @@ function render() {
   html += photoSection(me);
 
   app.innerHTML = html + footer();
-  // Vidéo anniversaire : initialisation YT Player (autoplay iPad = démarrer muet)
-  const _phoneWinId = STATE.winVideo ? (STATE.phase === 'win' ? 'phone-win-player' : 'phone-boss-player') : null;
-  if (_phoneWinId && !document.getElementById(_phoneWinId)._pwp) {
-    const el = document.getElementById(_phoneWinId);
-    if (el) {
-      el._pwp = true;
-      if (window.YT && YT.Player) {
-        new YT.Player(_phoneWinId, {
-          height:'100%', width:'100%', videoId: STATE.winVideo,
-          playerVars:{ autoplay:1, controls:0, playsinline:1, mute:1, rel:0, modestbranding:1, fs:0 },
-          events:{
-            onReady(e){ try{ e.target.playVideo(); }catch(_){} },
-            onStateChange(e){ if (e.data === YT.PlayerState.PLAYING) { try{ e.target.unMute(); e.target.setVolume(100); }catch(_){} } }
-          }
-        });
-      }
-    }
-  }
 }
 
 function footer() {
@@ -328,10 +289,6 @@ function controllerView(act) {
   // ENQUÊTE : pièces à conviction perso + saisie de code
   if (act.type === 'enquete') {
     return enqueteController(act);
-  }
-  // BOSS FINAL : manette pour entrer le Konami Code sur la BORNE
-  if (act.type === 'boss_final') {
-    return bossGamepadView(act);
   }
   // ROUE DES GAGES : détail du défi puis vote du meilleur
   if (act.type === 'roue_des_gages') {
@@ -390,75 +347,28 @@ function controllerView(act) {
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
 }
 
-// ─── Lecteur YouTube persistant ──────────────────────────────────────────────
-// Un seul tap (splash) crée le player via YT.Player pendant le geste utilisateur.
-// iOS "déverrouille" ce player pour toute la session : loadVideoById() fonctionne
-// ensuite sans aucun nouveau tap, même sur iPad/Safari/Chrome.
-let _ytPhoneReady = false;
-
-function phoneUnlock(){
-  const splash = document.getElementById('phone-splash');
-  if (splash) splash.remove();
-  if (!(window.YT && YT.Player)){
-    // API pas prête : on réessaiera quand elle l'est (rare). On marque l'intention.
-    window._wantUnlock = true;
-    return;
-  }
-  // CLÉ iOS : pour que le player puisse plus tard jouer AVEC LE SON sans nouveau
-  // tap, il doit avoir DÉMARRÉ une lecture audible PENDANT ce geste. On crée donc
-  // le player en autoplay NON muet, on laisse le sting démarrer ~1 s (ça « bénit »
-  // l'iframe), puis on coupe. Ensuite loadVideoById joue avec le son tout seul.
-  const container = document.createElement('div');
-  container.id = 'phone-yt-player';
-  container.style.cssText = 'width:100%;height:100%';
-  document.getElementById('phone-yt-slot').appendChild(container);
-  ytPhone = new YT.Player('phone-yt-player', {
-    height:'100%', width:'100%', videoId: 'Y0r3bg8hKG4',
-    playerVars:{ autoplay:1, controls:0, playsinline:1, rel:0, modestbranding:1, fs:0 },
-    events:{
-      onReady(){
-        _ytPhoneReady = true;
-        try{ ytPhone.setVolume(100); ytPhone.playVideo(); }catch(_){}
-        // Coupe l'engagement après ~1,2 s sauf si une vidéo est déjà demandée
-        setTimeout(()=>{ if (!ytPhone._mainVideo){ try{ ytPhone.stopVideo(); }catch(_){} } }, 1200);
-      },
-      onStateChange(e){
-        if (e.data === YT.PlayerState.ENDED){
-          if (ytPhone._mainVideo && !ytPhone._mainLoaded){
-            ytPhone._mainLoaded = true;
-            try{ ytPhone.loadVideoById(ytPhone._mainVideo); ytPhone.setVolume(100); }catch(_){}
-          } else if (ytPhone._mainVideo){
-            try{ ytPhone.seekTo(0,true); ytPhone.playVideo(); }catch(_){} // boucle
-          }
-        }
-      }
-    }
-  });
-}
-
 function renderVideoPlayer(me) {
-  if (videoKey === STATE.activity.startedAt) return;
+  if (videoKey === STATE.activity.startedAt) return; // une seule fois (sinon la vidéo redémarre)
   videoKey = STATE.activity.startedAt;
   const a = STATE.activity;
-  const bg = document.getElementById('phone-yt-bg');
-  const chyron = document.getElementById('phone-yt-chyron');
-  if (bg){ bg.style.opacity = '1'; bg.style.pointerEvents = 'auto'; }
-  if (chyron){ chyron.textContent = a.chyron || ''; chyron.style.display = a.chyron ? 'block' : 'none'; }
-  app.innerHTML = `<div class="card center"><p class="muted" style="font-size:13px">${a.topLabel||'📺 VIDÉO'}</p></div>`;
-  if (_ytPhoneReady && ytPhone){
-    // Sting d'intro puis vidéo principale (gérée dans onStateChange ENDED)
-    ytPhone._mainVideo = a.video || '7kyY29BHTZs';
-    ytPhone._mainLoaded = false;
-    const first = a.intro || PHONE_INTRO || ytPhone._mainVideo;
-    try{ ytPhone.setVolume(100); ytPhone.loadVideoById(first); }catch(_){}
-  }
+  const v = a.video || '7kyY29BHTZs';
+  const src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';
+  app.innerHTML = `
+    <div class="center">
+      <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
+      <div style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
+        <iframe id="videoframe" width="100%" style="aspect-ratio:9/16;display:block;border:0"
+          src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+        ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
+          font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}
+      </div>
+      <button class="btn warn mt" onclick="videoPlay('${v}')">🔊 Touche ici pour lancer le son</button>
+      ${a.footer?`<p class="muted" style="font-size:13px">${a.footer}</p>`:''}
+    </div>`;
 }
-
-function hidePhoneVideo(){
-  const bg = document.getElementById('phone-yt-bg');
-  if (bg){ bg.style.opacity = '0'; bg.style.pointerEvents = 'none'; }
-  try{ if (ytPhone && _ytPhoneReady){ ytPhone._mainVideo = null; ytPhone.stopVideo(); } }catch(_){}
-  videoKey = null;
+function videoPlay(v){
+  const f = document.getElementById('videoframe');
+  if (f) f.src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';
 }
 
 function mosaicGuessSend(){
@@ -937,9 +847,7 @@ function enqueteController(act) {
     <p style="font-size:15px"><b class="neon-pink">Énigme :</b> ${esc(a.riddle||'')}</p>
     ${frags ? `<div class="pill neon-cyan mt">🔍 TES PIÈCES À CONVICTION</div>${frags}
       <p class="muted" style="font-size:12px">Partage-les à voix haute avec la table : seule l'addition de toutes les pièces donne le code.</p>`
-      : (act.fragVisible
-          ? `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`
-          : `<p class="muted mt">🔒 Les pièces à conviction ne sont pas encore distribuées — attends le signal du maître du jeu.</p>`)}
+      : `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`}
     <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase"
       value="${esc(_enqDraft)}" oninput="_enqDraft=this.value" onkeydown="if(event.key==='Enter')enqueteCode()" autocomplete="off" />
     <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>
@@ -961,29 +869,6 @@ function enqueteCode(){
       : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
     poll();
   });
-}
-
-// ---- Boss Final : manette Konami Code --------------------------------
-let _bossSeq = [];
-function bossGamepadView(act) {
-  if (act.done) {
-    return `<div class="card center glow-box" style="border-color:var(--neon3)">
-      <div class="pill neon-yellow">💥 BRAVO !</div>
-      <h2 class="neon-cyan">BON ANNIVERSAIRE VINCENT !</h2>
-      <p class="big">🎉 REGARDE LA BORNE !</p>
-      <div style="margin-top:8px;max-width:100%">
-        <div style="position:relative;padding-bottom:56.25%;height:0">
-          <div id="phone-boss-player" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px"></div>
-        </div>
-      </div>
-    </div>`;
-  }
-  return `<div class="card glow-box center" style="border-color:var(--neon3);background:#1a0008">
-    <div class="pill neon-pink">👾 BOSS FINAL</div>
-    <h2 class="neon-cyan">LA BORNE EST PLANTÉE 📺</h2>
-    <p class="big">Tous autour de la borne !</p>
-    <p>La réalité est <b>figée</b>. Trouvez ensemble comment <b>forcer le redémarrage</b> d'un ordinateur bloqué… directement sur le clavier de la BORNE.</p>
-  </div>`;
 }
 
 function quizController(act) {
@@ -1042,6 +927,17 @@ function quizController(act) {
   </div>`;
 }
 
+function voteView() {
+  const others = STATE.players.filter(p=>p.id!==STATE.me.id);
+  return `<div class="card center glow-box">
+    <h2 class="neon-pink">QUI EST LE GLITCH ?</h2>
+    <p>Vote pour démasquer le traître.</p>
+    <div class="grid-players">
+      ${others.map(p=>`<button class="btn warn" onclick="vote('${p.id}')">${esc(p.name)}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
 function gageView(g, me) {
   const forMe = g.targetId === me.id;
   return `<div class="card center" style="border-color:var(--neon3)">
@@ -1056,41 +952,12 @@ function gageView(g, me) {
 function gmPlayerPanel(me) {
   const title = me.gameMaster ? '👑 POUVOIRS DU GAME MASTER' : '🎛️ CONTRÔLE HÔTE';
   const targets = STATE.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
-  const gbtn = (label,type,opts)=>`<button class="btn secondary" style="font-size:12px;padding:8px" onclick='gmStart(${JSON.stringify(type)},${JSON.stringify(opts||{})})'>${label}</button>`;
   return `<div class="card" style="border-color:var(--neon3);background:#1a1400">
     <div class="pill neon-yellow">${title}</div>
-    <p class="muted" style="font-size:13px">Tu peux LANCER les activités depuis ton téléphone.</p>
-
-    <div class="pixel neon-cyan" style="font-size:10px;margin-top:6px">🎵 BLIND-TEST & QUIZ</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px">
-      ${gbtn('🎵 Blind-test','blindtest')}
-      ${gbtn('🎮 Quiz JV','quiz',{deck:'videogame'})}
-      ${gbtn('📼 Quiz 80s','quiz',{deck:'eighties'})}
-      ${gbtn('💿 Quiz 90s','quiz',{deck:'nineties'})}
-      ${gbtn('🍙 Quiz Animés','quiz',{deck:'anime'})}
-      ${gbtn('🏘️ Quiz St-Maur','quiz',{deck:'saintmaur'})}
-    </div>
-
-    <div class="pixel neon-cyan" style="font-size:10px;margin-top:8px">🕹️ JEUX</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px">
-      ${gbtn('🟡 Pac-Man','pacman',{seconds:120})}
-      ${gbtn('🧱 Tetris','tetris',{seconds:240})}
-      ${gbtn('🟦 Tron','tron')}
-      ${gbtn('🔢 2048','2048',{seconds:180})}
-      ${gbtn('🏓 Pong','pong',{seconds:180})}
-      ${gbtn('🎨 Dessine-moi','draw')}
-      ${gbtn('⚡ Réaction','reaction_race')}
-      ${gbtn('🎰 Roue','roue_des_gages')}
-    </div>
-    <button class="btn danger mt" style="width:100%" onclick="gmStart('stop')">⏹ STOP activité</button>
-
-    <div class="pixel neon-cyan" style="font-size:10px;margin-top:10px">🎲 GAGE</div>
-    <select id="gmTarget" style="width:100%;padding:10px;font-family:var(--term);font-size:20px;margin-top:4px">${targets}</select>
-    <button class="btn warn mt" style="width:100%" onclick="gmGage()">🎲 LANCER UN GAGE</button>
+    <p class="muted">Distribue un gage à qui tu veux. Longue vie au roi.</p>
+    <select id="gmTarget" style="width:100%;padding:10px;font-family:var(--term);font-size:20px">${targets}</select>
+    <button class="btn warn mt" onclick="gmGage()">🎲 LANCER UN GAGE</button>
   </div>`;
-}
-function gmStart(type, opts){
-  api('/api/gm/start', { type, opts: opts||{} }).then(r=>{ if(r&&r.error) alert(r.error); });
 }
 
 // --- Défis photo ---
@@ -1147,6 +1014,7 @@ function photoVote(photoId, category) {
 // --- Actions ---
 function toggleReady(){ api('/api/ready', { ready: !STATE.me.ready }); }
 function buzz(){ api('/api/buzz'); }
+function vote(t){ api('/api/vote', { targetId: t }); }
 function answer(i){ api('/api/answer', { choice: i }); }
 function spotlightVote(v){ api('/api/spotlight/vote', { verdict: v }); }
 function submitCode(){
@@ -1155,53 +1023,6 @@ function submitCode(){
     const m = document.getElementById('codeMsg');
     if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ DÉBLOQUÉ !</span>'
                               : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
-  });
-}
-
-// --- Manette « séquence légendaire » (Konami) pour le PLAYER ONE ---
-let _konamiSeq = []; // [{sym, tok}]
-function konamiDisplay(){
-  return _konamiSeq.length
-    ? _konamiSeq.map(x=>`<span style="margin:0 3px">${esc(x.sym)}</span>`).join('')
-    : '<span class="muted" style="font-size:14px;letter-spacing:0">— séquence vide —</span>';
-}
-function konamiPadView(){
-  return `<div class="card glow-box" style="border-color:var(--neon3);background:#1a1400">
-    <div class="pill neon-yellow">🎮 SÉQUENCE LÉGENDAIRE — PLAYER ONE</div>
-    <p class="muted" style="font-size:13px">Rassemble les touches de tout le monde et tape la séquence. Toi seul peux valider.</p>
-    <div id="konamiDisplay" class="center" style="min-height:40px;font-size:30px;color:#ffe600;background:#03010a;border:2px solid var(--neon4);border-radius:8px;padding:6px;margin:8px 0">${konamiDisplay()}</div>
-    <div class="dpad" style="max-width:240px">
-      <div class="empty"></div><button onclick="konamiPress('↑','HAUT')">▲</button><div class="empty"></div>
-      <button onclick="konamiPress('←','GAUCHE')">◄</button><div class="empty"></div><button onclick="konamiPress('→','DROITE')">►</button>
-      <div class="empty"></div><button onclick="konamiPress('↓','BAS')">▼</button><div class="empty"></div>
-    </div>
-    <div class="row" style="gap:10px;justify-content:center;margin-top:10px">
-      <button class="btn" style="background:#ff2e88;color:#fff;max-width:90px" onclick="konamiPress('B','B')">B</button>
-      <button class="btn" style="background:#38ff9c;color:#03010a;max-width:90px" onclick="konamiPress('A','A')">A</button>
-    </div>
-    <div class="row mt" style="gap:8px">
-      <button class="btn" onclick="konamiBack()">⌫</button>
-      <button class="btn danger" onclick="konamiClear()">Effacer</button>
-      <button class="btn secondary" onclick="konamiSubmit()">👑 VALIDER</button>
-    </div>
-    <div id="codeMsg" class="center mt"></div>
-  </div>`;
-}
-function konamiRefresh(){ const el = document.getElementById('konamiDisplay'); if (el) el.innerHTML = konamiDisplay(); }
-function konamiPress(sym, tok){
-  _konamiSeq.push({ sym, tok });
-  if (window.SFX && SFX.pad) { try { SFX.unlock(); SFX.pad(_konamiSeq.length % 4); } catch(_){} }
-  konamiRefresh();
-}
-function konamiBack(){ _konamiSeq.pop(); konamiRefresh(); }
-function konamiClear(){ _konamiSeq = []; konamiRefresh(); }
-function konamiSubmit(){
-  const code = _konamiSeq.map(x=>x.tok).join(' ');
-  api('/api/code', { code }).then(r=>{
-    const m = document.getElementById('codeMsg');
-    if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ SÉQUENCE VALIDÉE !</span>'
-                              : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
-    if (r.ok) _konamiSeq = [];
   });
 }
 function gmGage(){

@@ -404,7 +404,7 @@ app.post('/api/gm/hero', (req, res) => {
       const theme = ['rock', 'francais', 'dessins'].includes(o.theme) ? o.theme : 'rock';
       opts = { theme };
     } else if (type === 'quiz') {
-      const decks = ['videogame', 'eighties', 'nineties', 'anime', 'territoriale', 'saintmaur'];
+      const decks = ['videogame', 'eighties', 'nineties', 'anime', 'cultureT', 'saintmaur'];
       opts = { deck: decks.includes(o.deck) ? o.deck : 'videogame' };
     } else if (type === 'roue_des_gages') {
       opts = { pool: o.pool || 'vincent' };

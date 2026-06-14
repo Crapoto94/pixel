@@ -1212,6 +1212,7 @@ export class GameState {
       type: 'enquete',
       title: ENQUETE.title,
       pitch: ENQUETE.pitch,
+      briefing: ENQUETE.briefing || null,
       total: acts.length,
       actIndex: idx,
       solvedCount: idx,

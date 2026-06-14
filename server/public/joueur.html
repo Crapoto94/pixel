@@ -945,6 +945,13 @@ function enqueteController(act) {
   }
   const a = act.act || {};
   if (_enqActSeen !== a.num) { _enqActSeen = a.num; _enqDraft = ''; } // nouvel acte → on vide le brouillon
+  // Briefing d'enquête : contexte affiché à l'acte 1 (regardez surtout la borne).
+  const briefingCard = (a.num === 1 && act.briefing) ? `
+    <div class="card glow-box" style="border-color:var(--neon);background:#0a0420">
+      <div class="pill neon-yellow">🗂️ BRIEFING D'ENQUÊTE</div>
+      <p style="font-size:14px;line-height:1.45;white-space:pre-line;margin-top:6px">${esc(act.briefing)}</p>
+      <p class="muted" style="font-size:12px">📺 Le détail des documents est sur la BORNE.</p>
+    </div>` : '';
   const frags = (act.myFragments||[]).map(f=>`
     <div style="border:2px solid var(--neon3);border-radius:10px;padding:10px;margin:8px 0;background:#1a1400">
       <div class="pill neon-yellow" style="font-size:11px">${esc(f.label||'PIÈCE')}</div>
@@ -952,7 +959,7 @@ function enqueteController(act) {
     </div>`).join('');
   const wrong = act.lastWrong && (Date.now()-act.lastWrong < 3000)
     ? '<p class="pixel" style="font-size:11px;color:var(--danger)">✘ Code refusé — recoupez encore !</p>' : '';
-  return `<div class="card glow-box">
+  return `${briefingCard}<div class="card glow-box">
     <div class="pill neon-pink">🕵️ ENQUÊTE — ACTE ${a.num}/${act.total}</div>
     <h2 class="neon-cyan">${esc(a.title||'')}</h2>
     <p class="muted" style="font-size:13px">📍 ${esc(a.place||'')}</p>
@@ -1111,7 +1118,7 @@ function heroSections(q) {
       ${pick('📼 80s',"heroLaunch('quiz',{deck:'eighties'})",q&&q.quiz)}
       ${pick('💿 90s',"heroLaunch('quiz',{deck:'nineties'})",q&&q.quiz)}
       ${pick('🍙 Animés',"heroLaunch('quiz',{deck:'anime'})",q&&q.quiz)}
-      ${pick('🗺️ Territoriale',"heroLaunch('quiz',{deck:'territoriale'})",q&&q.quiz)}
+      ${pick('🏛️ Culture T',"heroLaunch('quiz',{deck:'cultureT'})",q&&q.quiz)}
       ${pick('🏘️ Saint-Maur',"heroLaunch('quiz',{deck:'saintmaur'})",q&&q.quiz)}
     </div>
 

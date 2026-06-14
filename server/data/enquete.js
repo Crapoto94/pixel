@@ -15,7 +15,7 @@
 //  Chaîne :
 //   1 REVUE DE PRESSE — déduire l'année (perquisition − 1) ............ 2013
 //   2 L'ORGANIGRAMME — recomposer le nom (ER + ZEN) ................. ERZEN
-//   3 LE REGISTRE — retrouver le bon signalement .................. COUPAYE
+//   3 LES DEUX FRÉDÉRIC — démasquer le faux mail, matricule du vrai . DSI-312
 //   4 LA TABLE DES COMPTES — éliminer les homonymes C.L. .......... LEJARRE
 //   5 LE PLAN — ordonner le parcours, lire la lettre ................... G
 //   6 LES SUSPECTS — éliminer les alibis ...................... GUILLAUME
@@ -30,6 +30,20 @@ export const ENQUETE = {
     "retrouvée morte dans la salle des mariages de l'Hôtel de Ville, entourée de 50 verres de " +
     "champagne brisés. Pas d'effraction. Juste un toast funèbre. Rien ne vous sera donné : tout " +
     "se déduit. Croisez les articles, les documents et vos pièces à conviction.",
+
+  // Briefing affiché AVANT l'acte 1 : le contexte commun à toute la table.
+  briefing:
+    "📍 Saint-Maur-des-Fossés — Hôtel de Ville, salle des mariages.\n" +
+    "🔴 LES FAITS : Nathalie NEVES, directrice des finances de la mairie, est retrouvée morte au " +
+    "petit matin, entourée de 50 coupes de champagne brisées. Aucune effraction : le tueur " +
+    "connaissait les lieux… et les codes.\n" +
+    "🧩 LE CONTEXTE : derrière ce meurtre resurgit une vieille affaire de FAUSSES FACTURES — un " +
+    "marché de communication de la mairie truqué pendant des années.\n" +
+    "🎯 VOTRE MISSION : démasquer le MEURTRIER et reconstituer le RÉSEAU de fraude — qui " +
+    "falsifiait ? qui payait ? qui couvrait ? qui a voulu parler ?\n" +
+    "🔍 MÉTHODE : rien n'est donné en clair. La BORNE affiche les DOCUMENTS (articles, registres, " +
+    "plans, e-mails…). Chacun détient des PIÈCES À CONVICTION sur son téléphone. Croisez, " +
+    "déduisez, et tapez le code de chaque acte. 8 actes vous séparent de la vérité.",
 
   acts: [
     // ===============================================================
@@ -114,9 +128,7 @@ export const ENQUETE = {
           "MAIRE › DIRECTEUR GÉNÉRAL DES SERVICES : Frédéric ERZEN (signature « F. E. ») › " +
           "Direction des Finances (Nathalie NEVES) · Systèmes d'Information (DSI) · Services techniques.\n" +
           "Mention manuscrite : « les bons étaient RÉÉCRITS après signature, puis couverts par de " +
-          "FAUSSES FACTURES — exactement comme dans CE scandale national ».\n" +
-          "Du titre de l'article agrafé, déchiré, ne reste lisible que : « …ALION — l'affaire des " +
-          "fausses factures de campagne ».",
+          "FAUSSES FACTURES — exactement comme dans CE scandale national ».",
       },
       scene:
         "Erzen n'improvisait rien : il copiait une MÉCANIQUE déjà vue dans la presse — entreprise-" +
@@ -139,13 +151,9 @@ export const ENQUETE = {
         "les bons réécrits, Neves validait les paiements. Mais Erzen ne savait pas pirater la compta : " +
         "quelqu'un l'a aidé. Et un AGENT de la DSI avait justement tenté d'alerter… il porte le MÊME " +
         "prénom que le DGS : deux Frédéric. Méfiance.",
-      fragments: [
-        { label: "Pièce B1 — le procédé", text: "Le système copié est un VRAI scandale français : entreprise-écran + fausses factures pour cacher des dépassements d'une campagne présidentielle." },
-        { label: "Pièce B2 — le mythe source", text: "Son nom est forgé sur un mythe grec : un sculpteur de Chypre tombe amoureux de sa statue d'ivoire, qu'Aphrodite (Vénus) change en femme vivante." },
-        { label: "Pièce B3 — le mythe nommé", text: "Ce mythe — et la pièce de G. B. Shaw derrière « My Fair Lady » — s'appelle PYGMALION. Neuf lettres." },
-        { label: "Pièce B4 — la lettre changée", text: "Le scandale n'écrit PAS « Pygmalion » : il remplace la 1ʳᵉ lettre par la 2ᵉ lettre de l'alphabet (une consonne)." },
-        { label: "Pièce B5 — montage", text: "Prenez PYGMALION, changez le P initial en B → le nom de l'entreprise-écran. C'est le mot de passe (9 lettres)." },
-      ],
+      // Acte volontairement PEU assisté : pas de pièces à conviction. À déduire
+      // depuis l'organigramme, la scène et sa culture (roue de secours = indices MJ).
+      fragments: [],
     },
 
     // ===============================================================
@@ -156,44 +164,56 @@ export const ENQUETE = {
       key: 'a3',
       kind: 'logic',
       title: 'L\'AMALGAME DES DEUX FRÉDÉRIC',
-      place: "Direction des Systèmes d'Information — registre des alertes",
+      place: "Direction des Systèmes d'Information — messagerie & contrôle d'accès",
       article: {
-        source: "REGISTRE DES SIGNALEMENTS INTERNES — extrait",
-        date: "2010–2013",
+        source: "TROIS DOCUMENTS À SUPERPOSER",
+        date: "—",
         body:
-          "2010 — accès du parking municipal .................. signalé par M. DURUY (logistique)\n" +
-          "2011 — cantines scolaires (allergènes) ............. signalé par Mme NABLI (écoles)\n" +
-          "2012 — « montants des bons de commande réécrits » .. signalé par F. COUPAYE (DSI)\n" +
-          "2012 — éclairage public quartier Adamville ......... signalé par M. PARENT (voirie)\n" +
-          "2013 — stationnement marché de La Varenne .......... signalé par Mme OHNET (police mun.)",
+          "📧 E-MAILS D'ALERTE « BONS DE COMMANDE » (deux signalements, deux « Frédéric ») :\n" +
+          "   • MAIL 1 — de « F. » · poste 4312 · envoyé MARDI 18 h 42 :\n" +
+          "       « Les MONTANTS des bons sont RÉÉCRITS après signature. »\n" +
+          "   • MAIL 2 — de « F. » · poste 4207 · envoyé JEUDI 23 h 11 :\n" +
+          "       « Je signale de vagues anomalies sur les bons. Rien de grave. »\n" +
+          "\n" +
+          "📇 ANNUAIRE INTERNE :\n" +
+          "   • Postes 42xx → 2ᵉ étage → Direction Générale des Services (DGS)\n" +
+          "   • Postes 43xx → 3ᵉ étage → Direction des Systèmes d'Information (DSI)\n" +
+          "\n" +
+          "🔑 JOURNAL DES BADGES — nuit de JEUDI :\n" +
+          "   • Frédéric ERZEN (DGS) : entrée 08 h 05 — SORTIE 19 h 03 — aucun retour.\n" +
+          "   • Frédéric COUPAYE (DSI) : entrée 08 h 30 — sortie 18 h 20.",
       },
       scene:
-        "Deux Frédéric brouillent la piste : Frédéric ERZEN (le DGS, coupable) et un agent de la " +
-        "DSI, lui aussi prénommé Frédéric, qu'on a cru complice. Le bon nom est dans le REGISTRE " +
-        "affiché — mais à vous de trouver LA bonne ligne. Vos pièces disent laquelle.",
+        "Deux « Frédéric » brouillent la piste : Frédéric ERZEN (DGS, coupable) et Frédéric " +
+        "COUPAYE (agent DSI). Chacun aurait « alerté » sur les bons… mais l'un des deux mails est " +
+        "un FAUX, planté par le coupable pour se faire passer pour lanceur d'alerte. Démasquez le " +
+        "faux en recoupant son heure d'envoi avec le journal des badges, puis identifiez le VRAI " +
+        "lanceur d'alerte par son matricule.",
       riddle:
-        "Dans le registre affiché, qui est le CHEVALIER BLANC (l'agent qui a tenté d'alerter) ? " +
-        "Recoupez vos pièces pour isoler la bonne ligne. (nom de famille)",
-      answer: 'COUPAYE',
+        "Un seul des deux mails est sincère ; l'autre est un FAUX (recoupez son heure d'envoi avec " +
+        "le journal des badges). Donnez le MATRICULE du VRAI lanceur d'alerte : code du service " +
+        "(DGS ou DSI) suivi des 3 chiffres de son poste. (ex. de format : DSI-000)",
+      answer: 'DSI-312',
       hints: [
-        "Le bon signalement date de 2012 ET concerne les BONS DE COMMANDE (pas le parking, ni la cantine…).",
-        "Dans le registre, une seule ligne coche les deux cases : 2012 + bons de commande.",
-        "Réponse : COUPAYE.",
+        "Le mail VAGUE de 23 h sent l'écran de fumée. Surtout : à quelle heure son auteur a-t-il QUITTÉ les lieux d'après les badges ?",
+        "Mail 2 part du poste 4207 (42xx → 2ᵉ étage → DGS = Erzen) à 23 h 11 — mais le badge d'Erzen indique une SORTIE à 19 h 03, sans retour. Mail 2 = FAUX.",
+        "Reste le mail 1 : poste 4312 → 43xx → 3ᵉ étage → DSI. Matricule = DSI + 312 → DSI-312 (Frédéric COUPAYE).",
       ],
       humor:
-        "Note de l'inspecteur : Coupaye a alerté, on lui a répondu par un mug et un pot de départ. " +
-        "Sans le pot.",
+        "Note de l'inspecteur : Erzen a fignolé son faux mail au mot près… mais a oublié qu'on " +
+        "badge aussi à la SORTIE. Le crime parfait, à quatre heures près.",
       reveal:
-        "ACTE 3 — Le chevalier blanc est Frédéric COUPAYE : agent DSI, il a signalé dès 2012 les " +
-        "bons réécrits, sa signature a été imitée, on l'a muté puis oublié. Innocent. Reste le VRAI " +
-        "complice technique d'Erzen — celui qui a ouvert le système et effacé les traces.",
+        "ACTE 3 — Le faux lanceur d'alerte, c'est le DGS Frédéric ERZEN : un mail planté à 23 h, " +
+        "alors que son badge l'avait vu partir à 19 h. Le vrai chevalier blanc est l'agent DSI " +
+        "Frédéric COUPAYE (matricule DSI-312, poste 4312), dont la signature a été imitée. " +
+        "Innocent. Reste le VRAI complice technique d'Erzen — celui qui a ouvert la compta et " +
+        "purgé les traces.",
       fragments: [
-        { label: "Pièce C1 — la date", text: "Le chevalier blanc a déposé son alerte en 2012." },
-        { label: "Pièce C2 — l'objet", text: "Son alerte portait précisément sur les BONS DE COMMANDE réécrits — pas sur le parking, la cantine ou l'éclairage." },
-        { label: "Pièce C3 — la preuve", text: "Sa signature sur les bons est IMITÉE : ce n'est donc pas un complice mais une victime." },
-        { label: "Pièce C4 — anti-amalgame", text: "Erzen aussi se prénomme Frédéric. Le chevalier blanc est un simple AGENT de la DSI, pas le DGS." },
-        { label: "Pièce C5 — tri", text: "Deux lignes sont datées de 2012 dans le registre : ne gardez que celle qui parle des BONS." },
-        { label: "Pièce C6 — témoin", text: "« Le seul honnête de l'étage. Il a voulu parler, ça lui a coûté sa carrière. »" },
+        { label: "Pièce C1 — règle RH", text: "Le MATRICULE d'un agent = le code de son service (DGS ou DSI) suivi des 3 chiffres de son poste téléphonique." },
+        { label: "Pièce C2 — crédibilité", text: "Un vrai signalement cite un fait PRÉCIS (« montants réécrits après signature »). Le vague (« anomalies, rien de grave ») est un écran de fumée." },
+        { label: "Pièce C3 — métadonnées", text: "Vérifie l'HEURE : un mail ne peut pas partir d'un bureau APRÈS que le badge de son occupant l'a vu quitter les lieux." },
+        { label: "Pièce C4 — anti-amalgame", text: "Les deux suspects se prénomment Frédéric. Ne te fie pas au prénom : seuls comptent le POSTE et l'ÉTAGE." },
+        { label: "Pièce C5 — le piège", text: "Le coupable a pu PLANTER un faux mail d'alerte pour se faire passer pour lanceur d'alerte. Le vrai, c'est celui qui RESTE crédible." },
       ],
     },
 

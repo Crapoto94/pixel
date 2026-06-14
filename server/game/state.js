@@ -1623,7 +1623,7 @@ export class GameState {
     if (!a || a.type !== 'piano') return;
     a.demo = {
       at: Date.now(),
-      seq: a.melody.map((off) => { const n = pianoNoteInfo(off, a.baseMidi); return { freq: n.freq, name: n.name }; }),
+      seq: a.melody.map((off) => { const n = pianoNoteInfo(off, a.baseMidi); return { off, freq: n.freq, name: n.name }; }),
     };
     a.step = 0;
     this.addLog('🎶 Démo de la mélodie jouée sur la borne (piano).');
@@ -1682,7 +1682,7 @@ export class GameState {
   // Vue publique du piano INTÉGRÉ au Monde 3 (ou null si pas en piano-monde).
   pianoWorldPublic(forPlayerId) {
     const demo = this.pianoDemoAt
-      ? { at: this.pianoDemoAt, seq: PIANO_MELODY.map((off) => { const n = pianoNoteInfo(off, PIANO_BASE_MIDI); return { freq: n.freq, name: n.name }; }) }
+      ? { at: this.pianoDemoAt, seq: PIANO_MELODY.map((off) => { const n = pianoNoteInfo(off, PIANO_BASE_MIDI); return { off, freq: n.freq, name: n.name }; }) }
       : null;
     return this.buildPianoView({ order: this.pianoOrder(), melody: PIANO_MELODY,
       step: this.pianoStep, status: this.pianoStatus, demo }, forPlayerId);

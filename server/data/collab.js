@@ -33,9 +33,10 @@ export const PIANO_KEYS_PER_PHONE = 6;   // un demi-octave = 6 demi-tons
 export const PIANO_BASE_MIDI = 60;       // DO4 (C4) = première touche à gauche
 const PIANO_NAMES = ['DO', 'DO♯', 'RE', 'RE♯', 'MI', 'FA', 'FA♯', 'SOL', 'SOL♯', 'LA', 'LA♯', 'SI'];
 const PIANO_WHITE_PC = new Set([0, 2, 4, 5, 7, 9, 11]); // touches blanches
-// Mélodie par défaut : « Hymne à la joie » (offsets en demi-tons depuis DO4).
-//  MI MI FA SOL | SOL FA MI RE | DO DO RE MI | MI RE RE
-export const PIANO_MELODY = [4, 4, 5, 7, 7, 5, 4, 2, 0, 0, 2, 4, 4, 2, 2];
+// Mélodie par défaut : thème SUPER MARIO BROS (overworld), ramené sur UNE octave
+//  (offsets en demi-tons depuis DO4) pour tenir même avec 2 téléphones.
+//  MI MI MI DO MI SOL | DO SOL MI LA SI LA♯ LA
+export const PIANO_MELODY = [4, 4, 4, 0, 4, 7, 0, 7, 4, 9, 11, 10, 9];
 
 // Infos d'une touche à partir de son offset ABSOLU sur le clavier réparti.
 export function pianoNoteInfo(offset, baseMidi = PIANO_BASE_MIDI) {

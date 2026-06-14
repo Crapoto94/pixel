@@ -590,10 +590,10 @@ function pianoBorneBody(a){
   }).join('<div style="align-self:center;font-size:26px;color:#ffffff55">▸</div>');
   // Partition = la mélodie à RETROUVER (on n'indique PAS quelle touche / quel
   // téléphone : juste les notes déjà jouées qui s'allument au fur et à mesure).
-  const notes = (a.slots||[]).map(s=>{
+  const notes = (a.slots||[]).map((s,i)=>{
     const style = s.st==='done' ? 'background:var(--neon2);color:#0a0420'
                 : 'border:2px solid #ffffff22;color:#fff';
-    return `<span style="display:inline-block;min-width:46px;text-align:center;padding:6px 8px;margin:3px;border-radius:8px;font-family:var(--pixel);font-size:14px;${style}">${esc(s.name)}</span>`;
+    return `<span id="btnote-${i}" style="display:inline-block;min-width:46px;text-align:center;padding:6px 8px;margin:3px;border-radius:8px;font-family:var(--pixel);font-size:14px;transition:transform .08s;${style}">${esc(s.name)}</span>`;
   }).join('');
   return `
     ${win ? `<p class="big neon-yellow pixel glow-box" style="display:inline-block;padding:6px 18px">🎉 MÉLODIE COMPLÈTE !</p>`
@@ -619,19 +619,43 @@ function pianoBorneLocked(w){
 }
 
 // Détection sonore du piano réparti (démo, note jouée, victoire)
+const PIANO_STEP = 0.42; // durée d'une note de la démo (s) — sert aussi au surlignage
 let _pn = { demoAt: 0, step: 0, win: false };
+// Surligne, en rythme, la note courante de la partition pendant que la borne
+// joue la mélodie (les téléphones font de même de leur côté).
+let _bdRaf = 0;
+function startBorneDemoHighlight(seq){
+  cancelAnimationFrame(_bdRaf);
+  const start = performance.now(), stepMs = PIANO_STEP * 1000, total = seq.length * stepMs;
+  let last = -1;
+  const clearAll = () => { for (let i = 0; i < seq.length; i++){ const e = document.getElementById('btnote-'+i); if (e){ e.style.boxShadow=''; e.style.transform=''; } } };
+  const tick = () => {
+    const el = performance.now() - start;
+    if (el > total){ clearAll(); return; }
+    const idx = Math.floor(el / stepMs);
+    if (idx !== last){
+      clearAll();
+      const c = document.getElementById('btnote-'+idx);
+      if (c){ c.style.boxShadow='0 0 0 3px #ffe600,0 0 18px #ffe600'; c.style.transform='scale(1.25)'; }
+      last = idx;
+    }
+    _bdRaf = requestAnimationFrame(tick);
+  };
+  tick();
+}
 function detectPiano(s){
-  if(!SOUND_ON || !window.SFX) return;
   // Piano = activité OU intégré au Monde 3 (s.piano). Même forme de données.
   const a = (s.activity && s.activity.type==='piano') ? s.activity : (s.piano || null);
   if(!a){ _pn = { demoAt:0, step:0, win:false }; return; }
   // La BORNE joue UNIQUEMENT la mélodie de référence (démo / rejouer séquence).
   // Les notes pressées par les joueurs sont jouées par LEUR smartphone, pas ici.
+  // Le SURLIGNAGE est toujours actif ; le SON seulement si le son est activé.
   if(a.demo && a.demo.at && a.demo.at!==_pn.demoAt){
-    _pn.demoAt = a.demo.at; let t = 0;
-    a.demo.seq.forEach(n=>{ SFX.note(n.freq, t, 0.34); t += 0.44; });
+    _pn.demoAt = a.demo.at;
+    if(SOUND_ON && window.SFX) a.demo.seq.forEach((n,i)=>{ SFX.note(n.freq, i*PIANO_STEP, 0.34); });
+    startBorneDemoHighlight(a.demo.seq); // touches qui s'allument en rythme
   }
-  if(a.status==='win' && !_pn.win){ SFX.win(); _pn.win = true; }
+  if(a.status==='win' && !_pn.win){ if(SOUND_ON && window.SFX) SFX.win(); _pn.win = true; }
   _pn.step = a.step;
 }
 

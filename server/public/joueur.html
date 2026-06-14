@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/arcade.css" />
 <script src="/static/fullscreen.js"></script>
 <script src="/static/pacman-render.js"></script>
+<script src="/static/sound.js"></script>
 <style>
   .dpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin:12px auto 0; }
   .dpad button { font-size:30px; padding:18px 0; border:3px solid #000; border-radius:12px;
@@ -45,6 +46,7 @@ function applyState(s){
   if (j === _lastJoueurJson) return;
   _lastJoueurJson = j;
   STATE = s; render();
+  detectPianoDemo(s); // surligne mes touches si la borne (re)joue la mélodie
 }
 const es = new EventSource('/events?token=' + encodeURIComponent(TOKEN));
 es.onmessage = (e) => { lastSse = Date.now(); applyState(JSON.parse(e.data)); };
@@ -813,7 +815,7 @@ function pianoController(act){
   let whiteH = '', blackH = '', wSeen = 0;
   keys.forEach(k=>{
     if (k.white){
-      whiteH += `<button onpointerdown="pianoPress(${k.off},${k.freq})"
+      whiteH += `<button id="pk-${k.off}" onpointerdown="pianoPress(${k.off},${k.freq})"
         style="flex:1;min-width:0;height:100%;background:#f6f6fa;border:1px solid #1a1a1a;border-radius:0 0 7px 7px;
         color:#444;font-family:var(--pixel);font-size:9px;display:flex;align-items:flex-end;justify-content:center;
         padding-bottom:8px;cursor:pointer;touch-action:manipulation">${esc(k.name)}</button>`;
@@ -821,7 +823,7 @@ function pianoController(act){
     } else {
       let left = wSeen*wPct - bPct/2;            // posée sur la jointure des blanches
       if (left < 0) left = 0; if (left > 100-bPct) left = 100-bPct;
-      blackH += `<button onpointerdown="pianoPress(${k.off},${k.freq})"
+      blackH += `<button id="pk-${k.off}" onpointerdown="pianoPress(${k.off},${k.freq})"
         style="position:absolute;top:0;left:${left}%;width:${bPct}%;height:62%;background:#14121d;border:1px solid #000;
         border-radius:0 0 5px 5px;color:#cbd5ff;font-family:var(--pixel);font-size:7px;display:flex;align-items:flex-end;
         justify-content:center;padding-bottom:6px;cursor:pointer;touch-action:manipulation;z-index:2;box-shadow:0 3px 4px #0008">${esc(k.name)}</button>`;
@@ -840,6 +842,35 @@ function pianoController(act){
 }
 function pianoPress(off, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/piano/press', { off }); }
 function pianoReplay(){ if(window.SFX) SFX.unlock(); api('/api/piano/replay', {}); }
+// Surligne MES touches en rythme pendant que la BORNE joue la mélodie (démo).
+const PIANO_STEP_MS = 420; // doit matcher la borne (PIANO_STEP)
+let _jpDemoAt = 0, _jpRaf = 0;
+function detectPianoDemo(s){
+  const p = s && s.piano;
+  if (!p || !p.demo || !p.demo.at || p.myPos < 0) return;
+  if (p.demo.at === _jpDemoAt) return;       // démo déjà traitée
+  _jpDemoAt = p.demo.at;
+  startKeyDemoHighlight(p.demo.seq);
+}
+function startKeyDemoHighlight(seq){
+  cancelAnimationFrame(_jpRaf);
+  const start = performance.now(), total = seq.length * PIANO_STEP_MS;
+  let last = -1;
+  const clearAll = () => { document.querySelectorAll('[id^="pk-"]').forEach(e=>{ e.style.boxShadow=''; e.style.filter=''; }); };
+  const tick = () => {
+    const el = performance.now() - start;
+    if (el > total){ clearAll(); return; }
+    const idx = Math.floor(el / PIANO_STEP_MS);
+    if (idx !== last){
+      clearAll();
+      const k = document.getElementById('pk-' + (seq[idx] && seq[idx].off)); // n'existe que si la note est sur MON clavier
+      if (k){ k.style.boxShadow='0 0 0 4px #ffe600,0 0 22px #ffe600'; k.style.filter='brightness(1.2)'; }
+      last = idx;
+    }
+    _jpRaf = requestAnimationFrame(tick);
+  };
+  tick();
+}
 
 function roueController(act){
   const g = act.gage || {};

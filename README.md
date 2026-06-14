@@ -1,6 +1,6 @@
 # 🕹️ PIXEL PANIC
 
-Jeu d'anniversaire **rétro-arcade** pour **Vincent** — 7 joueurs, ~4 h 30, énigmes + traître + gages légers + écran partagé interactif.
+Jeu d'anniversaire **rétro-arcade** pour **Vincent** — 7 joueurs, ~4 h 30, énigmes + grande enquête + gages légers + écran partagé interactif.
 
 ## Documentation
 - 📖 [Scénario complet (la bible)](docs/SCENARIO.md) — histoire, rôles, déroulé minute par minute, rebondissements.
@@ -36,6 +36,6 @@ Tout est dans **`server/config.js`** : joueurs, avatars, tokens, URL publique, m
 Contenu du jeu : `server/data/` (avatars, gages, mondes).
 
 ## Statut
-✅ Moteur de jeu, 3 interfaces, SSE temps réel, 6 mondes, mécanique du Glitch, twist Game Master de Vincent, activités BORNE (réaction / blind-test / quiz / spotlight / roue / boss), gages, votes, QR codes, sauvegarde auto. Testé : démarre et répond.
+✅ Moteur de jeu, 3 interfaces, SSE temps réel, 6 mondes, **grande enquête (Monde 5)** dont la résolution ouvre le boss, twist Game Master de Vincent (pouvoirs gardés jusqu'à la fin), activités BORNE (réaction / blind-test / quiz / spotlight / roue / piano réparti / boss), gages, défis photo, QR codes, sauvegarde auto. Testé : démarre et répond.
 
 🔜 À affiner ensemble : énigmes définitives selon ton lieu, cartes-avatars à imprimer, sons/musiques de la borne, contenu blind-test metal.

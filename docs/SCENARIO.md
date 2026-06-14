@@ -12,12 +12,12 @@ Pendant l'apéro, la **tablette-borne d'arcade** (« la BORNE ») se met à gré
 
 Le bug a désigné un **Avatar Légendaire** sans le savoir : **Vincent**. Tant qu'il n'aura pas terminé le jeu, personne ne peut « se déconnecter » (= la fête ne peut pas vraiment commencer / les cadeaux restent verrouillés / le gâteau est « corrompu »…).
 
-Les 6 invités sont des **avatars rétro** réveillés par le glitch. Ils doivent aider Vincent à franchir **6 MONDES** (= 6 manches d'énigmes), gagner des **VIES** et des **PIÈCES**, et atteindre le **BOSS FINAL** avant minuit.
+Les 6 invités sont des **avatars rétro** réveillés par le bug. Ils doivent aider Vincent à franchir **6 MONDES** (= 6 manches d'énigmes), gagner des **VIES** et des **PIÈCES**, et atteindre le **BOSS FINAL** avant minuit.
 
-**Deux secrets moteurs de toute la soirée :**
+**Deux fils rouges de toute la soirée :**
 
-1. 🐛 **Le GLITCH** — l'un des 6 invités est secrètement un virus. Il reçoit des **missions de sabotage** sur son téléphone et doit faire échouer les autres sans se faire griller. (Mécanique « Among Us » version apéro.)
-2. 👑 **Le pouvoir caché de Vincent** — au Monde 4, Vincent découvre qu'il est le **PLAYER ONE / Game Master** : à partir de là, *c'est lui* qui peut distribuer des gages, ressusciter des joueurs, et déclencher des événements. Le héros devient marionnettiste.
+1. 🕵️ **La GRANDE ENQUÊTE** — au Monde 5, le groupe doit élucider ensemble une affaire (façon escape game / Cluedo). Chaque joueur détient des pièces à conviction, et c'est la **résolution complète de l'enquête** qui ouvre la dernière porte vers le BOSS FINAL.
+2. 👑 **Le pouvoir caché de Vincent** — au Monde 4, Vincent découvre qu'il est le **PLAYER ONE / Game Master** : à partir de là, *c'est lui* qui anime la soirée (lancer une vidéo de fête, un blind-test, un quiz, une roue, des jeux, une anecdote…) et il **garde ses pouvoirs** jusqu'à la fin. Le héros devient marionnettiste.
 
 ---
 
@@ -41,7 +41,7 @@ Les 6 invités sont des **avatars rétro** réveillés par le glitch. Ils doiven
 |---------|------|---------|
 | **Robin & Juliette** | 👾 **LES PIXELS** | Messagers 8-bit : livrent les boîtes à cadenas, cachent/révèlent les indices, tiennent la lampe UV, appuient sur « le gros bouton », transportent les PIÈCES. **Mini-quêtes sans alcool** + récompenses (bonbons dorés, badges, diplôme de « Héros Bonus »). |
 
-> ⚙️ **Le GLITCH** n'est pas un rôle séparé : c'est un **calque secret** posé sur l'un des avatars, **tiré au sort par le serveur**. Pool du tirage : **Willy, Jessica, Marie-Anne, Stéphane (+ parent)**. **Exclus : Marc** (pilote le jeu) **et Vincent** (le héros). Le traître a ainsi une couverture publique parfaite.
+> ⚙️ **Carnet secret** : au lancement, chaque joueur reçoit sur son téléphone une **mission perso** (objectif fun de la soirée) et un petit **indice social** (« tu sais un truc sur X… va lui en parler »). De quoi animer la table — l'enquête, elle, porte sur une affaire externe (Monde 5), pas sur les joueurs.
 
 ---
 
@@ -68,22 +68,22 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 ### ⏱️ 0:00 — INSERT COIN (accueil, ~20 min)
 - Les invités arrivent. À l'entrée : **QR code « SCANNE POUR JOUER »** → page perso → choix/attribution avatar, règles en 3 écrans animés.
 - La BORNE est en veille (écran « INSERT COIN » clignotant).
-- Quand tout le monde est connecté (le serveur le voit), **Vincent arrive / on l'installe**. Au moment où il scanne *son* QR (carte dorée), la BORNE **explose en glitch** → cinématique d'intro. **Le jeu démarre.**
+- Quand tout le monde est connecté (le serveur le voit), **Vincent arrive / on l'installe**. Au moment où il scanne *son* QR (carte dorée), la BORNE **explose de pixels** → cinématique d'intro. **Le jeu démarre.**
 
 ### ⏱️ 0:20 — MONDE 1 : « TUTORIEL CORROMPU »
 - **But narratif** : réveiller les avatars, comprendre les commandes.
 - **Énigme** : une énigme d'échauffement collaborative (manette à reconstituer / séquence de boutons type Konami Code ↑↑↓↓←→←→ B A). Chaque joueur détient 2 boutons de la séquence sur son tél → ils doivent se parler pour reconstituer le code.
 - **Code trouvé** → tapé dans l'appli → la BORNE annonce *« COLIS 2 débloqué »* → les Pixels livrent l'enveloppe 2.
 - 🎉 **BONUS STAGE** : « 1-UP » — défi collectif de cohésion (cri d'équipe / trinque légère pour « charger les vies »).
-- 🌀 **Rebondissement** : la BORNE annonce qu'un **GLITCH s'est infiltré** parmi les avatars (sans le nommer). Parano installée. Le vrai Glitch, lui, reçoit sa **1ʳᵉ mission de sabotage**.
+- 🌀 **Rebondissement** : le tutoriel est rétabli, la réalité se recompose pixel par pixel… **Niveau suivant !**
 
 ### ⏱️ 1:00 — MONDE 2 : « LE LABYRINTHE DE GLOUTON »
 - **Énigme** : un plan/labyrinthe (Pac-Man). Indices répartis : LARA CROÛTE reçoit l'indice caché (encre UV), GLOUTON a la clé du parcours. Résolution = un mot/chiffre.
 - 🍺 **BONUS STAGE** : « POWER PELLET » — celui qui a le moins participé boit ; GLOUTON applique son pouvoir (finir les verres).
-- 🌀 **Rebondissement** : première **accusation publique possible** — la BORNE propose un mini-vote « qui est suspect ? » (sans élimination encore, juste pour semer la zizanie). Le Glitch a réussi (ou raté) son sabotage → conséquence annoncée.
+- 🌀 **Rebondissement** : le labyrinthe s'efface. Une **PORTE SONORE** se dessine plus loin… préparez vos oreilles.
 
-### ⏱️ 1:45 — MONDE 3 : « BOSS DE MI-PARCOURS & SABOTAGE »
-- **Énigme** : énigme à manipulation physique (pièces de puzzle qui, assemblées, forment un QR à scanner / un code à taper dans l'appli). Le sabotage du Glitch peut cacher/voler une pièce.
+### ⏱️ 1:45 — MONDE 3 : « LE PIANO GÉANT »
+- **Énigme** : une devinette ouvre une **PORTE SONORE**, puis les téléphones, alignés côte à côte, forment un **grand piano réparti** : le groupe doit rejouer ensemble la mélodie affichée par la BORNE.
 - 🍺 **BONUS STAGE** : duel « RIU » — un Hadoken : 1 contre 1, le perdant boit (pierre-feuille-ciseaux géant, bras de fer, etc.).
 - 🌀 **GROS REBONDISSEMENT** : la BORNE détecte que **« le PLAYER ONE possède un pouvoir dormant »**… et lance un compte à rebours mystérieux sur Vincent. (Teasing du twist à venir.)
 
@@ -95,18 +95,18 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 - **Cinématique** : la BORNE révèle alors à tous que **Vincent EST le Game Master**. Sa page téléphone change radicalement : il a maintenant un **panneau de contrôle** (donner un gage à X, ressusciter Y, déclencher un événement, voir des indices que les autres n'ont pas).
 - **Énigme** : la première où **Vincent mène** — il doit utiliser ses pouvoirs pour aider le groupe (et peut se venger gentiment des gages subis).
 - 🍺 **BONUS STAGE** : « ROYALTY » — Vincent distribue 3 gages de son choix. Roi de la soirée.
-- 🌀 **Rebondissement** : le Glitch panique (le GM peut maintenant le démasquer) → mission de sabotage **risquée** donnée au Glitch.
+- 🌀 **Rebondissement** : les pouvoirs du Game Master sont pleinement actifs — **Vincent prend les commandes de la soirée** (et les garde jusqu'à la fin).
 
-### ⏱️ 3:35 — MONDE 5 : « LA CHASSE AU GLITCH »
-- **Énigme-enquête** : indices disséminés sur toute la soirée convergent pour identifier le Glitch (façon Cluedo). Chaque joueur a reçu, sans le savoir, un fragment de preuve.
-- **Vote d'élimination** officiel sur les téléphones → si le groupe trouve le Glitch : récompense ; sinon : méga-gage collectif.
-- 🎉 **BONUS STAGE** : « GAME OVER » du Glitch — défi spectaculaire pour le traître (démasqué ou victorieux selon l'issue).
-- 🌀 **Rebondissement** : démasqué, le Glitch révèle qu'il a **caché le dernier code** quelque part → mini chasse express.
+### ⏱️ 3:35 — MONDE 5 : « LA GRANDE ENQUÊTE »
+- **Énigme-enquête** : une affaire à élucider tous ensemble, **acte après acte** (façon escape game). Chaque joueur reçoit sur son téléphone des **pièces à conviction** à recouper ; le groupe résout chaque acte en tapant le bon code.
+- **C'est la résolution complète de l'enquête qui ouvre le Monde 6** — pas de vote, pas de code de monde à taper.
+- 🎉 **BONUS STAGE** : pendant l'enquête, Vincent (Game Master) peut lancer un blind-test, un quiz ou une anecdote pour rythmer les recherches.
+- 🌀 **Rebondissement** : dernier acte élucidé, l'affaire est close… mais la BORNE garde un ultime secret. **Direction le BOSS FINAL.**
 
 ### ⏱️ 4:15 — MONDE 6 : « BOSS FINAL — REBOOT REALITY »
 - **Affrontement final** collectif contre la BORNE (le « boss » est l'écran lui-même : barre de vie, attaques, QTE à scanner vite). Tous les pouvoirs/objets accumulés servent ici.
 - **Vincent porte le coup final** (il scanne la carte dorée sur la BORNE) → **la réalité redémarre** : écran « YOU WIN », feu d'artifice 8-bit, déverrouillage du **vrai cadeau / coffre final** de Vincent.
-- 🎉 **BONUS STAGE FINAL** : « HIGH SCORE » — classement final affiché sur la BORNE (MVP, meilleur Glitch, roi de l'air-guitar, etc.) + trinque légère de victoire.
+- 🎉 **BONUS STAGE FINAL** : « HIGH SCORE » — classement final affiché sur la BORNE (MVP, meilleur enquêteur, roi de l'air-guitar, etc.) + trinque légère de victoire.
 
 ### ⏱️ 4:35 — GÉNÉRIQUE DE FIN
 - La BORNE déroule un **générique** façon jeu vidéo avec les vrais prénoms + des récompenses fun pour chacun. Photos. Fin.
@@ -126,7 +126,7 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 - **Photosynthèse** : tu deviens une plante immobile jusqu'au prochain indice.
 - **Mode miroir** : tu parles à l'envers jusqu'au prochain monde.
 - **Buff / Trophée** : compliment sincère, ou pose photo héroïque obligatoire.
-- **Glitch tax** : le Glitch a saboté → « cheers » général (gorgée OU soft, au choix de chacun).
+- **Cheers collectif** : toute la table fait un « cheers » général (gorgée OU soft, au choix de chacun).
 - **Royalty (Vincent only, dès Monde 4)** : Vincent désigne qui relève le prochain défi. 👑
 
 *(Catalogue complet et paramétrable dans le code — `server/data/gages.js`.)*
@@ -148,7 +148,7 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 - **LA ROUE DES GAGES** tourne sur le grand écran (façon machine à sous) → s'arrête sur un **nom + un gage**. Suspense garanti, personne ne sait sur qui ça tombe.
 
 **🔵 Mode SPECTACLE (affichage)**
-- Flashs « news glitch », cinématiques d'intro/twist, **scores & vies**, comptes à rebours, classement final « HIGH SCORE ».
+- Flashs « news rétro », cinématiques d'intro/twist, **scores & vies**, comptes à rebours, classement final « HIGH SCORE ».
 
 > ⚙️ Techniquement : la BORNE déclenche une **« activité »** (reaction, memory, blind-test, spotlight, roue…) ; les pages joueurs basculent automatiquement en **mode contrôleur** (gros bouton BUZZ, vote, séquence) le temps de l'activité, puis reviennent au jeu. Tout est synchronisé par le serveur.
 
@@ -156,11 +156,11 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
 
 ## 6. Les rebondissements (résumé)
 
-1. **Monde 1** : un Glitch est parmi vous (parano).
-2. **Monde 2** : premier vote de suspicion, sabotage visible.
+1. **Monde 1** : tutoriel rétabli, la réalité se recompose.
+2. **Monde 2** : le labyrinthe s'efface, une porte sonore approche.
 3. **Monde 3** : teasing — Vincent a un pouvoir dormant.
-4. **Monde 4** : 👑 **TWIST MAJEUR** — Vincent devient Game Master.
-5. **Monde 5** : démasquage du Glitch + il a caché le dernier code.
+4. **Monde 4** : 👑 **TWIST MAJEUR** — Vincent devient Game Master (et le reste).
+5. **Monde 5** : 🕵️ **LA GRANDE ENQUÊTE** — l'élucider ouvre la dernière porte.
 6. **Monde 6** : la BORNE est le boss ; Vincent porte le coup final ; le vrai cadeau est libéré.
 
 > Bonus optionnels pour pimenter : **faux Game Over** (la BORNE annonce que tout est perdu… avant un « CONTINUE? »), **panne de courant scriptée**, **un invité « banni » 5 min** (gage d'exil rigolo), **mode miroir** (tout le monde doit parler à l'envers).
@@ -174,7 +174,7 @@ Pour que **rien ne soit cousu de fil blanc**, le matériel n'arrive jamais d'un 
   - **Console BORNE** (`/borne`) : grand écran rétro — news, vidéos, scores, comptes à rebours, cinématiques.
   - **Page GM cachée** (`/gm`) : ton override discret (forcer un événement, gérer un imprévu).
   - **QR codes** : un par joueur + un par MONDE/boîte, générés automatiquement.
-  - **État partagé** côté serveur (qui en est où, qui est le Glitch, scores, vies).
+  - **État partagé** côté serveur (qui en est où, avancement de l'enquête, scores, vies).
 - **Déploiement** : guide LXC + Node + reverse-proxy (`docs/DEPLOIEMENT-PROXMOX.md`).
 
 ---

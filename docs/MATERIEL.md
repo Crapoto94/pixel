@@ -23,9 +23,9 @@
 ### Petit matériel d'énigmes (selon monde)
 - [ ] **Monde 1** : rien de physique (la séquence est sur les téléphones).
 - [ ] **Monde 2** : un **plan de labyrinthe** imprimé + 1 indice « secret » (option : écrit au **stylo encre invisible UV**, ~5 €, avec sa mini-lampe — pour LARA CROÛTE / Marc).
-- [ ] **Monde 3** : un **puzzle** (8–12 pièces) qui, assemblé, montre un mot ou un QR. Prévois d'en **retirer 1 pièce** que le Glitch « cache ».
+- [ ] **Monde 3** : **rien de physique** — une devinette ouvre une « porte sonore », puis les téléphones alignés forment un **piano géant** ; le groupe rejoue la mélodie affichée par la BORNE.
 - [ ] **Monde 4** : la carte dorée + (option) une « manette » déco à remettre à Vincent.
-- [ ] **Monde 5** : 3–4 **cartes-preuves** glissées dans les colis précédents (heures, indices) pour l'enquête.
+- [ ] **Monde 5** : **LA GRANDE ENQUÊTE** — les pièces à conviction sont distribuées **automatiquement via les téléphones**. Option : imprimer le dossier complet (cartes + plan + solution MJ) via le bouton **🖨️ Imprimer le matériel d'enquête** de la page GM (`/print-enquete`).
 - [ ] **Monde 6** : le **vrai cadeau / coffre final** de Vincent (déverrouillé à la victoire).
 
 ### Ambiance
@@ -46,4 +46,4 @@
 | 🟡 GLOUTON | parent (option) | verres orphelins |
 | 👾 LES PIXELS | Robin & Juliette | livrent les colis, cachent les indices |
 
-> ⚠️ **Le Glitch** est tiré au sort par le serveur le soir même — tu le verras sur ta **page GM**. Ne le dis à personne. 😈
+> 💡 **La GRANDE ENQUÊTE** (Monde 5) se joue sur la BORNE et les téléphones : sa **résolution complète** ouvre le Monde 6. Tu peux suivre l'avancement et donner des indices / forcer un acte depuis ta **page GM**.

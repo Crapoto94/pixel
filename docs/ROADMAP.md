@@ -3,8 +3,9 @@
 Suivi des demandes et de leur état. (✅ fait · 🔧 en cours · ⏳ à faire)
 
 ## Ajustements de gameplay
-- 🔧 **Le Glitch n'est PLUS désigné au démarrage** — il est tiré au sort plus tard (à la fin du Monde 1, quand la BORNE annonce l'infiltration). Plus de réveil instantané.
-- ✅ **Missions joueurs affinées** + **réseau d'indices social** : chaque joueur reçoit une mission perso + un **indice secret sur un autre** (mélange enquête : réduction « X ou Y », disculpations vraies, diversion pour le Glitch, et indices sociaux). Carnet secret sur le téléphone. Source : `data/clues.js`.
+- ✅ **Mécanique du Glitch (traître) RETIRÉE** — plus de désignation, de vote ni de missions de sabotage. Le **Monde 5** est désormais **LA GRANDE ENQUÊTE** : sa résolution complète ouvre le Monde 6.
+- ✅ **Carnet secret** : chaque joueur reçoit au lancement une **mission perso** + un **indice social** (« tu sais un truc sur X »). Source : `data/clues.js`.
+- ✅ **Monde 4 — pouvoirs du Game Master** : Vincent choisit et lance lui-même les activités (vidéo de fête, blind-test, quiz, roue, anecdote, jeux) via une checklist de missions ; il **garde ses pouvoirs** aux Mondes 5 et 6.
 - ⏳ **Niveau d'énigmes supérieur (style Unlock!)** : de vraies énigmes, pas des codes triviaux. *(prochaine étape)*
 
 ## Énigmes collaboratives temps réel

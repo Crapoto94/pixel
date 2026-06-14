@@ -52,8 +52,8 @@ sur le grand écran ; chaque invité joue depuis son téléphone (QR perso).
   **👾 Boss final** (QTE collectif).
 
 ### 🎲 À tout moment
-- **Gages** (catalogue léger, alcool optionnel), **vote du Glitch** (traître),
-  **gestion des vies**, **défis photo** (vote « plus belle / plus rigolote »).
+- **Gages** (catalogue léger, alcool optionnel), **gestion des vies**,
+  **défis photo** (vote « plus belle / plus rigolote »).
 
 ---
 
@@ -69,8 +69,7 @@ sur le grand écran ; chaque invité joue depuis son téléphone (QR perso).
 5. **Le gros morceau** — **Enquête** (prévoir ~1 h, table au calme, documents
    imprimés sur la table, téléphones pour les pièces). Pause boissons au milieu.
 6. **Arcade** — alterner **Pac-Man / Tron / Pong / Tetris** selon l'énergie.
-7. **Final** — **Boss final** collectif, **vote du Glitch**, puis **palmarès
-   photo** et **YOU WIN**.
+7. **Final** — **Boss final** collectif, puis **palmarès photo** et **YOU WIN**.
 
 > Conseils : garde un œil sur les **vies** (le MJ peut en redonner). Si une
 > énigme bloque, utilise les **indices** (mosaïque : révéler la couleur ;

@@ -86,6 +86,7 @@ export class GameState {
     // Vidéo-indice diffusée sur la borne à la demande d'un joueur (ex. Monde 1)
     this.hintVideo = null; // { video, start, at } ou null
     // --- Monde 3 : piano réparti intégré au monde (un demi-octave/téléphone) ---
+    this.pianoUnlocked = false; // le mot-code (OCTAVE) débloque le piano
     this.pianoStep = 0;
     this.pianoStatus = 'playing';
     this.pianoDemoAt = 0;
@@ -424,6 +425,24 @@ export class GameState {
         return { ok: false, reason: world.nearMissMsg || 'Presque… essaie en LEET.' };
       }
     }
+    // Monde « piano » (Monde 3) : le mot-code DÉBLOQUE le piano réparti
+    // (il ne valide PAS le monde : c'est la mélodie jouée qui le valide).
+    if (world.pianoWorld) {
+      if (this.pianoUnlocked) {
+        return { ok: false, reason: 'Piano déjà débloqué — jouez la mélodie sur vos téléphones !' };
+      }
+      if (normalize(code) === world.codeNormalise) {
+        this.pianoUnlocked = true;
+        this.pianoStep = 0;
+        this.pianoStatus = 'playing';
+        this.addLog(`🎹 ${p ? p.name : '?'} a trouvé « ${world.code} » — le PIANO RÉPARTI se réveille !`);
+        this.touch();
+        return { ok: true };
+      }
+      this.addLog(`❌ Mot refusé (Monde ${world.num}).`);
+      this.touch();
+      return { ok: false, reason: 'Mot incorrect.' };
+    }
     const ok = normalize(code) === world.codeNormalise;
     if (ok) {
       this.addLog(`✅ ${p ? p.name : '?'} a validé le code du Monde ${world.num} !`);
@@ -485,7 +504,10 @@ export class GameState {
     this.touch();
   }
 
-  completeWorld() {
+  // opts.celebrate : true = danse des canards (réussite JOUEURS), false = passage
+  //  direct sans danse (le MJ fait avancer manuellement).
+  completeWorld(opts = {}) {
+    const celebrate = opts.celebrate !== false;
     const world = this.currentWorld();
     if (!world) return;
     // Récompense : tous les joueurs connectés gagnent une pièce
@@ -504,7 +526,13 @@ export class GameState {
       this.touch();
       return;
     }
-    // Célébration : message + 10 s de la danse des canards, PUIS monde suivant.
+    // Passage forcé par le MJ : pas de danse, on enchaîne directement.
+    if (!celebrate) {
+      this.addLog(`⏭ Monde ${world.num} validé par le MJ (passage direct).`);
+      this._advanceWorld();
+      return;
+    }
+    // Réussite JOUEURS → célébration : 10 s de la danse des canards, PUIS suite.
     this.addLog(`✅ Monde ${world.num} réussi — petite danse de la victoire ! 🦆`);
     this.startActivity('videoshow', {
       video: '7kyY29BHTZs',
@@ -516,13 +544,20 @@ export class GameState {
     if (this._celebrateTimer) clearTimeout(this._celebrateTimer);
     this._celebrateTimer = setTimeout(() => {
       this._celebrateTimer = null;
-      this.activity = null;            // coupe la vidéo de célébration
-      this.worldIndex += 1;
-      const next = this.currentWorld();
-      if (next) this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
-      this.phase = 'world';
-      this.touch();
+      this._advanceWorld();
     }, 10000);
+  }
+
+  // Avance au monde suivant (coupe toute activité, réinitialise l'état piano).
+  _advanceWorld() {
+    this.activity = null;          // coupe une éventuelle vidéo de célébration
+    this.pianoUnlocked = false;    // le piano du monde suivant repart verrouillé
+    this.pianoStep = 0; this.pianoStatus = 'playing'; this.pianoDemoAt = 0;
+    this.worldIndex += 1;
+    const next = this.currentWorld();
+    if (next) this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
+    this.phase = 'world';
+    this.touch();
   }
 
   awakenHero() {
@@ -1508,9 +1543,11 @@ export class GameState {
   // au MONDE 3 (les joueurs ont directement leurs touches). Mêmes rendus.
 
   // Le monde courant est-il un monde « piano intégré » en cours ?
+  //  NB : en phase « monde » aucune activité ne s'affiche, donc on n'exige PAS
+  //  this.activity == null (sinon une activité « done » bloquerait le piano).
   pianoWorldActive() {
     const w = this.currentWorld();
-    return !!(w && w.pianoWorld && this.phase === 'world' && !this.activity);
+    return !!(w && w.pianoWorld && this.phase === 'world');
   }
   // Ordre des téléphones (gauche → droite) = joueurs connectés, ordre stable.
   pianoOrder() {
@@ -1757,8 +1794,8 @@ export class GameState {
         hintVideo: !!world.hintVideo,
         pianoWorld: !!world.pianoWorld,
       },
-      // Monde 3 : piano réparti intégré (placement + partition + touches joueur)
-      piano: this.pianoWorldActive() ? this.pianoWorldPublic(me ? me.id : null) : null,
+      // Monde 3 : piano réparti — exposé seulement une fois le mot-code trouvé.
+      piano: (this.pianoWorldActive() && this.pianoUnlocked) ? this.pianoWorldPublic(me ? me.id : null) : null,
       // Vidéo-indice en cours de diffusion sur la borne (ou null)
       hintVideo: this.hintVideo,
       // Progression de la porte « Konami collectif » (Monde 6)

@@ -403,7 +403,7 @@ app.post('/api/gm/action', (req, res) => {
   switch (action) {
     case 'start': game.startGame(); break;
     case 'assignGlitch': game.assignGlitch(); break;
-    case 'completeWorld': game.completeWorld(); break;
+    case 'completeWorld': game.completeWorld({ celebrate: false }); break;
     case 'startActivity': game.startActivity(payload.type, payload.opts || {}); break;
     case 'stopActivity': game.stopActivity(); break;
     case 'quizReveal': game.quizReveal(); break;

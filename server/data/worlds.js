@@ -86,22 +86,23 @@ export const WORLDS = [
     titre: 'LE PIANO GÉANT',
     colis: 3,
     intro:
-      "Mi-parcours. Une PORTE SONORE bloque le passage. « Seule LA MÉLODIE LÉGENDAIRE " +
-      "m'ouvrira. Mais aucun de vous n'a le clavier entier… »",
+      "Mi-parcours. Une PORTE SONORE bloque le passage. « Trouvez le MOT DE PASSE " +
+      "pour réveiller le grand clavier… »",
+    // L'énigme à résoudre pour DÉBLOQUER le piano (devinette « M. et Mme »).
     enigme:
-      "Chaque téléphone affiche un DEMI-OCTAVE de piano. Alignez-les côte à côte dans " +
-      "l'ordre indiqué par la BORNE pour former un grand clavier, puis jouez la mélodie ensemble.",
-    pianoWorld: true, // piano réparti intégré : chaque téléphone a ses touches
-    code: 'JOIE', // la mélodie est l'« Hymne à la Joie » (validation de secours)
-    codeNormalise: 'JOIE',
+      "Monsieur et Madame ERGEBEL ont un fils. Comment se prénomme-t-il ? " +
+      "(tapez le prénom sur un téléphone pour réveiller le PIANO).",
+    pianoWorld: true, // après le mot-code, piano réparti : chaque téléphone a ses touches
+    code: 'OCTAVE', // réponse à la devinette → débloque le piano réparti
+    codeNormalise: 'OCTAVE',
     colisContenu: [
-      'Une carte-consigne : « Chaque téléphone = un DEMI-CLAVIER. Alignez-les dans l’ordre de la BORNE (de gauche à droite). »',
+      'Une carte-énigme : « Monsieur et Madame ERGEBEL ont un fils. Comment se prénomme-t-il ? » (réponse = mot de passe).',
+      'Une carte-consigne : « Une fois le piano réveillé, chaque téléphone = un DEMI-CLAVIER. Alignez-les dans l’ordre de la BORNE. »',
       'Une partition simplifiée : MI MI FA SOL… (la BORNE affiche aussi la mélodie note par note).',
-      'Indice (mot-code) : quel est le titre de cette mélodie ? (Hymne à la… ).',
     ],
     indices: {
-      riu: ['Suis la note qui clignote sur ton clavier : joue-la quand c’est ton tour.'],
-      zilda: ['La BORNE indique QUEL téléphone joue la prochaine note.'],
+      riu: ['Pense « musique » : ce que couvrent 8 notes blanches d’affilée…'],
+      zilda: ['Une fois le piano réveillé, la BORNE indique QUEL téléphone joue la prochaine note.'],
     },
     activite: 'piano',
     gagePool: 'duel',

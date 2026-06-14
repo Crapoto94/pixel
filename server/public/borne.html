@@ -314,6 +314,7 @@ function render(){
     const w = STATE.world;
     const body = w.konamiGate ? w6BorneBody()
                : (w.pianoWorld && STATE.piano) ? pianoBorneBody(STATE.piano)
+               : (w.pianoWorld) ? pianoBorneLocked(w)
                : '';
     html = `<div>
       ${w.isTwist ? `<div class="center huge pixel neon-yellow glow-box">⚡ PLAYER ONE ⚡</div>`:''}
@@ -601,6 +602,16 @@ function pianoBorneBody(a){
 function renderPianoBorne(a){
   stage.innerHTML = `<div class="center"><h1 class="big neon-pink">🎹 PIANO GÉANT</h1>${pianoBorneBody(a)}</div>`;
   tickerEl.textContent = 'PIANO GÉANT — alignez les téléphones et jouez la mélodie !';
+}
+// Monde 3 verrouillé : l'énigme à résoudre pour réveiller le piano.
+function pianoBorneLocked(w){
+  return `<div class="center" style="margin-top:10px">
+    <div class="card glow-box" style="display:inline-block;max-width:780px;border-color:var(--neon3)">
+      <div class="pill neon-yellow">🔒 PORTE SONORE VERROUILLÉE</div>
+      <p class="big">${esc(w.enigme||'')}</p>
+      <p class="big neon-cyan blink">Tapez le mot de passe sur un téléphone pour réveiller le PIANO 🎹</p>
+    </div>
+  </div>`;
 }
 
 // Détection sonore du piano réparti (démo, note jouée, victoire)

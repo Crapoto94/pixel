@@ -49,8 +49,8 @@ export const WORLDS = [
     activite: 'reaction_race',
     gagePool: 'collectif',
     twist:
-      "ALERTE : un GLITCH s'est infiltré parmi les avatars. Il sabotera dans l'ombre. " +
-      "Méfiance… (le traître vient de recevoir sa première mission).",
+      "Le tutoriel est rétabli. La réalité se recompose pixel par pixel… " +
+      "Niveau suivant !",
   },
   {
     id: 'w2',
@@ -77,8 +77,8 @@ export const WORLDS = [
     activite: 'blindtest',
     gagePool: 'solo',
     twist:
-      "Premier VOTE DE SUSPICION : qui vous semble louche ? (aucune élimination, " +
-      "juste pour semer le doute). Le sabotage du Glitch a laissé une trace…",
+      "Le labyrinthe s'efface. Une PORTE SONORE se dessine plus loin… " +
+      "préparez vos oreilles.",
   },
   {
     id: 'w3',
@@ -139,36 +139,37 @@ export const WORLDS = [
     activite: 'roue_des_gages',
     gagePool: 'vincent',
     twist:
-      "Le Glitch PANIQUE : le Game Master peut désormais le démasquer. " +
-      "Mission de sabotage RISQUÉE confiée au traître.",
+      "Les pouvoirs du Game Master sont pleinement actifs. " +
+      "Vincent prend les commandes de la soirée !",
   },
   {
     id: 'w5',
     num: 5,
-    titre: 'LA CHASSE AU GLITCH',
+    titre: 'LA GRANDE ENQUÊTE',
     colis: 5,
+    // Monde « enquête » : la GRANDE ENQUÊTE se lance automatiquement à l'entrée.
+    // C'est sa RÉSOLUTION (tous les actes élucidés) qui ouvre le Monde 6 —
+    // il n'y a pas de code de monde à taper.
+    enqueteWorld: true,
     intro:
-      "Niveau 5. « Le GLITCH est parmi vous depuis le début. Rassemblez les PREUVES " +
-      "et démasquez-le par un VOTE. »",
+      "Niveau 5. Un dossier clignote sur la BORNE. « Pour ouvrir la dernière porte, " +
+      "résolvez LA GRANDE ENQUÊTE — acte après acte. »",
     enigme:
-      "Chaque joueur a reçu, au fil de la soirée, un fragment de preuve (dans les colis). " +
-      "Recoupez-les façon Cluedo, puis VOTEZ sur vos téléphones.",
-    code: 'VOTE', // résolu par le vote, pas par un code tapé
-    codeNormalise: 'VOTE',
-    resoluParVote: true,
+      "Menez l'enquête ensemble : chacun détient des pièces à conviction. Recoupez-les, " +
+      "résolvez chaque ACTE en tapant le bon code sur un téléphone. L'enquête complète ouvre la suite.",
     colisContenu: [
-      'Les FRAGMENTS DE PREUVES à distribuer façon Cluedo (un par joueur), à recouper.',
-      'Une carte récap : « notez et comparez les HEURES inscrites sur les colis 2, 3 et 4 ».',
-      'Pas de code à taper : ce monde se résout par un VOTE sur les téléphones.',
+      "Le DOSSIER D'ENQUÊTE : les pièces à conviction à répartir entre les joueurs.",
+      "Une carte-consigne : « Résolvez chaque ACTE en tapant le bon code sur un téléphone. »",
+      "Tout se joue sur la BORNE : suivez les actes dans l'ordre jusqu'au dénouement.",
     ],
     indices: {
-      lara_croute: ['Recoupe les heures notées sur les colis 2, 3 et 4.'],
+      lara_croute: ['Recoupe bien chaque pièce à conviction : tout finit par se relier.'],
     },
-    activite: 'vote_glitch',
+    activite: 'enquete',
     gagePool: 'collectif',
     twist:
-      "Démasqué (ou non), le Glitch révèle qu'il a CACHÉ le dernier code quelque part. " +
-      "Chasse express avant le boss final !",
+      "Dernier acte élucidé ! L'affaire est close… mais la BORNE garde un ultime secret. " +
+      "Direction le BOSS FINAL.",
   },
   {
     id: 'w6',

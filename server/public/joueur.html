@@ -170,13 +170,6 @@ function render() {
     return;
   }
 
-  // --- Vote du Glitch ---
-  if (STATE.phase === 'vote') {
-    html += voteView();
-    app.innerHTML = html + footer();
-    return;
-  }
-
   // --- Vote / résultats photo ---
   if (STATE.photoPhase === 'vote') {
     html += photoVoteView(me);
@@ -219,7 +212,13 @@ function render() {
       </div>`;
     }
 
-    if (!w.resoluParVote) {
+    if (w.enqueteWorld) {
+      // Monde 5 : LA GRANDE ENQUÊTE se joue en activité — rien à saisir ici.
+      html += `<div class="card center" style="border-color:var(--neon2)">
+        <div class="pill neon-cyan">🕵️ LA GRANDE ENQUÊTE</div>
+        <p>L'enquête démarre sur la BORNE 📺 — suivez les actes et tapez les codes !</p>
+      </div>`;
+    } else {
       if (w.pianoWorld && STATE.piano) {
         // Monde 3 : piano réparti intégré — chaque téléphone a ses touches.
         html += pianoController(STATE.piano);
@@ -250,16 +249,6 @@ function render() {
       </div>`;
     }
     html += `</div>`;
-  }
-
-  // --- Mission secrète du Glitch ---
-  if (me.glitchMission) {
-    html += `
-    <div class="card" style="border-color:var(--danger);background:#1a0008">
-      <div class="pill" style="color:var(--danger)">🐛 MISSION SECRÈTE — GLITCH</div>
-      <p>${esc(me.glitchMission)}</p>
-      <p class="muted">Personne d'autre ne voit ce message. Sabote… mais ne te fais pas griller.</p>
-    </div>`;
   }
 
   // --- Carnet secret : mission perso + indice sur un autre joueur ---
@@ -1050,17 +1039,6 @@ function quizController(act) {
   </div>`;
 }
 
-function voteView() {
-  const others = STATE.players.filter(p=>p.id!==STATE.me.id);
-  return `<div class="card center glow-box">
-    <h2 class="neon-pink">QUI EST LE GLITCH ?</h2>
-    <p>Vote pour démasquer le traître.</p>
-    <div class="grid-players">
-      ${others.map(p=>`<button class="btn warn" onclick="vote('${p.id}')">${esc(p.name)}</button>`).join('')}
-    </div>
-  </div>`;
-}
-
 function gageView(g, me) {
   const forMe = g.targetId === me.id;
   return `<div class="card center" style="border-color:var(--neon3)">
@@ -1265,7 +1243,6 @@ function photoVote(photoId, category) {
 // --- Actions ---
 function toggleReady(){ api('/api/ready', { ready: !STATE.me.ready }); }
 function buzz(){ api('/api/buzz'); }
-function vote(t){ api('/api/vote', { targetId: t }); }
 function answer(i){ api('/api/answer', { choice: i }); }
 function spotlightVote(v){ api('/api/spotlight/vote', { verdict: v }); }
 function submitCode(){

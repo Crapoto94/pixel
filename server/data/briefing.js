@@ -8,7 +8,7 @@ export const SCENARIO_SLIDES = [
   { title: "L'ÉLU",
     text: "Le bug a désigné un Avatar Légendaire : VINCENT. Tant que le jeu n'est pas terminé, personne ne peut se déconnecter." },
   { title: 'VOTRE MISSION',
-    text: "6 MONDES, des énigmes, des défis — et un traître infiltré parmi vous. Aidez Vincent à atteindre le BOSS FINAL avant minuit." },
+    text: "6 MONDES, des énigmes, des défis et une GRANDE ENQUÊTE à élucider. Aidez Vincent à atteindre le BOSS FINAL avant minuit." },
   { title: 'AU PROGRAMME',
     text: "Une GROSSE ENQUÊTE à résoudre tous ensemble (~1 h, comme un escape game), et PLEIN DE MINI-JEUX d'arcade : Pac-Man, Tetris, blind-test, roue des gages, quiz… De quoi en avoir pour la soirée !" },
   { title: "RÈGLE D'OR",

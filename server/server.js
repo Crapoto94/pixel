@@ -71,7 +71,7 @@ app.get('/api/print', async (req, res) => {
   }
   const colis = WORLDS.map((w) => ({
     num: w.colis, titre: w.titre, enigme: w.enigme,
-    code: w.resoluParVote ? null : w.code, contenu: w.colisContenu || [],
+    code: w.enqueteWorld ? null : w.code, contenu: w.colisContenu || [],
   }));
   res.json({ players, npcs: NPCS, colis, publicUrl: CONFIG.publicUrl });
 });
@@ -195,12 +195,6 @@ app.post('/api/hint/clear', (req, res) => {
 app.post('/api/buzz', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;
   game.buzz(p.id);
-  res.json({ ok: true });
-});
-
-app.post('/api/vote', (req, res) => {
-  const p = requirePlayer(req, res); if (!p) return;
-  game.castVote(p.id, req.body.targetId);
   res.json({ ok: true });
 });
 
@@ -443,9 +437,6 @@ app.get('/api/gm/state', (req, res) => {
   const cw = game.currentWorld();
   res.json({
     ...game.publicState(),
-    glitchId: game.glitchId, // l'hôte a le droit de savoir
-    glitchName: game.player(game.glitchId)?.name || null,
-    votes: game.votes,
     quizMaster,
     enqueteMaster: game.enqueteMaster(),
     mosaicWord: game.activity && game.activity.type === 'mosaic' ? game.activity.word : null,
@@ -454,7 +445,7 @@ app.get('/api/gm/state', (req, res) => {
     drawWord: game.activity?.type === 'draw' ? game.activity.word : null,
     // Solution du monde courant (l'hôte doit pouvoir débloquer/aider)
     worldCode: cw ? cw.code : null,
-    worldResoluParVote: cw ? !!cw.resoluParVote : false,
+    worldEnquete: cw ? !!cw.enqueteWorld : false,
     worldIndices: cw ? cw.indices || null : null,
   });
 });
@@ -464,7 +455,6 @@ app.post('/api/gm/action', (req, res) => {
   const { action, payload = {} } = req.body;
   switch (action) {
     case 'start': game.startGame(); break;
-    case 'assignGlitch': game.assignGlitch(); break;
     case 'completeWorld': game.completeWorld({ celebrate: false }); break;
     case 'startActivity': game.startActivity(payload.type, payload.opts || {}); break;
     case 'stopActivity': game.stopActivity(); break;
@@ -475,8 +465,6 @@ app.post('/api/gm/action', (req, res) => {
     case 'pianoDemo': game.pianoDemo(); break;
     case 'drawGage': game.drawGage(payload.pool || null, payload.targetId || null); break;
     case 'clearGage': game.clearGage(); break;
-    case 'startVote': game.startVote(); break;
-    case 'tallyVotes': return res.json({ ok: true, result: game.tallyVotes() });
     case 'loseLife': game.loseLife(payload.playerId); break;
     case 'reset': game.reset(); break;
     case 'setPhotoPhase': game.setPhotoPhase(payload.phase ?? null); break;

@@ -246,14 +246,13 @@ function mazeBlock(){
   </div>`;
 }
 
-// --- W3 : puzzle PIXEL à découper (retirer 1 pièce = sabotage) ---
+// --- W3 : puzzle PIXEL à découper ---
 function pixelBlock(){
   const tiles='PIXEL'.split('').map((ch,i)=>`<div class="tile5">${ch}${i===2?'<span class="cible">🎯</span>':''}</div>`).join('');
   return `<div class="enig">
     <div class="ehead">MONDE 3 — BOSS DE MI-PARCOURS · PUZZLE « PIXEL »</div>
     <div class="esub">À glisser dans l'enveloppe 3. Découpe les 5 pièces ; assemblées dans l'ordre elles donnent le mot-code. La pièce 🎯 (centrale) est le repère de ZILDA.</div>
     <div class="tiles5">${tiles}</div>
-    <div style="margin-top:3mm"><span class="stamp">SABOTAGE : retire 1 pièce avant de fermer</span></div>
     <div class="cut">✂️ Découper les 5 tuiles sur les pointillés.</div>
   </div>`;
 }
@@ -267,15 +266,13 @@ function goldBlock(num, title, gt, code, note){
   </div>`;
 }
 
-// --- W5 : preuves (heures à recouper) ---
+// --- W5 : LA GRANDE ENQUÊTE (matériel détaillé imprimé à part) ---
 function preuvesBlock(){
-  const stamps = [['COLIS 2','21 h 12'],['COLIS 3','22 h 30'],['COLIS 4','23 h 05']]
-    .map(([c,h])=>`<span class="stamp">${c} — ${h}</span>`).join('');
   return `<div class="enig">
-    <div class="ehead">MONDE 5 — PREUVES</div>
-    <div class="esub">À TAMPONNER/coller sur les colis 2, 3 et 4 (les joueurs recoupent les heures façon Cluedo). Les fragments de preuve perso sont distribués via les téléphones. Ce monde se résout par un VOTE.</div>
-    <div>${stamps}</div>
-    <div class="cut">Astuce : note les mêmes heures au dos des colis 2/3/4 quand tu les prépares.</div>
+    <div class="ehead">MONDE 5 — LA GRANDE ENQUÊTE</div>
+    <div class="esub">Ce monde est une enquête collaborative qui se joue sur la BORNE et les téléphones : sa RÉSOLUTION (tous les actes élucidés) ouvre le Monde 6. Aucun code de monde à taper.</div>
+    <div style="margin-top:3mm"><span class="stamp">Imprime le dossier détaillé via « 🖨️ Imprimer le matériel d'enquête » (page /print-enquete)</span></div>
+    <div class="cut">Les pièces à conviction perso sont distribuées automatiquement via les téléphones.</div>
   </div>`;
 }
 
@@ -316,7 +313,7 @@ function render(data){
     return `<div class="colis">
       <div class="head"><div class="num">${n}</div>
         <div><div class="titre">COLIS ${n}</div><div style="font-size:11px;color:#555">${esc(titre)}</div>
-        ${code?`<div class="code">🔑 Code : <b>${esc(code)}</b></div>`:'<div class="code">🗳️ Résolu par VOTE</div>'}</div>
+        ${code?`<div class="code">🔑 Code : <b>${esc(code)}</b></div>`:'<div class="code">🕵️ Résolu en élucidant LA GRANDE ENQUÊTE</div>'}</div>
       </div>
       <div class="lbl">À mettre dans l’enveloppe :</div>
       <ul>${contenu.map(x=>`<li>${esc(x)}</li>`).join('') || '<li>(à compléter selon ton matériel)</li>'}</ul>

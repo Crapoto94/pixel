@@ -311,14 +311,6 @@ function render(){
     html = activityView(STATE.activity);
   }
 
-  else if (STATE.phase === 'vote') {
-    html = `<div class="center">
-      <h1 class="big neon-pink">🗳️ DÉMASQUEZ LE GLITCH</h1>
-      <p class="big">Votez sur vos téléphones…</p>
-      <div class="wheel">🐛❓</div>
-    </div>`;
-  }
-
   else if (STATE.phase === 'win') {
     html = `<div style="position:fixed;inset:0;z-index:9000;background:#000">
       <div id="win-video-player" style="width:100%;height:100%"></div>

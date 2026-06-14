@@ -23,7 +23,7 @@ export const GAGES = [
   { id: 'compliment', titre: 'BUFF', desc: 'Lance un “buff” : fais un vrai compliment sincère à la personne à ta gauche.', alt: '—', intensity: 1, pool: ['solo', 'fun'] },
   { id: 'royalty', titre: 'ROYALTY 👑', desc: 'Le PLAYER ONE désigne qui relève le prochain défi. Sans justification.', alt: '—', intensity: 2, pool: ['vincent'] },
   { id: 'exil', titre: 'BANNI 2 MIN', desc: 'Tu es éjecté du jeu 2 min (va “recharger”). Reviens avec une boisson pour quelqu’un.', intensity: 1, pool: ['solo', 'fun'] },
-  { id: 'glitch-tax', titre: 'SABOTAGE COLLECTIF', desc: 'Toute la table fait un “cheers” (gorgée ou soft, au choix de chacun).', alt: '—', intensity: 1, pool: ['collectif', 'sabotage'] },
+  { id: 'cheers-collectif', titre: 'CHEERS COLLECTIF 🥂', desc: 'Toute la table fait un “cheers” (gorgée ou soft, au choix de chacun).', alt: '—', intensity: 1, pool: ['collectif'] },
 ];
 
 // Tire un gage au hasard, filtré par pool si fourni.

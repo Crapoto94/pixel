@@ -77,14 +77,13 @@ function render(){
     </div>
     ${w ? `<div class="mt" style="background:#021a16;border:1px solid var(--neon2);border-radius:6px;padding:8px">
       <b class="neon-cyan">🔑 SOLUTION (réservé hôte) :</b>
-      ${S.worldResoluParVote
-        ? '<code>— se résout par un VOTE —</code>'
+      ${S.worldEnquete
+        ? '<code>— se résout en élucidant LA GRANDE ENQUÊTE —</code>'
         : `<code style="color:var(--neon3);font-size:20px">${esc(S.worldCode||'?')}</code>`}
       ${w && w.konamiGate ? `<div class="muted" style="font-size:12px;margin-top:4px">🎮 Monde 6 : TOUS les joueurs doivent saisir le Konami (manette) — ${(S.w6&&S.w6.doneCount)||0}/${(S.w6&&S.w6.total)||0}. Puis la commande <code>${esc(S.worldCode||'R38007')}</code> = REBOOT en LEET (REBOOT en clair → indice « LEET »).</div>` : ''}
-      <div class="muted" style="font-size:12px;margin-top:4px">Un joueur tape ce code sur son téléphone → le monde se valide. (Ou « ✅ Valider monde » pour forcer.)</div>
+      <div class="muted" style="font-size:12px;margin-top:4px">${S.worldEnquete ? 'La résolution de l\'enquête valide le monde. (Ou « ✅ Valider monde » pour forcer.)' : 'Un joueur tape ce code sur son téléphone → le monde se valide. (Ou « ✅ Valider monde » pour forcer.)'}</div>
     </div>`:''}
-    <div class="mt"><b>🐛 GLITCH :</b> <code>${esc(S.glitchName||'(non assigné)')}</code>
-      ${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé</span>':''}</div>
+    <div class="mt">${S.heroAwakened?'<span class="pill neon-yellow">👑 Vincent éveillé (Game Master)</span>':''}</div>
   </div>
 
   <div class="card">
@@ -92,7 +91,6 @@ function render(){
     <div class="grid mt">
       <button class="btn secondary" onclick="startAct('briefing')">📖 BRIEFING</button>
       <button class="btn secondary" onclick="act('start')">▶ DÉMARRER</button>
-      <button class="btn" onclick="act('assignGlitch')">🎲 Tirer Glitch</button>
       <button class="btn warn" onclick="act('completeWorld')">✅ Valider monde →</button>
       ${S.hintVideo ? `<button class="btn" onclick="act('clearHint')">⏹ Couper l'indice 💡</button>` : ''}
       <button class="btn danger" onclick="if(confirm('Tout réinitialiser ?'))act('reset')">⟲ RESET</button>
@@ -327,15 +325,6 @@ function render(){
   </div>
 
   <div class="card">
-    <div class="pixel neon-cyan" style="font-size:11px">VOTE GLITCH</div>
-    <div class="grid mt">
-      <button class="btn" onclick="act('startVote')">🗳️ Ouvrir vote</button>
-      <button class="btn warn" onclick="tally()">📊 Dépouiller</button>
-    </div>
-    <div class="muted mt">Votes: <code>${esc(JSON.stringify(S.votes||{}))}</code></div>
-  </div>
-
-  <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">VIES</div>
     <div class="grid3 mt">
       ${S.players.map(p=>`<button class="btn danger" onclick="act('loseLife',{playerId:'${p.id}'})">💔 ${esc(p.name)} (${p.lives})</button>`).join('')}
@@ -399,7 +388,6 @@ function drawGage(){
   act('drawGage',{pool:document.getElementById('gagePool').value||null,
     targetId:document.getElementById('gageTarget').value||null});
 }
-function tally(){ act('tallyVotes').then(r=>{ if(r.result) alert(r.result.found?'TROUVÉ !':'Raté — le Glitch a survécu.'); }); }
 
 // Auto-connexion : si aucun mot de passe n'est configuré côté serveur, accès direct.
 connect('');

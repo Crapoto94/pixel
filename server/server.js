@@ -359,6 +359,13 @@ app.post('/api/piano/press', (req, res) => {
   res.json({ ok: true });
 });
 
+// Piano réparti : un joueur demande à la BORNE de rejouer la mélodie
+app.post('/api/piano/replay', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  game.pianoDemo();
+  res.json({ ok: true });
+});
+
 // --- API Game Master (Vincent éveillé OU Marc l'hôte) ---------------
 app.post('/api/gm/gage', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

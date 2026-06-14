@@ -90,8 +90,7 @@ export const WORLDS = [
       "pour réveiller le grand clavier… »",
     // L'énigme à résoudre pour DÉBLOQUER le piano (devinette « M. et Mme »).
     enigme:
-      "Monsieur et Madame ERGEBEL ont un fils. Comment se prénomme-t-il ? " +
-      "(tapez le prénom sur un téléphone pour réveiller le PIANO).",
+      "Monsieur et Madame ERGEBEL ont un fils. Comment se prénomme-t-il ?",
     pianoWorld: true, // après le mot-code, piano réparti : chaque téléphone a ses touches
     code: 'OCTAVE', // réponse à la devinette → débloque le piano réparti
     codeNormalise: 'OCTAVE',

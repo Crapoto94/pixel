@@ -447,7 +447,8 @@ export class GameState {
         this.pianoUnlocked = true;
         this.pianoStep = 0;
         this.pianoStatus = 'playing';
-        this.addLog(`🎹 ${p ? p.name : '?'} a trouvé « ${world.code} » — le PIANO RÉPARTI se réveille !`);
+        this.pianoDemoAt = Date.now(); // la BORNE joue la mélodie à reproduire dès le réveil
+        this.addLog(`🎹 ${p ? p.name : '?'} a trouvé « ${world.code} » — le PIANO RÉPARTI se réveille ! Écoutez la mélodie…`);
         this.touch();
         return { ok: true };
       }
@@ -1609,12 +1610,12 @@ export class GameState {
     }
   }
 
-  // Le MJ (re)joue la mélodie en démo sur la borne (monde OU activité).
+  // Rejoue la mélodie en démo sur la BORNE (monde OU activité). Ne réinitialise
+  // PAS la progression des joueurs : on ré-écoute juste la séquence.
   pianoDemo() {
     if (this.pianoWorldActive()) {
       this.pianoDemoAt = Date.now();
-      this.pianoStep = 0;
-      this.addLog('🎶 Démo de la mélodie jouée sur la borne (piano).');
+      this.addLog('🎶 La borne rejoue la mélodie (piano).');
       this.touch();
       return;
     }

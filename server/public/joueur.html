@@ -799,31 +799,47 @@ function musicController(act) {
 function musicPress(index, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/music/press', { index }); }
 
 // =================== PIANO RÉPARTI (manette joueur = un demi-octave) ===========
+// Vrai look piano : touches blanches jointives, touches noires en surimpression.
 function pianoController(act){
   if (act.myPos < 0){
     return `<div class="card center glow-box"><div class="pill neon-pink">🎹 PIANO GÉANT</div>
       <p>Regarde la BORNE 📺 — tu rejoindras au prochain morceau.</p></div>`;
   }
   const win = act.status==='win';
-  const myTurn = act.nextPos === (act.myPos+1);
-  const keys = (act.myKeys||[]).map(k=>{
-    const bg = k.white ? '#f4f4f8' : '#15131f';
-    const col = k.white ? '#15131f' : '#f4f4f8';
-    const hl = (k.next && !win) ? 'box-shadow:0 0 0 4px var(--neon3),0 0 22px var(--neon3);transform:translateY(2px);' : '';
-    return `<button onpointerdown="pianoPress(${k.off},${k.freq})"
-      style="flex:1;min-width:0;height:130px;border:2px solid #000;border-radius:0 0 9px 9px;background:${bg};color:${col};
-      font-family:var(--pixel);font-size:11px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;cursor:pointer;touch-action:manipulation;${hl}">${esc(k.name)}</button>`;
-  }).join('');
+  const keys = act.myKeys || [];
+  const nW = Math.max(1, keys.filter(k=>k.white).length);
+  const wPct = 100/nW;            // largeur d'une touche blanche
+  const bPct = wPct*0.62;         // largeur d'une touche noire
+  let whiteH = '', blackH = '', wSeen = 0;
+  keys.forEach(k=>{
+    if (k.white){
+      whiteH += `<button onpointerdown="pianoPress(${k.off},${k.freq})"
+        style="flex:1;min-width:0;height:100%;background:#f6f6fa;border:1px solid #1a1a1a;border-radius:0 0 7px 7px;
+        color:#444;font-family:var(--pixel);font-size:9px;display:flex;align-items:flex-end;justify-content:center;
+        padding-bottom:8px;cursor:pointer;touch-action:manipulation">${esc(k.name)}</button>`;
+      wSeen++;
+    } else {
+      let left = wSeen*wPct - bPct/2;            // posée sur la jointure des blanches
+      if (left < 0) left = 0; if (left > 100-bPct) left = 100-bPct;
+      blackH += `<button onpointerdown="pianoPress(${k.off},${k.freq})"
+        style="position:absolute;top:0;left:${left}%;width:${bPct}%;height:62%;background:#14121d;border:1px solid #000;
+        border-radius:0 0 5px 5px;color:#cbd5ff;font-family:var(--pixel);font-size:7px;display:flex;align-items:flex-end;
+        justify-content:center;padding-bottom:6px;cursor:pointer;touch-action:manipulation;z-index:2;box-shadow:0 3px 4px #0008">${esc(k.name)}</button>`;
+    }
+  });
   return `<div class="card center glow-box">
-    <div class="pill neon-pink">🎹 PIANO GÉANT — TÉLÉPHONE N°${act.myPos+1}</div>
-    <p class="muted" style="font-size:12px;margin:4px 0 8px">Place ton téléphone au bon endroit (vois l'ordre sur la BORNE) et joue quand ta touche s'allume.</p>
-    <div style="display:flex;gap:2px;background:#000;padding:3px;border-radius:0 0 12px 12px">${keys}</div>
-    <p class="mt">${win
-      ? '<span class="neon-yellow pixel" style="font-size:12px">🎉 MÉLODIE RÉUSSIE !</span>'
-      : (act.nextName ? `Prochaine note : <b class="neon-cyan">${esc(act.nextName)}</b>${myTurn?' — <b class="neon-yellow blink">À TOI !</b>':''}` : '')}</p>
+    <div class="pill neon-pink">🎹 PIANO — TÉLÉPHONE N°${act.myPos+1}</div>
+    <p class="muted" style="font-size:12px;margin:4px 0 10px">Écoute la mélodie sur la BORNE, puis retrouve-la sur ton clavier.</p>
+    <div style="position:relative;height:160px;background:#000;padding:3px;border-radius:0 0 12px 12px">
+      <div style="display:flex;gap:1px;height:100%">${whiteH}</div>
+      ${blackH}
+    </div>
+    <button class="btn mt" onclick="pianoReplay()">🔁 Rejouer la séquence</button>
+    ${win ? '<p class="mt"><span class="neon-yellow pixel" style="font-size:12px">🎉 MÉLODIE RÉUSSIE !</span></p>' : ''}
   </div>`;
 }
 function pianoPress(off, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/piano/press', { off }); }
+function pianoReplay(){ if(window.SFX) SFX.unlock(); api('/api/piano/replay', {}); }
 
 function roueController(act){
   const g = act.gage || {};

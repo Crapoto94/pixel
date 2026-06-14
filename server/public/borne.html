@@ -175,6 +175,10 @@ function render(){
   if (briefTimer && !(STATE.activity && STATE.activity.type==='briefing')){
     clearInterval(briefTimer); briefTimer = null; briefKey = null;
   }
+  // Nettoyage du diaporama d'enquête si on n'est plus dans sa phase « briefing »
+  if (enqBriefIv && !(STATE.activity && STATE.activity.type==='enquete' && STATE.activity.sub==='briefing')){
+    clearInterval(enqBriefIv); enqBriefIv = null; enqBriefKey = null;
+  }
   // --- BRIEFING : déroulé scénario + attendus par joueur ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='briefing'){
     setupBriefing(); return;
@@ -897,6 +901,9 @@ function renderRoueBorne(a){
 
 // =================== ENQUÊTE (affichage borne) ===================
 function renderEnqueteBorne(a){
+  // Briefing d'ouverture en SLIDES (ambiance mystérieuse) avant l'acte 1.
+  if (a.sub === 'briefing'){ setupEnqueteBrief(a); return; }
+  if (enqBriefIv){ clearInterval(enqBriefIv); enqBriefIv = null; enqBriefKey = null; }
   // Affiche le "mur d'enquête" : pitch, acte courant (article + énigme + indices),
   // et les révélations des actes déjà résolus.
   if (a.done && a.finale){
@@ -946,15 +953,7 @@ function renderEnqueteBorne(a){
   const dots = Array.from({length:a.total},(_,i)=>
     `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:0 4px;background:${i<a.actIndex?'var(--ok)':(i===a.actIndex?'var(--neon)':'#ffffff33')}"></span>`).join('');
 
-  // Briefing d'enquête : affiché AU-DESSUS de l'acte 1 (contexte pour tous).
-  const briefingBlock = (a.actIndex === 0 && a.briefing) ? `
-    <div class="card glow-box" style="text-align:left;border-color:var(--neon);background:#0a0420;margin-bottom:16px">
-      <div class="center"><div class="pill neon-yellow">🗂️ BRIEFING D'ENQUÊTE — ${esc(a.title||'DOSSIER 94100')}</div></div>
-      <p style="font-size:20px;line-height:1.5;white-space:pre-line;margin-top:10px">${esc(a.briefing)}</p>
-    </div>` : '';
-
   stage.innerHTML = `<div style="max-width:1000px;margin:0 auto">
-    ${briefingBlock}
     <div class="center">
       <div class="pill neon-pink">🕵️ DOSSIER 94100 · ACTE ${act.num}/${a.total}</div>
       <h1 class="big neon-cyan" style="margin:10px 0">${esc(act.title||'')}</h1>
@@ -981,6 +980,44 @@ function renderEnqueteBorne(a){
     ${wall?`<div style="margin-top:14px"><div class="pixel neon-yellow center" style="font-size:13px">🧩 MUR D'ENQUÊTE</div>${wall}</div>`:''}
   </div>`;
   tickerEl.textContent = `ENQUÊTE — ${a.title} · Acte ${act.num}/${a.total} : ${act.title||''}`;
+}
+
+// =================== BRIEFING D'ENQUÊTE (slides sur la borne) ===================
+// Les slides défilent ~10 min (ambiance mystérieuse). Le passage à l'acte 1 est
+// piloté par le SERVEUR (minuterie) ; ici on ne fait que dérouler l'affichage,
+// calé sur l'horloge LOCALE de la borne (pas de décalage serveur/client).
+let enqBriefIv = null, enqBriefKey = null, enqBriefStart = 0;
+function setupEnqueteBrief(a){
+  const slides = a.briefSlides || [];
+  if (!slides.length) return;
+  if (enqBriefKey === a.briefAt) return;          // déjà lancé pour CE briefing
+  enqBriefKey = a.briefAt;
+  enqBriefStart = performance.now();
+  if (enqBriefIv) clearInterval(enqBriefIv);
+  const total = slides.reduce((s, sl) => s + (sl.sec || 8), 0);
+  const draw = () => {
+    const el = (performance.now() - enqBriefStart) / 1000;
+    let acc = 0, idx = slides.length - 1;
+    for (let i = 0; i < slides.length; i++){ const d = slides[i].sec || 8; if (el < acc + d){ idx = i; break; } acc += d; }
+    renderEnqueteSlide(slides[idx], idx, slides.length, Math.min(1, el / total));
+  };
+  draw();
+  enqBriefIv = setInterval(draw, 500);
+}
+function renderEnqueteSlide(s, idx, n, prog){
+  const dots = Array.from({length:n}, (_,i) =>
+    `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 3px;background:${i<=idx?'var(--neon)':'#ffffff22'}"></span>`).join('');
+  stage.innerHTML = `<div class="center" style="min-height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center">
+    <div class="pill" style="color:#fff;background:#7a1020;border:1px solid #ff2e3e">🗂️ DOSSIER 94100 — OUVERTURE</div>
+    <h1 class="huge neon-pink pixel" style="margin:20px 0 14px;letter-spacing:2px">${esc(s.title||'')}</h1>
+    <p style="max-width:1040px;line-height:1.6;font-size:30px;color:#e8e8ff">${esc(s.text||'')}</p>
+    <div style="margin-top:28px">${dots}</div>
+    <div style="width:60%;max-width:760px;height:6px;background:#ffffff22;border-radius:4px;margin-top:14px;overflow:hidden">
+      <div style="height:100%;width:${Math.round(prog*100)}%;background:linear-gradient(90deg,#ff2e88,#2effd5);transition:width .5s linear"></div>
+    </div>
+    <p class="muted" style="margin-top:10px;font-size:14px">${idx+1}/${n}</p>
+  </div>`;
+  tickerEl.textContent = "MEURTRE À SAINT-MAUR — le dossier s'ouvre…";
 }
 
 // Plan stylisé de Saint-Maur : la Marne + les sites publics remarquables.

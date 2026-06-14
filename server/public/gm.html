@@ -253,6 +253,11 @@ function render(){
       <div class="pixel" style="font-size:11px;color:var(--ok)">🕵️ ENQUÊTE — RÉSOLUE ✔</div>
       <div class="mt">Affaire close. Coupable : <code>GUILLAUME</code>.</div>
       <button class="btn mt" onclick="act('stopActivity')">⏹ Terminer</button></div>`;
+    if (em.sub === 'briefing') return `<div class="card" style="border-color:var(--neon)">
+      <div class="pixel neon-pink" style="font-size:11px">🗂️ ENQUÊTE — BRIEFING EN COURS</div>
+      <div class="muted mt" style="font-size:13px">Les slides défilent sur la borne (~10 min). Les téléphones affichent « MEURTRE À SAINT-MAUR ». L'acte 1 démarrera automatiquement.</div>
+      <button class="btn warn mt" onclick="act('enqueteSkip')">⏭ Passer le briefing → Acte 1</button>
+    </div>`;
     return `<div class="card" style="border-color:var(--neon3)">
       <div class="pixel neon-yellow" style="font-size:11px">🕵️ ENQUÊTE — ACTE ${em.num}/${em.total} : ${esc(em.title||'')}</div>
       <div class="mt">✔ Code attendu : <code>${esc(em.answer||'')}</code></div>

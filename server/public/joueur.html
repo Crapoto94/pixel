@@ -943,15 +943,18 @@ function enqueteController(act) {
       <p class="muted">Regarde la BORNE 📺</p>
     </div>`;
   }
+  // Briefing d'ouverture en slides : chaque téléphone affiche juste le titre.
+  if (act.sub === 'briefing') {
+    const lines = (act.phoneBrief || '🔪 MEURTRE À SAINT-MAUR\nRegardez la borne 📺').split('\n');
+    return `<div class="card center glow-box" style="border-color:var(--danger);background:#14000a;min-height:60vh;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-size:54px;line-height:1.1">🔪</div>
+      <h2 class="neon-pink pixel" style="font-size:18px;margin:14px 0 6px;letter-spacing:1px">${esc(lines[0]||'')}</h2>
+      <p class="big neon-cyan blink" style="margin-top:6px">${esc(lines.slice(1).join(' ')||'Regarde la borne 📺')}</p>
+      <p class="muted" style="font-size:12px;margin-top:14px">Le dossier s'ouvre… l'enquête va commencer.</p>
+    </div>`;
+  }
   const a = act.act || {};
   if (_enqActSeen !== a.num) { _enqActSeen = a.num; _enqDraft = ''; } // nouvel acte → on vide le brouillon
-  // Briefing d'enquête : contexte affiché à l'acte 1 (regardez surtout la borne).
-  const briefingCard = (a.num === 1 && act.briefing) ? `
-    <div class="card glow-box" style="border-color:var(--neon);background:#0a0420">
-      <div class="pill neon-yellow">🗂️ BRIEFING D'ENQUÊTE</div>
-      <p style="font-size:14px;line-height:1.45;white-space:pre-line;margin-top:6px">${esc(act.briefing)}</p>
-      <p class="muted" style="font-size:12px">📺 Le détail des documents est sur la BORNE.</p>
-    </div>` : '';
   const frags = (act.myFragments||[]).map(f=>`
     <div style="border:2px solid var(--neon3);border-radius:10px;padding:10px;margin:8px 0;background:#1a1400">
       <div class="pill neon-yellow" style="font-size:11px">${esc(f.label||'PIÈCE')}</div>
@@ -959,7 +962,7 @@ function enqueteController(act) {
     </div>`).join('');
   const wrong = act.lastWrong && (Date.now()-act.lastWrong < 3000)
     ? '<p class="pixel" style="font-size:11px;color:var(--danger)">✘ Code refusé — recoupez encore !</p>' : '';
-  return `${briefingCard}<div class="card glow-box">
+  return `<div class="card glow-box">
     <div class="pill neon-pink">🕵️ ENQUÊTE — ACTE ${a.num}/${act.total}</div>
     <h2 class="neon-cyan">${esc(a.title||'')}</h2>
     <p class="muted" style="font-size:13px">📍 ${esc(a.place||'')}</p>

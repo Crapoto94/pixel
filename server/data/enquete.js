@@ -31,19 +31,25 @@ export const ENQUETE = {
     "champagne brisés. Pas d'effraction. Juste un toast funèbre. Rien ne vous sera donné : tout " +
     "se déduit. Croisez les articles, les documents et vos pièces à conviction.",
 
-  // Briefing affiché AVANT l'acte 1 : le contexte commun à toute la table.
-  briefing:
-    "📍 Saint-Maur-des-Fossés — Hôtel de Ville, salle des mariages.\n" +
-    "🔴 LES FAITS : Nathalie NEVES, directrice des finances de la mairie, est retrouvée morte au " +
-    "petit matin, entourée de 50 coupes de champagne brisées. Aucune effraction : le tueur " +
-    "connaissait les lieux… et les codes.\n" +
-    "🧩 LE CONTEXTE : derrière ce meurtre resurgit une vieille affaire de FAUSSES FACTURES — un " +
-    "marché de communication de la mairie truqué pendant des années.\n" +
-    "🎯 VOTRE MISSION : démasquer le MEURTRIER et reconstituer le RÉSEAU de fraude — qui " +
-    "falsifiait ? qui payait ? qui couvrait ? qui a voulu parler ?\n" +
-    "🔍 MÉTHODE : rien n'est donné en clair. La BORNE affiche les DOCUMENTS (articles, registres, " +
-    "plans, e-mails…). Chacun détient des PIÈCES À CONVICTION sur son téléphone. Croisez, " +
-    "déduisez, et tapez le code de chaque acte. 8 actes vous séparent de la vérité.",
+  // Texte affiché sur CHAQUE téléphone pendant le briefing en slides.
+  phoneBrief: "🔪 MEURTRE À SAINT-MAUR\nRegardez la borne 📺",
+
+  // Briefing d'OUVERTURE en SLIDES (défilent sur la BORNE ~10 min, ambiance
+  //  mystérieuse), AVANT l'acte 1. `sec` = durée d'affichage de la slide.
+  briefingSlides: [
+    { title: "DOSSIER 94100", text: "SAINT-MAUR-DES-FOSSÉS. Une nuit d'hiver. La boucle de la Marne dort sous le givre. À l'Hôtel de Ville, une seule fenêtre reste allumée : la salle des mariages.", sec: 45 },
+    { title: "03 h 12 — L'APPEL", text: "Un agent de sécurité pousse la lourde porte de la salle des mariages. Ce qu'il découvre le fera trembler jusqu'au matin… et vous tiendra éveillés toute la nuit.", sec: 42 },
+    { title: "LA VICTIME", text: "Nathalie NEVES, directrice des finances de la mairie. Étendue au sol, élégante jusque dans la mort, le visage tourné vers la table d'honneur. Comme si elle attendait encore quelqu'un.", sec: 50 },
+    { title: "CINQUANTE COUPES", text: "Autour d'elle, cinquante coupes de champagne. Toutes brisées. Une seule, intacte, encore pleine. Un toast funèbre. Personne ne porte cinquante coupes par hasard. C'est un message.", sec: 52 },
+    { title: "AUCUNE EFFRACTION", text: "Portes verrouillées de l'intérieur. Fenêtres closes. Aucune trace de lutte. Le meurtrier connaissait les lieux. Il connaissait les codes. Il était… de la maison.", sec: 50 },
+    { title: "LES PARAPHEURS PERDUS", text: "Dans le tiroir de la victime : des magazines municipaux annotés au stylo rouge, et trois mots griffonnés à la hâte — « les parapheurs perdus ». Une dette que quelqu'un est venu réclamer.", sec: 52 },
+    { title: "LE SCANDALE", text: "Des années durant, un marché de communication de la mairie aurait été truqué. Fausses factures. Bons de commande réécrits après signature. Des centaines de milliers d'euros évaporés dans l'encre.", sec: 55 },
+    { title: "LE RÉSEAU", text: "Qui falsifiait ? Qui payait ? Qui couvrait ? Et qui, un soir de trop, a voulu parler ? La mort de Nathalie Neves ne cache pas un crime. Elle en cache toute une chaîne.", sec: 52 },
+    { title: "LA BRIGADE, C'EST VOUS", text: "Cette nuit, vous êtes les enquêteurs. Sept regards, sept mémoires. Aucun de vous ne détient la vérité entière — mais chacun en tient un fragment. Seuls, vous êtes aveugles. Ensemble, redoutables.", sec: 52 },
+    { title: "LA MÉTHODE", text: "Rien ne vous sera donné en clair. La BORNE affiche les DOCUMENTS — articles, registres, plans, e-mails. Vos téléphones gardent vos PIÈCES À CONVICTION. Croisez. Déduisez. Tapez le code de chaque acte.", sec: 55 },
+    { title: "HUIT ACTES", text: "Huit actes vous séparent du nom du meurtrier. Huit verrous. Huit vérités. Au bout du couloir : un dossier refermé… ou une affaire enterrée à jamais.", sec: 48 },
+    { title: "L'ENQUÊTE COMMENCE", text: "Inspecteurs, prenez place. La nuit sera longue. Le premier dossier s'ouvre maintenant. ACTE 1 — La revue de presse.", sec: 40 },
+  ],
 
   acts: [
     // ===============================================================

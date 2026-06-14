@@ -69,6 +69,7 @@ export class GameState {
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
     if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
+    if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.tron = null;   // partie Tron en cours
@@ -131,7 +132,7 @@ export class GameState {
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
       g2048Timer, g2048, pongTimer, pong,
-      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, ...data } = this;
+      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, _enqueteBriefTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -796,6 +797,16 @@ export class GameState {
       this.activity.lastWrong = 0;
       this.activity.done = false;
       this._enqueteDistribute();
+      // Briefing d'OUVERTURE en slides (sur la borne, ~10 min) AVANT l'acte 1 ;
+      // pendant ce temps les téléphones affichent « MEURTRE À SAINT-MAUR ».
+      this.activity.sub = 'briefing';
+      this.activity.briefAt = Date.now();
+      const totalMs = (ENQUETE.briefingSlides || []).reduce((s, sl) => s + (sl.sec || 8), 0) * 1000;
+      if (this._enqueteBriefTimer) clearTimeout(this._enqueteBriefTimer);
+      this._enqueteBriefTimer = setTimeout(() => {
+        this._enqueteBriefTimer = null;
+        this.enqueteStartActs();
+      }, totalMs || 1000);
     }
     // Roue des gages : segments affichés, la roue tourne et tombe sur un gage,
     // puis décompte, puis vote « meilleur » (+1 vie au gagnant, −1 aux autres).
@@ -1124,6 +1135,7 @@ export class GameState {
     if (!a || a.type !== 'enquete') return;
     const act = ENQUETE.acts[a.actIndex];
     a.frag = {};
+    a.docDist = {};
     if (!act) return;
     const players = this.players.filter((p) => p.connected);
     if (!players.length) return;
@@ -1131,12 +1143,30 @@ export class GameState {
       const owner = players[i % players.length];
       (a.frag[owner.id] = a.frag[owner.id] || []).push(f);
     });
+    // Documents À VISUALISER (journal, mails, annuaire…) : un par joueur, à ouvrir
+    // sur SON téléphone. Répartis en décalé pour qu'aucun joueur n'ait tout.
+    (act.docs || []).forEach((d, i) => {
+      const owner = players[i % players.length];
+      (a.docDist[owner.id] = a.docDist[owner.id] || []).push(d);
+    });
+  }
+
+  // Fin du briefing en slides → on ouvre l'ACTE 1 (auto après ~10 min, ou via le MJ).
+  enqueteStartActs() {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete' || a.sub !== 'briefing') return;
+    if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
+    a.sub = 'acts';
+    this._enqueteDistribute();
+    this.addLog(`🕵️ Briefing terminé — ACTE 1 : « ${ENQUETE.acts[0]?.title || ''} ».`);
+    this.touch();
   }
 
   // Un joueur propose un code pour l'acte courant.
   submitEnqueteCode(playerId, code) {
     const a = this.activity;
     if (!a || a.type !== 'enquete' || a.done) return { ok: false, reason: 'Pas d\'enquête en cours.' };
+    if (a.sub === 'briefing') return { ok: false, reason: 'Le briefing est en cours — regardez la borne.' };
     const act = ENQUETE.acts[a.actIndex];
     if (!act) return { ok: false, reason: 'Aucun acte actif.' };
     if (normalize(code) === normalize(act.answer)) {
@@ -1181,6 +1211,8 @@ export class GameState {
   enqueteSkip() {
     const a = this.activity;
     if (!a || a.type !== 'enquete' || a.done) return;
+    // Pendant le briefing en slides : « passer » = ouvrir directement l'acte 1.
+    if (a.sub === 'briefing') { this.enqueteStartActs(); return; }
     const act = ENQUETE.acts[a.actIndex];
     a.actIndex += 1;
     a.lastWrong = 0;
@@ -1212,7 +1244,11 @@ export class GameState {
       type: 'enquete',
       title: ENQUETE.title,
       pitch: ENQUETE.pitch,
-      briefing: ENQUETE.briefing || null,
+      // Briefing d'ouverture en slides (sub='briefing') puis les actes (sub='acts').
+      sub: a.sub || 'acts',
+      briefSlides: ENQUETE.briefingSlides || [],
+      briefAt: a.briefAt || 0,
+      phoneBrief: ENQUETE.phoneBrief || '🔪 MEURTRE À SAINT-MAUR\nRegardez la borne 📺',
       total: acts.length,
       actIndex: idx,
       solvedCount: idx,
@@ -1226,12 +1262,17 @@ export class GameState {
           shift: act.cipher.shift, help: act.cipher.help,
         } : null,
         scene: act.scene, riddle: act.riddle, humor: act.humor || null,
+        // Acte à DOCUMENTS répartis : la borne n'affiche QUE l'énigme ; les
+        // documents (journal, mails, annuaire…) sont à ouvrir sur les téléphones.
+        hasDocs: !!(act.docs && act.docs.length),
       },
       hintList: act ? (act.hints || []).slice(0, nHints) : [],
       // Le « mur d'enquête » : révélations des actes déjà résolus
       wall: acts.slice(0, idx).map((x) => ({ num: x.num, title: x.title, reveal: x.reveal })),
       lastWrong: a.lastWrong || 0,
       myFragments: forPlayerId ? (a.frag?.[forPlayerId] || []) : [],
+      // Documents que CE joueur détient et peut ouvrir (bodies envoyés au seul porteur).
+      myDocs: forPlayerId ? (a.docDist?.[forPlayerId] || []) : [],
       finale: a.done ? ENQUETE.finale : null,
     };
   }
@@ -1243,6 +1284,7 @@ export class GameState {
     const act = ENQUETE.acts[a.actIndex];
     return {
       done: !!a.done,
+      sub: a.sub || 'acts',
       actIndex: a.actIndex,
       total: ENQUETE.acts.length,
       num: act ? act.num : null,
@@ -1265,6 +1307,7 @@ export class GameState {
     if (this._autoAdvanceTimer) { clearTimeout(this._autoAdvanceTimer); this._autoAdvanceTimer = null; }
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
     if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
+    if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;

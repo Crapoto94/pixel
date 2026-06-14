@@ -49,6 +49,7 @@
 <body class="scanlines">
 <div id="yt-amb"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-brief" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-enq"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-bt"    style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-pac"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
@@ -85,6 +86,7 @@ function enableSound(){
   if (ytAmb) { try { ytAmb.unMute(); } catch(_){} } // déjà en train de jouer, on retire juste le mute
   else initYT(); // API pas encore prête, on démarre normalement
   if (ytBrief) { try { ytBrief.unMute(); } catch(_){} }
+  if (ytEnq) { try { ytEnq.unMute(); } catch(_){} }
 }
 document.getElementById('soundhint').addEventListener('click', enableSound);
 ['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: false }));
@@ -123,7 +125,7 @@ function buildWinVideo(){
   if (!el) return;
   try { document.documentElement.requestFullscreen(); } catch(_){}
   // Coupe tout le son de fond — la vidéo anniversaire prend la main.
-  try { if (ytAmb){ytAmb.pauseVideo();ytAmb.mute();} if (ytBrief){ytBrief.pauseVideo();ytBrief.mute();} if (ytBt){ytBt.pauseVideo();ytBt.mute();} if (ytPac){ytPac.pauseVideo();ytPac.mute();} } catch(_){}
+  try { if (ytAmb){ytAmb.pauseVideo();ytAmb.mute();} if (ytBrief){ytBrief.pauseVideo();ytBrief.mute();} if (ytEnq){ytEnq.pauseVideo();ytEnq.mute();} if (ytBt){ytBt.pauseVideo();ytBt.mute();} if (ytPac){ytPac.pauseVideo();ytPac.mute();} } catch(_){}
   if (window.YT && YT.Player){
     ytWin = new YT.Player('win-video-player', {
       height:'100%', width:'100%', videoId:'6EEGmdH9Vu0',
@@ -1549,7 +1551,7 @@ function syncBlindtest(s) {
 }
 
 // =================== YOUTUBE (ambiance gaming + blind-test rock + pac-man) ===================
-let ytAmb = null, ytBrief = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
+let ytAmb = null, ytBrief = null, ytEnq = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
 
 window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; initYT(); }; // démarre muet sans attendre de clic
 
@@ -1576,6 +1578,17 @@ function initYT(){
         events:{
           onReady(e){ try{ e.target.mute(); }catch(_){} }, // prêt, muet ; lancé pendant le briefing
           onStateChange(e){ if(e.data===YT.PlayerState.ENDED){ try{ e.target.seekTo(bstart); e.target.playVideo(); }catch(_){} } }
+        }
+      });
+    }
+    if (cfg.enquete && cfg.enquete.id) {
+      const eid = cfg.enquete.id, estart = cfg.enquete.start || 0;
+      ytEnq = new YT.Player('yt-enq', {
+        height:'1', width:'1', videoId: eid,
+        playerVars:{ autoplay:1, loop:1, playlist:eid, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:estart },
+        events:{
+          onReady(e){ try{ e.target.mute(); }catch(_){} }, // prêt, muet ; lancé pendant l'enquête
+          onStateChange(e){ if(e.data===YT.PlayerState.ENDED){ try{ e.target.seekTo(estart); e.target.playVideo(); }catch(_){} } }
         }
       });
     }
@@ -1636,9 +1649,10 @@ function initYT(){
 function syncYT(s){
   const a = s.activity;
   const pauseBrief = () => { try { if (ytBrief) ytBrief.pauseVideo(); } catch(_){} };
+  const pauseEnq = () => { try { if (ytEnq) ytEnq.pauseVideo(); } catch(_){} };
   // 🎹 Piano (Monde 3) en cours : silence total — la borne joue la mélodie elle-même.
   if (s.piano) {
-    pauseBrief();
+    pauseBrief(); pauseEnq();
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }
@@ -1659,18 +1673,26 @@ function syncYT(s){
   const isPac = live && a.type === 'pacman';
   // Une chanson blind-test est posée uniquement quand le QCM est affiché.
   const songOn = isBT && a.sub === 'question' && !!a.playVideoId;
+  const isEnq = live && a.type === 'enquete';
   // 🎬 BRIEFING : ambiance sonore dédiée (si configurée) à la place de l'ambiance normale.
   if (isBrief && ytBrief) {
+    pauseEnq();
     try { ytBrief.unMute(); ytBrief.playVideo(); if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+    return;
+  }
+  // 🕵️ ENQUÊTE : musique dédiée (si configurée) à la place de l'ambiance normale.
+  if (isEnq && ytEnq) {
+    pauseBrief();
+    try { ytEnq.unMute(); ytEnq.playVideo(); if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }
   // Diffusion vidéo : l'iframe fournit le son → on coupe tout le reste.
   if (live && a.type === 'videoshow') {
-    pauseBrief();
+    pauseBrief(); pauseEnq();
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }
-  pauseBrief();
+  pauseBrief(); pauseEnq();
   try {
     if (isPac) {
       // 🟡 PAC-MAN : musique dédiée, ambiance et rock en pause

@@ -111,6 +111,7 @@ app.get('/api/ytconfig', (req, res) => {
   res.json({
     ambiance: extractList(CONFIG.ambianceYoutube),
     briefing: extractVideo(CONFIG.briefingYoutube),
+    enquete: extractVideo(CONFIG.enqueteYoutube),
     blindtest,
     pacman: extractVideo(CONFIG.pacmanYoutube),
   });

@@ -31,6 +31,11 @@ export const CONFIG = {
   //    Laisse vide ('') pour garder l'ambiance normale pendant le briefing.
   briefingYoutube: 'https://www.youtube.com/watch?v=lDNGlG71AR8',
 
+  // 🕵️ Ambiance sonore SPÉCIFIQUE pendant L'ENQUÊTE (remplace l'ambiance le temps de
+  //    l'enquête, puis l'ambiance normale reprend). Vidéo unique en boucle.
+  //    Laisse vide ('') pour garder l'ambiance normale pendant l'enquête.
+  enqueteYoutube: 'https://www.youtube.com/watch?v=b0bRw1faiws',
+
   // 🎉 Vidéo de FÊTE que le GAME MASTER (Vincent) peut lancer au Monde 4.
   feteYoutube: 'https://www.youtube.com/watch?v=7kyY29BHTZs',
 

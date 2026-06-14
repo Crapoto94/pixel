@@ -1075,7 +1075,10 @@ function gageView(g, me) {
 function gmPlayerPanel(me) {
   const title = me.gameMaster ? '👑 POUVOIRS DU GAME MASTER' : '🎛️ CONTRÔLE HÔTE';
   const targets = STATE.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
-  return `${me.heroQuest ? heroQuestPanel(me) : ''}
+  // Monde 4 : panneau avec checklist. Mondes 5-6 (et au-delà) : Vincent garde
+  // ses pouvoirs via le panneau « libre » (mêmes activités, sans checklist).
+  const heroPanel = me.heroQuest ? heroQuestPanel(me) : (me.gameMaster ? heroFreePanel(me) : '');
+  return `${heroPanel}
   <div class="card" style="border-color:var(--neon3);background:#1a1400">
     <div class="pill neon-yellow">${title}</div>
     <p class="muted">Distribue un gage à qui tu veux. Longue vie au roi.</p>
@@ -1084,37 +1087,81 @@ function gmPlayerPanel(me) {
   </div>`;
 }
 
-// Monde 4 : checklist des MISSIONS du Game Master + bouton « valider le monde ».
-function heroQuestPanel(me) {
-  const q = me.heroQuest;
-  const g = q.games || {};
-  const row = (done, label, type, sub) => `
-    <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
-      <span style="font-size:18px">${done ? '✅' : '⬜'}</span>
-      <div style="flex:1">
-        <div style="font-size:14px;color:${done?'var(--ok)':'#fff'}">${label}</div>
-        ${sub ? `<div class="muted" style="font-size:11px">${sub}</div>` : ''}
-      </div>
-      ${type ? `<button class="btn ${done?'':'warn'}" style="font-size:11px;padding:8px 10px" onclick="heroLaunch('${type}')">${done?'↻':'▶'}</button>` : ''}
+// Monde 4 : VRAI panneau de contrôle du Game Master. Vincent CHOISIT chaque
+// activité (quel blind-test, quel quiz, quelle vidéo…) comme la console GM.
+// Vidéos de fête (mêmes IDs que la console hôte).
+const HERO_FETE = { 1:'HpCZqG7lxD8', 2:'NoxgPqw4rSY', 3:'dhCDATSf3Ss' };
+function heroFete(n){ heroLaunch('videoshow', { video: HERO_FETE[n],
+  topLabel:'🎉 FÊTE '+n, chyron:'FÊTE '+n+' 🎊<br>À LA SANTÉ DE VINCENT !', footer:'🥂 TCHIN TCHIN !' }); }
+function heroDuck(){ heroLaunch('videoshow', { video:'7kyY29BHTZs',
+  topLabel:'🔴 BREAKING NEWS', chyron:'CONCOURS DE DANSE 🦆<br>DANSEZ TOUS !', footer:'TOUT LE MONDE DANSE ! 🪿' }); }
+
+// Les groupes de boutons du panneau de contrôle. `q` = quête (Monde 4) avec
+// l'état d'avancement ✅, ou null en mode « pouvoirs libres » (Mondes 5-6).
+function heroSections(q) {
+  const free = !q;
+  const g = (q && q.games) || {};
+  // En-tête de section : pastille ✅/⬜ (mode quête) ou 🎛️ (mode libre) + titre.
+  const head = (done, label) => `
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px">
+      <span style="font-size:18px">${free ? '🎛️' : (done ? '✅' : '⬜')}</span>
+      <div style="flex:1;font-size:14px;color:${(!free&&done)?'var(--ok)':'#fff'}">${label}</div>
     </div>`;
+  // Mini-bouton de choix (mis en avant tant que la mission n'est pas faite).
+  const pick = (label, call, on) => `<button class="btn ${(!free&&on)?'':'warn'}" style="flex:1 1 auto;min-width:96px;font-size:11px;padding:8px 6px" onclick="${call}">${label}</button>`;
   const gamesDone = !!(g.tetris && g.pacman && g.draw && g.pong);
-  const gamesBtns = `
-    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px">
-      <button class="btn ${g.tetris?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('tetris')">${g.tetris?'✅':''} Tetris</button>
-      <button class="btn ${g.pacman?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('pacman')">${g.pacman?'✅':''} Pac-Man</button>
-      <button class="btn ${g.draw?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('draw')">${g.draw?'✅':''} Dessine</button>
-      <button class="btn ${g.pong?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('pong')">${g.pong?'✅':''} Pong</button>
+  const dot = (k) => free ? '' : (g[k] ? '✅ ' : '');
+  return `
+    ${head(q&&q.video, '🎉 Vidéo de fête')}
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${pick('🎉 Fête 1','heroFete(1)',q&&q.video)}
+      ${pick('🎉 Fête 2','heroFete(2)',q&&q.video)}
+      ${pick('🎉 Fête 3','heroFete(3)',q&&q.video)}
+      ${pick('🦆 Canards','heroDuck()',q&&q.video)}
+    </div>
+
+    ${head(q&&q.blindtest, '🎵 Blind-test')}
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${pick('🎸 Rock',"heroLaunch('blindtest',{theme:'rock'})",q&&q.blindtest)}
+      ${pick('🎤 Chansons FR',"heroLaunch('blindtest',{theme:'francais'})",q&&q.blindtest)}
+      ${pick('📺 Dessins animés',"heroLaunch('blindtest',{theme:'dessins'})",q&&q.blindtest)}
+    </div>
+
+    ${head(q&&q.quiz, '❓ Quiz')}
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${pick('🎮 Jeu vidéo',"heroLaunch('quiz',{deck:'videogame'})",q&&q.quiz)}
+      ${pick('📼 80s',"heroLaunch('quiz',{deck:'eighties'})",q&&q.quiz)}
+      ${pick('💿 90s',"heroLaunch('quiz',{deck:'nineties'})",q&&q.quiz)}
+      ${pick('🍙 Animés',"heroLaunch('quiz',{deck:'anime'})",q&&q.quiz)}
+      ${pick('🗺️ Territoriale',"heroLaunch('quiz',{deck:'territoriale'})",q&&q.quiz)}
+      ${pick('🏘️ Saint-Maur',"heroLaunch('quiz',{deck:'saintmaur'})",q&&q.quiz)}
+    </div>
+
+    ${head(q&&q.roue, '🎰 Roue des gages')}
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${pick('🎰 Lancer la roue',"heroLaunch('roue_des_gages')",q&&q.roue)}
+    </div>
+
+    ${head(q&&q.anecdote, '📖 Anecdote')}
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${pick('📖 Anecdote au hasard',"heroLaunch('anecdote')",q&&q.anecdote)}
+    </div>
+
+    ${head(gamesDone, '🎮 Jeux (Tetris · Pac-Man · Dessine · Pong)')}
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${pick(dot('tetris')+'Tetris',"heroLaunch('tetris')",g.tetris)}
+      ${pick(dot('pacman')+'Pac-Man',"heroLaunch('pacman')",g.pacman)}
+      ${pick(dot('draw')+'Dessine',"heroLaunch('draw')",g.draw)}
+      ${pick(dot('pong')+'Pong',"heroLaunch('pong')",g.pong)}
     </div>`;
+}
+
+// Monde 4 : panneau de contrôle AVEC checklist de missions + validation.
+function heroQuestPanel(me) {
   return `<div class="card" style="border-color:var(--neon);background:#14001a">
-    <div class="pill neon-pink">👑 MISSIONS DU GAME MASTER</div>
-    <p class="muted" style="font-size:13px">Anime la soirée ! Accomplis chaque mission pour ouvrir le Monde 5.</p>
-    ${row(q.video, '🎉 Lancer une vidéo de fête', 'videoshow')}
-    ${row(q.blindtest, '🎵 Lancer un blind-test', 'blindtest')}
-    ${row(q.quiz, '❓ Lancer un quiz', 'quiz')}
-    ${row(q.roue, '🎰 Lancer une roue des gages', 'roue_des_gages')}
-    ${row(q.anecdote, '📖 Lancer une anecdote', 'anecdote')}
-    ${row(gamesDone, '🎮 Lancer tous les jeux', null, 'Tetris · Pac-Man · Dessine · Pong')}
-    ${gamesBtns}
+    <div class="pill neon-pink">👑 PANNEAU DU GAME MASTER</div>
+    <p class="muted" style="font-size:13px">À toi d'animer ! Choisis et lance chaque activité. Le Monde 5 s'ouvre quand tout est ✅.</p>
+    ${heroSections(me.heroQuest)}
     <div class="mt" style="border-top:1px solid #ffffff22;padding-top:10px">
       ${me.heroQuestComplete
         ? `<button class="btn" style="width:100%;background:var(--ok);color:#001;font-size:14px" onclick="heroValidate()">✅ VALIDER LE MONDE → MONDE 5</button>`
@@ -1123,8 +1170,18 @@ function heroQuestPanel(me) {
     <div id="heroMsg" class="center mt" style="font-size:12px"></div>
   </div>`;
 }
-function heroLaunch(type){
-  api('/api/gm/hero', { action:'launch', payload:{ type } }).then(r=>{
+
+// Mondes 5-6 : Vincent GARDE ses pouvoirs — mêmes choix, sans checklist.
+function heroFreePanel(me) {
+  return `<div class="card" style="border-color:var(--neon);background:#14001a">
+    <div class="pill neon-pink">👑 POUVOIRS DU GAME MASTER</div>
+    <p class="muted" style="font-size:13px">Tu gardes le contrôle ! Lance une activité quand tu veux.</p>
+    ${heroSections(null)}
+    <div id="heroMsg" class="center mt" style="font-size:12px"></div>
+  </div>`;
+}
+function heroLaunch(type, opts){
+  api('/api/gm/hero', { action:'launch', payload:{ type, opts: opts||{} } }).then(r=>{
     const m = document.getElementById('heroMsg');
     if (m && r && r.error) m.innerHTML = `<span style="color:var(--danger)">${esc(r.error)}</span>`;
     poll();
@@ -1145,7 +1202,9 @@ function heroStop(){ api('/api/gm/hero', { action:'stop' }).then(poll); }
 function updateHeroBar(me){
   const bar = document.getElementById('gmbar');
   if (!bar) return;
-  const show = me.gameMaster && me.heroQuest && STATE.phase === 'activity';
+  // Vincent (Game Master éveillé) peut stopper une activité qu'il a lancée,
+  // au Monde 4 comme aux Mondes 5-6.
+  const show = me.gameMaster && STATE.phase === 'activity';
   if (!show){ bar.style.display = 'none'; return; }
   bar.style.display = 'block';
   bar.innerHTML = `<span class="pixel neon-yellow" style="font-size:11px;margin-right:10px">👑 GAME MASTER</span>

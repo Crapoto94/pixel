@@ -394,20 +394,26 @@ app.post('/api/gm/hero', (req, res) => {
     const allowedTypes = ['videoshow', 'blindtest', 'quiz', 'roue_des_gages', 'tetris', 'pacman', 'draw', 'pong', 'anecdote'];
     const type = payload.type;
     if (!allowedTypes.includes(type)) return res.status(400).json({ error: 'Activité non autorisée.' });
-    let opts = payload.opts || {};
+    const o = payload.opts || {};
+    let opts = {};
     if (type === 'videoshow') {
-      // Vidéo de FÊTE (id côté serveur, le téléphone ne le connaît pas).
+      // Vincent choisit SA vidéo (id + bandeaux fournis par son panneau) ;
+      // à défaut, la vidéo de fête configurée côté serveur.
       opts = {
-        video: ytVideoId(CONFIG.feteYoutube) || '7kyY29BHTZs',
-        topLabel: '🎉 SOIRÉE !', chyron: 'Le GAME MASTER lance la fête ! 🎶',
-        footer: 'Tout le monde danse 💃🕺', skipIntro: true,
+        video: ytVideoId(o.video) || ytVideoId(CONFIG.feteYoutube) || '7kyY29BHTZs',
+        topLabel: o.topLabel || '🎉 SOIRÉE !',
+        chyron: o.chyron || 'Le GAME MASTER lance la fête ! 🎶',
+        footer: o.footer || 'Tout le monde danse 💃🕺',
+        skipIntro: o.skipIntro !== false,
       };
-    } else if (type === 'blindtest' && !opts.theme) {
-      opts = { theme: 'rock' };
-    } else if (type === 'quiz' && !opts.deck) {
-      opts = { deck: 'videogame' };
-    } else if (type === 'roue_des_gages' && !opts.pool) {
-      opts = { pool: 'vincent' };
+    } else if (type === 'blindtest') {
+      const theme = ['rock', 'francais', 'dessins'].includes(o.theme) ? o.theme : 'rock';
+      opts = { theme };
+    } else if (type === 'quiz') {
+      const decks = ['videogame', 'eighties', 'nineties', 'anime', 'territoriale', 'saintmaur'];
+      opts = { deck: decks.includes(o.deck) ? o.deck : 'videogame' };
+    } else if (type === 'roue_des_gages') {
+      opts = { pool: o.pool || 'vincent' };
     }
     game.startActivity(type, opts);
     return res.json({ ok: true });

@@ -961,16 +961,21 @@ function renderEnqueteBorne(a){
       <div class="mt">${dots}</div>
     </div>
 
-    ${pressBlock}${artBlock}${mapBlock}${cipherBlock}
+    ${act.hasDocs ? '' : `${pressBlock}${artBlock}${mapBlock}${cipherBlock}`}
 
     <div class="card" style="text-align:left;margin-top:12px">
-      <p style="font-size:21px">${esc(act.scene||'')}</p>
+      ${act.hasDocs
+        ? `<div class="card" style="border-color:var(--neon3);background:#05030f;text-align:center">
+            <div class="pill neon-yellow">📄 LES INDICES SONT SUR VOS TÉLÉPHONES</div>
+            <p style="font-size:20px">Chaque enquêteur détient un DOCUMENT (journal des badges, e-mails, annuaire…). Ouvrez-les, lisez-les à voix haute et recoupez.</p>
+          </div>`
+        : `<p style="font-size:21px">${esc(act.scene||'')}</p>`}
       <div class="card center glow-box" style="border-color:var(--neon);margin-top:12px">
         <div class="pill neon-pink">🔑 ÉNIGME</div>
         <p class="big">${esc(act.riddle||'')}</p>
-        <p class="neon-yellow blink" style="font-size:22px">Recoupez vos pièces et tapez le code sur un téléphone.</p>
+        <p class="neon-yellow blink" style="font-size:22px">Recoupez vos documents et tapez le code sur un téléphone.</p>
       </div>
-      ${act.humor?`<div class="card" style="border-color:var(--neon4);background:#100a02;margin-top:10px">
+      ${(!act.hasDocs && act.humor)?`<div class="card" style="border-color:var(--neon4);background:#100a02;margin-top:10px">
         <div class="pill" style="color:var(--neon4)">📎 NOTE DE L'INSPECTEUR</div>
         <p style="font-size:19px;font-style:italic;color:#ffd9a0">${esc(act.humor)}</p></div>`:''}
       ${hints?`<div class="card" style="border-color:var(--neon4);background:#0a0820;margin-top:10px">

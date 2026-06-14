@@ -954,11 +954,20 @@ function enqueteController(act) {
     </div>`;
   }
   const a = act.act || {};
-  if (_enqActSeen !== a.num) { _enqActSeen = a.num; _enqDraft = ''; } // nouvel acte → on vide le brouillon
+  if (_enqActSeen !== a.num) { _enqActSeen = a.num; _enqDraft = ''; _enqOpenDocs = {}; } // nouvel acte → reset brouillon + docs
   const frags = (act.myFragments||[]).map(f=>`
     <div style="border:2px solid var(--neon3);border-radius:10px;padding:10px;margin:8px 0;background:#1a1400">
       <div class="pill neon-yellow" style="font-size:11px">${esc(f.label||'PIÈCE')}</div>
       <div style="font-size:15px;margin-top:4px">${esc(f.text||'')}</div>
+    </div>`).join('');
+  // Documents à VISUALISER : chacun s'ouvre/se ferme en cliquant (état conservé).
+  const docs = (act.myDocs||[]).map(d=>`
+    <div style="border:2px solid var(--neon3);border-radius:10px;margin:8px 0;background:#05030f;overflow:hidden">
+      <button id="enqdocbtn-${d.id}" class="btn" style="width:100%;text-align:left;font-size:13px;border-radius:0" onclick="toggleEnqDoc('${d.id}')">${_enqOpenDocs[d.id]?'▼':'▶'} 📄 ${esc(d.label||'DOCUMENT')}</button>
+      <div id="enqdoc-${d.id}" style="display:${_enqOpenDocs[d.id]?'block':'none'};padding:10px">
+        <div class="pill neon-yellow" style="font-size:11px">${esc(d.title||'')}</div>
+        <pre style="white-space:pre-wrap;font-family:var(--term);font-size:13px;line-height:1.45;margin:8px 0 0;color:#dfe7ff">${esc(d.body||'')}</pre>
+      </div>
     </div>`).join('');
   const wrong = act.lastWrong && (Date.now()-act.lastWrong < 3000)
     ? '<p class="pixel" style="font-size:11px;color:var(--danger)">✘ Code refusé — recoupez encore !</p>' : '';
@@ -967,9 +976,11 @@ function enqueteController(act) {
     <h2 class="neon-cyan">${esc(a.title||'')}</h2>
     <p class="muted" style="font-size:13px">📍 ${esc(a.place||'')}</p>
     <p style="font-size:15px"><b class="neon-pink">Énigme :</b> ${esc(a.riddle||'')}</p>
+    ${docs ? `<div class="pill neon-cyan mt">🗂️ TES DOCUMENTS — ouvre-les et lis-les à voix haute</div>${docs}
+      <p class="muted" style="font-size:12px">Aucun joueur n'a tout : c'est en recoupant VOS documents que le code apparaît.</p>` : ''}
     ${frags ? `<div class="pill neon-cyan mt">🔍 TES PIÈCES À CONVICTION</div>${frags}
       <p class="muted" style="font-size:12px">Partage-les à voix haute avec la table : seule l'addition de toutes les pièces donne le code.</p>`
-      : `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`}
+      : (docs ? '' : `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`)}
     <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase"
       value="${esc(_enqDraft)}" oninput="_enqDraft=this.value" onkeydown="if(event.key==='Enter')enqueteCode()" autocomplete="off" />
     <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>
@@ -979,6 +990,15 @@ function enqueteController(act) {
 // brouillon de code conservé entre les rendus ; réinitialisé à chaque acte
 let _enqDraft = '';
 let _enqActSeen = null;
+// Documents ouverts/fermés (conservé entre les rendus pour ne pas se replier tout seul).
+let _enqOpenDocs = {};
+function toggleEnqDoc(id){
+  _enqOpenDocs[id] = !_enqOpenDocs[id];
+  const el = document.getElementById('enqdoc-'+id);
+  const btn = document.getElementById('enqdocbtn-'+id);
+  if (el) el.style.display = _enqOpenDocs[id] ? 'block' : 'none';
+  if (btn) btn.innerHTML = btn.innerHTML.replace(/^[▶▼]/, _enqOpenDocs[id] ? '▼' : '▶');
+}
 function enqueteCode(){
   const el = document.getElementById('enqCode');
   const v = el ? el.value : '';

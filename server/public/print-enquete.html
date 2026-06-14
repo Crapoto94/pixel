@@ -148,6 +148,13 @@ function render(E){
       </div></div>`;
     }
     const docLabel = doc ? `<p style="font-size:13px;color:#2a5db0;margin:0 6px 6px">📌 DOCUMENT À POSER SUR LA TABLE (l'info-clé est ici) :</p>${doc}` : '';
+    // Documents NUMÉRIQUES répartis sur les téléphones (les joueurs les ouvrent eux-mêmes) — copie MJ.
+    const docsBlock = (a.docs && a.docs.length) ? `
+      <p style="font-size:13px;color:#2a5db0;margin:0 6px 6px">📱 DOCUMENTS RÉPARTIS SUR LES TÉLÉPHONES (ouverts par les joueurs — copie MJ) :</p>
+      <div class="press">${a.docs.map(d=>`<div class="art">
+        <div class="ttl">${esc(d.title||d.label||'')}</div>
+        <div class="sum doc">${esc(d.body||'')}</div>
+      </div>`).join('')}</div>` : '';
     const cards = (a.fragments||[]).map(f=>{
       const give = /leurre|fausse piste|écartez|homonyme/i.test(f.text) ? ' giveaway' : '';
       return `<div class="clue${give}">
@@ -160,9 +167,10 @@ function render(E){
     }).join('');
     const humor = a.humor ? `<p style="font-style:italic;color:#7a1d1d;font-size:14px;margin:8px 6px">📎 ${esc(a.humor)}</p>` : '';
     const riddle = a.riddle ? `<p style="font-size:14px;margin:0 6px 8px"><b>❓ Énigme :</b> ${esc(a.riddle)}</p>` : '';
-    return `<h2>Acte ${a.num} : ${esc(a.title)}</h2>${riddle}${docLabel}
-      <p style="font-size:13px;color:#555;margin:10px 6px 4px">✂️ Pièces à conviction à découper et distribuer :</p>
-      <div class="cards">${cards}</div>${humor}`;
+    const cardsBlock = cards ? `<p style="font-size:13px;color:#555;margin:10px 6px 4px">✂️ Pièces à conviction à découper et distribuer :</p>
+      <div class="cards">${cards}</div>` : '';
+    return `<h2>Acte ${a.num} : ${esc(a.title)}</h2>${riddle}${docLabel}${docsBlock}
+      ${cardsBlock}${humor}`;
   }).join('');
 
   // ③ Plan

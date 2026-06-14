@@ -15,7 +15,7 @@
 //  Chaîne :
 //   1 REVUE DE PRESSE — déduire l'année (perquisition − 1) ............ 2013
 //   2 L'ORGANIGRAMME — recomposer le nom (ER + ZEN) ................. ERZEN
-//   3 LES DEUX FRÉDÉRIC — démasquer le faux mail, matricule du vrai . DSI-312
+//   3 QUI A VOULU PARLER ? — docs répartis : démasquer le faux mail . DSI-312
 //   4 LA TABLE DES COMPTES — éliminer les homonymes C.L. .......... LEJARRE
 //   5 LE PLAN — ordonner le parcours, lire la lettre ................... G
 //   6 LES SUSPECTS — éliminer les alibis ...................... GUILLAUME
@@ -163,46 +163,85 @@ export const ENQUETE = {
     },
 
     // ===============================================================
-    //  ACTE 3 — LE REGISTRE → RETROUVER le bon signalement (COUPAYE)
+    //  ACTE 3 — QUI A VOULU PARLER ? → DOCUMENTS répartis (DSI-312)
+    //  La borne n'affiche QUE l'énigme. Les documents (journal des badges,
+    //  e-mails, annuaire) sont à OUVRIR sur les téléphones des joueurs.
     // ===============================================================
     {
       num: 3,
       key: 'a3',
-      kind: 'logic',
-      title: 'L\'AMALGAME DES DEUX FRÉDÉRIC',
+      kind: 'docs',
+      title: 'QUI A VOULU PARLER ?',
       place: "Direction des Systèmes d'Information — messagerie & contrôle d'accès",
-      article: {
-        source: "TROIS DOCUMENTS À SUPERPOSER",
-        date: "—",
-        body:
-          "📧 E-MAILS D'ALERTE « BONS DE COMMANDE » (deux signalements, deux « Frédéric ») :\n" +
-          "   • MAIL 1 — de « F. » · poste 4312 · envoyé MARDI 18 h 42 :\n" +
-          "       « Les MONTANTS des bons sont RÉÉCRITS après signature. »\n" +
-          "   • MAIL 2 — de « F. » · poste 4207 · envoyé JEUDI 23 h 11 :\n" +
-          "       « Je signale de vagues anomalies sur les bons. Rien de grave. »\n" +
-          "\n" +
-          "📇 ANNUAIRE INTERNE :\n" +
-          "   • Postes 42xx → 2ᵉ étage → Direction Générale des Services (DGS)\n" +
-          "   • Postes 43xx → 3ᵉ étage → Direction des Systèmes d'Information (DSI)\n" +
-          "\n" +
-          "🔑 JOURNAL DES BADGES — nuit de JEUDI :\n" +
-          "   • Frédéric ERZEN (DGS) : entrée 08 h 05 — SORTIE 19 h 03 — aucun retour.\n" +
-          "   • Frédéric COUPAYE (DSI) : entrée 08 h 30 — sortie 18 h 20.",
-      },
+      // Documents À VISUALISER, répartis entre les joueurs (un par téléphone).
+      docs: [
+        {
+          id: 'journal',
+          label: 'JOURNAL DES BADGES',
+          title: '🔑 JOURNAL DES BADGES — nuit de JEUDI',
+          body:
+            "Entrées / sorties enregistrées (badge nominatif) :\n\n" +
+            "07 h 52   Carla LENOIR (Finances) ......... ENTRÉE\n" +
+            "08 h 05   Frédéric ERZEN (DGS) ............ ENTRÉE\n" +
+            "08 h 30   Frédéric COUPAYE (DSI) .......... ENTRÉE\n" +
+            "09 h 14   Sophie MARAIS (RH) .............. ENTRÉE\n" +
+            "12 h 40   Carla LENOIR ................... SORTIE\n" +
+            "13 h 31   Carla LENOIR ................... ENTRÉE\n" +
+            "17 h 58   Sophie MARAIS (RH) .............. SORTIE\n" +
+            "18 h 20   Frédéric COUPAYE (DSI) .......... SORTIE\n" +
+            "19 h 03   Frédéric ERZEN (DGS) ............ SORTIE — aucun retour cette nuit\n" +
+            "21 h 10   Agent de sécurité (ronde) ...... ENTRÉE puis SORTIE\n" +
+            "22 h 05   Carla LENOIR ................... SORTIE\n\n" +
+            "Aucune autre entrée n'a été enregistrée après 22 h 05.",
+        },
+        {
+          id: 'mail1',
+          label: "E-MAIL D'ALERTE n°1",
+          title: "📧 E-MAIL D'ALERTE n°1",
+          body:
+            "De : « F. »   —   poste 4312\n" +
+            "Reçu : MARDI, 18 h 42\n" +
+            "Objet : bons de commande\n\n" +
+            "« Les MONTANTS des bons sont RÉÉCRITS après signature. J'ai conservé des copies datées. Il faut que ça remonte. »",
+        },
+        {
+          id: 'mail2',
+          label: "E-MAIL D'ALERTE n°2",
+          title: "📧 E-MAIL D'ALERTE n°2",
+          body:
+            "De : « F. »   —   poste 4207\n" +
+            "Reçu : JEUDI, 23 h 11\n" +
+            "Objet : RAS\n\n" +
+            "« Je signale de vagues anomalies sur les bons. Rien de grave, sans doute une erreur de saisie. Je m'en occupe. »",
+        },
+        {
+          id: 'annuaire',
+          label: 'ANNUAIRE INTERNE',
+          title: '📇 ANNUAIRE INTERNE — postes & étages',
+          body:
+            "Plages de postes téléphoniques par direction :\n\n" +
+            "40xx → 1er étage → Accueil & État civil\n" +
+            "41xx → 1er étage → Direction des Finances (N. NEVES)\n" +
+            "42xx → 2e étage → Direction Générale des Services (DGS)\n" +
+            "43xx → 3e étage → Systèmes d'Information (DSI)\n" +
+            "44xx → 3e étage → Ressources Humaines (RH)\n" +
+            "45xx → 4e étage → Services techniques\n" +
+            "46xx → sous-sol → Archives & reprographie\n\n" +
+            "MATRICULE d'un agent = code de sa direction (DGS, DSI, RH…) + les 3 chiffres de son poste.",
+        },
+      ],
       scene:
-        "Deux « Frédéric » brouillent la piste : Frédéric ERZEN (DGS, coupable) et Frédéric " +
-        "COUPAYE (agent DSI). Chacun aurait « alerté » sur les bons… mais l'un des deux mails est " +
-        "un FAUX, planté par le coupable pour se faire passer pour lanceur d'alerte. Démasquez le " +
-        "faux en recoupant son heure d'envoi avec le journal des badges, puis identifiez le VRAI " +
-        "lanceur d'alerte par son matricule.",
+        "Deux signalements anonymes, signés « F. », dorment dans la messagerie. L'un est sincère, " +
+        "l'autre a été planté par le coupable pour se faire passer pour lanceur d'alerte. Vos " +
+        "documents sont sur vos téléphones : ouvrez-les, lisez-les à voix haute, recoupez.",
       riddle:
-        "Un seul des deux mails est sincère ; l'autre est un FAUX (recoupez son heure d'envoi avec " +
-        "le journal des badges). Donnez le MATRICULE du VRAI lanceur d'alerte : code du service " +
-        "(DGS ou DSI) suivi des 3 chiffres de son poste. (ex. de format : DSI-000)",
+        "Un seul des deux e-mails d'alerte est sincère ; l'autre est un FAUX. Donnez le MATRICULE " +
+        "du VRAI lanceur d'alerte : code du service (DGS ou DSI) suivi des 3 chiffres de son poste. " +
+        "(ex. de format : DSI-000)",
       answer: 'DSI-312',
       hints: [
         "Le mail VAGUE de 23 h sent l'écran de fumée. Surtout : à quelle heure son auteur a-t-il QUITTÉ les lieux d'après les badges ?",
-        "Mail 2 part du poste 4207 (42xx → 2ᵉ étage → DGS = Erzen) à 23 h 11 — mais le badge d'Erzen indique une SORTIE à 19 h 03, sans retour. Mail 2 = FAUX.",
+        "Mail 2 part du poste 4207 (42xx → 2ᵉ étage → DGS) à 23 h 11 — mais le seul badge de ce service, celui d'Erzen, indique une SORTIE à 19 h 03, sans retour. Mail 2 = FAUX.",
         "Reste le mail 1 : poste 4312 → 43xx → 3ᵉ étage → DSI. Matricule = DSI + 312 → DSI-312 (Frédéric COUPAYE).",
       ],
       humor:
@@ -214,13 +253,8 @@ export const ENQUETE = {
         "Frédéric COUPAYE (matricule DSI-312, poste 4312), dont la signature a été imitée. " +
         "Innocent. Reste le VRAI complice technique d'Erzen — celui qui a ouvert la compta et " +
         "purgé les traces.",
-      fragments: [
-        { label: "Pièce C1 — règle RH", text: "Le MATRICULE d'un agent = le code de son service (DGS ou DSI) suivi des 3 chiffres de son poste téléphonique." },
-        { label: "Pièce C2 — crédibilité", text: "Un vrai signalement cite un fait PRÉCIS (« montants réécrits après signature »). Le vague (« anomalies, rien de grave ») est un écran de fumée." },
-        { label: "Pièce C3 — métadonnées", text: "Vérifie l'HEURE : un mail ne peut pas partir d'un bureau APRÈS que le badge de son occupant l'a vu quitter les lieux." },
-        { label: "Pièce C4 — anti-amalgame", text: "Les deux suspects se prénomment Frédéric. Ne te fie pas au prénom : seuls comptent le POSTE et l'ÉTAGE." },
-        { label: "Pièce C5 — le piège", text: "Le coupable a pu PLANTER un faux mail d'alerte pour se faire passer pour lanceur d'alerte. Le vrai, c'est celui qui RESTE crédible." },
-      ],
+      // Pas de pièces « explicatives » : tout se déduit des DOCUMENTS ci-dessus.
+      fragments: [],
     },
 
     // ===============================================================

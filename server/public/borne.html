@@ -312,7 +312,9 @@ function render(){
 
   else if (STATE.world) {
     const w = STATE.world;
-    const body = w.konamiGate ? w6BorneBody() : '';
+    const body = w.konamiGate ? w6BorneBody()
+               : (w.pianoWorld && STATE.piano) ? pianoBorneBody(STATE.piano)
+               : '';
     html = `<div>
       ${w.isTwist ? `<div class="center huge pixel neon-yellow glow-box">⚡ PLAYER ONE ⚡</div>`:''}
       <div class="pill neon-yellow">MONDE ${w.num}/${STATE.worldCount}</div>
@@ -568,9 +570,10 @@ function renderMusicBorne(a){
 }
 
 // =================== PIANO RÉPARTI (affichage borne) ===================
-function renderPianoBorne(a){
+// Corps réutilisable : ordre de placement + partition + prochaine note.
+// Utilisé par l'ACTIVITÉ piano ET par le Monde 3 (piano intégré).
+function pianoBorneBody(a){
   const win = a.status === 'win';
-  // Ordre de placement des téléphones (gauche → droite) avec leur tessiture.
   const cards = (a.placement||[]).map(p=>{
     const hot = a.nextPos===p.pos && !win;
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:12px;
@@ -581,22 +584,22 @@ function renderPianoBorne(a){
       <div style="font-size:22px">📱</div>
     </div>`;
   }).join('<div style="align-self:center;font-size:26px;color:#ffffff55">▸</div>');
-  // Partition : la mélodie, note par note, avec l'avancement.
   const notes = (a.slots||[]).map(s=>{
     const style = s.st==='done' ? 'background:var(--neon2);color:#0a0420'
                 : s.st==='next' ? 'border:2px solid var(--neon3);color:var(--neon3);animation:blink 1s steps(1) infinite'
                 : 'border:2px solid #ffffff22;color:#fff';
     return `<span style="display:inline-block;min-width:46px;text-align:center;padding:6px 8px;margin:3px;border-radius:8px;font-family:var(--pixel);font-size:14px;${style}">${esc(s.name)}</span>`;
   }).join('');
-  stage.innerHTML = `<div class="center">
-    <h1 class="big neon-pink">🎹 PIANO GÉANT</h1>
+  return `
     ${win ? `<p class="big neon-yellow pixel glow-box" style="display:inline-block;padding:6px 18px">🎉 MÉLODIE COMPLÈTE !</p>`
           : `<p class="big">Placez vos téléphones <b>de GAUCHE à DROITE</b> dans cet ordre, puis jouez la mélodie ensemble&nbsp;:</p>`}
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:stretch;margin:14px auto;max-width:1150px">${cards}</div>
-    <div style="margin:14px auto;max-width:1000px">${notes}</div>
+    <div style="margin:10px auto;max-width:1000px">${notes}</div>
     ${win ? '' : `<p class="big neon-cyan">${a.nextName?`👉 Prochaine note : <b>${esc(a.nextName)}</b> — téléphone <b>N°${a.nextPos}</b>`:''}</p>`}
-    <p class="muted">${a.step}/${a.len}</p>
-  </div>`;
+    <p class="muted">${a.step}/${a.len}</p>`;
+}
+function renderPianoBorne(a){
+  stage.innerHTML = `<div class="center"><h1 class="big neon-pink">🎹 PIANO GÉANT</h1>${pianoBorneBody(a)}</div>`;
   tickerEl.textContent = 'PIANO GÉANT — alignez les téléphones et jouez la mélodie !';
 }
 
@@ -604,8 +607,9 @@ function renderPianoBorne(a){
 let _pn = { demoAt: 0, step: 0, win: false };
 function detectPiano(s){
   if(!SOUND_ON || !window.SFX) return;
-  const a = s.activity;
-  if(!a || a.type!=='piano'){ _pn = { demoAt:0, step:0, win:false }; return; }
+  // Piano = activité OU intégré au Monde 3 (s.piano). Même forme de données.
+  const a = (s.activity && s.activity.type==='piano') ? s.activity : (s.piano || null);
+  if(!a){ _pn = { demoAt:0, step:0, win:false }; return; }
   if(a.demo && a.demo.at && a.demo.at!==_pn.demoAt){
     _pn.demoAt = a.demo.at; let t = 0;
     a.demo.seq.forEach(n=>{ SFX.note(n.freq, t, 0.34); t += 0.44; });

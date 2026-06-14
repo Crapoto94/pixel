@@ -91,7 +91,8 @@ export const WORLDS = [
     enigme:
       "Chaque téléphone affiche un DEMI-OCTAVE de piano. Alignez-les côte à côte dans " +
       "l'ordre indiqué par la BORNE pour former un grand clavier, puis jouez la mélodie ensemble.",
-    code: 'JOIE', // la mélodie est l'« Hymne à la Joie »
+    pianoWorld: true, // piano réparti intégré : chaque téléphone a ses touches
+    code: 'JOIE', // la mélodie est l'« Hymne à la Joie » (validation de secours)
     codeNormalise: 'JOIE',
     colisContenu: [
       'Une carte-consigne : « Chaque téléphone = un DEMI-CLAVIER. Alignez-les dans l’ordre de la BORNE (de gauche à droite). »',

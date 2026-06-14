@@ -226,15 +226,20 @@ function render(){
     </div>
   </div>`:''}
 
-  ${S.activity && S.activity.type === 'piano' ? `
+  ${(() => {
+    // Piano : soit en ACTIVITÉ, soit intégré au Monde 3 (S.piano).
+    const pn = (S.activity && S.activity.type === 'piano') ? S.activity : (S.piano || null);
+    if (!pn) return '';
+    return `
   <div class="card" style="border-color:var(--neon3)">
-    <div class="pixel neon-yellow" style="font-size:11px">🎹 PIANO RÉPARTI · ${S.activity.nPhones||0} téléphone(s)</div>
-    <div class="mt">Progression : <code>${S.activity.step}/${S.activity.len}</code> ${S.activity.status==='win'?'<span class="pill neon-cyan">RÉUSSI</span>':(S.activity.nextName?`· prochaine : <code>${esc(S.activity.nextName)}</code> (tél. N°${S.activity.nextPos})`:'')}</div>
-    <div class="muted mt" style="font-size:12px">Ordre des téléphones (gauche→droite) : ${(S.activity.placement||[]).map(p=>`<b>${p.pos}.</b> ${esc(p.name)}`).join(' · ')}</div>
+    <div class="pixel neon-yellow" style="font-size:11px">🎹 PIANO RÉPARTI · ${pn.nPhones||0} téléphone(s)</div>
+    <div class="mt">Progression : <code>${pn.step}/${pn.len}</code> ${pn.status==='win'?'<span class="pill neon-cyan">RÉUSSI</span>':(pn.nextName?`· prochaine : <code>${esc(pn.nextName)}</code> (tél. N°${pn.nextPos})`:'')}</div>
+    <div class="muted mt" style="font-size:12px">Ordre des téléphones (gauche→droite) : ${(pn.placement||[]).map(p=>`<b>${p.pos}.</b> ${esc(p.name)}`).join(' · ') || '(aucun téléphone connecté)'}</div>
     <div class="grid mt">
       <button class="btn secondary" onclick="act('pianoDemo')">🎶 Jouer la démo</button>
     </div>
-  </div>`:''}
+  </div>`;
+  })()}
 
   ${S.activity && S.activity.type === 'enquete' && S.enqueteMaster ? (()=>{
     const em = S.enqueteMaster;

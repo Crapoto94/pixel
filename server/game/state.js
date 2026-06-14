@@ -85,6 +85,10 @@ export class GameState {
     this.w6Reboot = false; // quelqu'un a tapé REBOOT → on guide vers le LEET
     // Vidéo-indice diffusée sur la borne à la demande d'un joueur (ex. Monde 1)
     this.hintVideo = null; // { video, start, at } ou null
+    // --- Monde 3 : piano réparti intégré au monde (un demi-octave/téléphone) ---
+    this.pianoStep = 0;
+    this.pianoStatus = 'playing';
+    this.pianoDemoAt = 0;
     this.votes = {}; // { voterId: targetId }
     this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
     this.photos = []; // [{id, playerId, playerName, avatar, missionIdx, missionLabel, url, uploadedAt}]
@@ -1500,16 +1504,50 @@ export class GameState {
   }
 
   // ---- Piano réparti (un demi-octave par téléphone) ----------------
+  // Le piano existe sous 2 formes : comme ACTIVITÉ (lancée par le MJ) OU intégré
+  // au MONDE 3 (les joueurs ont directement leurs touches). Mêmes rendus.
+
+  // Le monde courant est-il un monde « piano intégré » en cours ?
+  pianoWorldActive() {
+    const w = this.currentWorld();
+    return !!(w && w.pianoWorld && this.phase === 'world' && !this.activity);
+  }
+  // Ordre des téléphones (gauche → droite) = joueurs connectés, ordre stable.
+  pianoOrder() {
+    return this.players.filter((p) => p.connected).map((p) => p.id);
+  }
+
   // Un joueur appuie sur une touche (offset = position absolue sur le clavier).
   pianoPress(playerId, offset) {
+    offset = Number(offset);
+    // 1) Piano INTÉGRÉ au Monde 3
+    if (this.pianoWorldActive()) {
+      if (this.pianoStatus !== 'playing') return;
+      const order = this.pianoOrder();
+      const idx = order.indexOf(playerId);
+      if (idx < 0) return;
+      const lo = idx * PIANO_KEYS_PER_PHONE, hi = lo + PIANO_KEYS_PER_PHONE - 1;
+      if (offset < lo || offset > hi) return; // pas ta touche
+      if (PIANO_MELODY[this.pianoStep] === offset) {
+        this.pianoStep += 1;
+        if (this.pianoStep >= PIANO_MELODY.length) {
+          this.pianoStatus = 'win';
+          this.addLog('🎹 Mélodie complète — la PORTE SONORE s\'ouvre !');
+          this.touch();
+          this.completeWorld(); // la mélodie réussie valide le monde
+          return;
+        }
+        this.touch();
+      }
+      return;
+    }
+    // 2) Piano en tant qu'ACTIVITÉ (lancée par le MJ)
     const a = this.activity;
     if (!a || a.type !== 'piano' || a.status !== 'playing') return;
-    offset = Number(offset);
     const idx = a.order.indexOf(playerId);
-    if (idx < 0) return; // pas un joueur du clavier
+    if (idx < 0) return;
     const lo = idx * a.keysPerPhone, hi = lo + a.keysPerPhone - 1;
-    if (offset < lo || offset > hi) return; // cette touche n'est pas sur ton téléphone
-    // Bonne note attendue → on avance ; sinon on laisse explorer (pas de pénalité).
+    if (offset < lo || offset > hi) return;
     if (a.melody[a.step] === offset) {
       a.step += 1;
       if (a.step >= a.melody.length) {
@@ -1520,8 +1558,15 @@ export class GameState {
     }
   }
 
-  // Le MJ (re)joue la mélodie en démo sur la borne.
+  // Le MJ (re)joue la mélodie en démo sur la borne (monde OU activité).
   pianoDemo() {
+    if (this.pianoWorldActive()) {
+      this.pianoDemoAt = Date.now();
+      this.pianoStep = 0;
+      this.addLog('🎶 Démo de la mélodie jouée sur la borne (piano).');
+      this.touch();
+      return;
+    }
     const a = this.activity;
     if (!a || a.type !== 'piano') return;
     a.demo = {
@@ -1533,50 +1578,62 @@ export class GameState {
     this.touch();
   }
 
-  // Vue publique du piano réparti (placement + mélodie + touches du joueur).
-  pianoPublic(forPlayerId) {
-    const a = this.activity;
-    const kpp = a.keysPerPhone;
+  // Constructeur partagé : vue piano (placement + partition + touches joueur).
+  buildPianoView({ order, melody, step, status, demo }, forPlayerId) {
+    const kpp = PIANO_KEYS_PER_PHONE, base = PIANO_BASE_MIDI;
     const rangeLabel = (i) => {
-      const lo = pianoNoteInfo(i * kpp, a.baseMidi);
-      const hi = pianoNoteInfo(i * kpp + kpp - 1, a.baseMidi);
+      const lo = pianoNoteInfo(i * kpp, base), hi = pianoNoteInfo(i * kpp + kpp - 1, base);
       return `${lo.label}–${hi.label}`;
     };
-    const placement = a.order.map((id, i) => ({
+    const placement = order.map((id, i) => ({
       pos: i + 1, name: this.player(id)?.name || '?', range: rangeLabel(i),
     }));
-    const slots = a.melody.map((off, i) => {
-      const n = pianoNoteInfo(off, a.baseMidi);
+    const slots = melody.map((off, i) => {
+      const n = pianoNoteInfo(off, base);
       let st = 'todo';
-      if (i < a.step) st = 'done';
-      else if (i === a.step && a.status === 'playing') st = 'next';
+      if (i < step) st = 'done';
+      else if (i === step && status === 'playing') st = 'next';
       return { st, name: n.name, freq: n.freq };
     });
-    // Quel téléphone (et quelle note) doit jouer maintenant ?
     let nextPos = -1, nextName = null;
-    if (a.status === 'playing' && a.step < a.melody.length) {
-      const off = a.melody[a.step];
+    if (status === 'playing' && step < melody.length) {
+      const off = melody[step];
       nextPos = Math.floor(off / kpp) + 1;
-      nextName = pianoNoteInfo(off, a.baseMidi).name;
+      nextName = pianoNoteInfo(off, base).name;
     }
-    // Touches du joueur (son demi-octave).
-    const idx = forPlayerId ? a.order.indexOf(forPlayerId) : -1;
+    const idx = forPlayerId ? order.indexOf(forPlayerId) : -1;
     const myKeys = [];
     if (idx >= 0) {
       for (let k = 0; k < kpp; k++) {
         const off = idx * kpp + k;
-        const n = pianoNoteInfo(off, a.baseMidi);
+        const n = pianoNoteInfo(off, base);
         myKeys.push({ off, name: n.name, label: n.label, white: n.white, freq: n.freq,
-          next: a.status === 'playing' && a.melody[a.step] === off });
+          next: status === 'playing' && melody[step] === off });
       }
     }
     return {
-      type: 'piano', state: a.state, status: a.status,
-      len: a.melody.length, step: a.step, wrongAt: a.wrongAt || 0,
-      nPhones: a.order.length, placement, slots, nextPos, nextName,
+      type: 'piano', status,
+      len: melody.length, step,
+      nPhones: order.length, placement, slots, nextPos, nextName,
       myPos: idx, myKeys,
-      demo: a.demo ? { at: a.demo.at, seq: a.demo.seq } : null,
+      demo: demo || null,
     };
+  }
+
+  // Vue publique du piano ACTIVITÉ.
+  pianoPublic(forPlayerId) {
+    const a = this.activity;
+    return this.buildPianoView({ order: a.order, melody: a.melody, step: a.step, status: a.status,
+      demo: a.demo ? { at: a.demo.at, seq: a.demo.seq } : null }, forPlayerId);
+  }
+
+  // Vue publique du piano INTÉGRÉ au Monde 3 (ou null si pas en piano-monde).
+  pianoWorldPublic(forPlayerId) {
+    const demo = this.pianoDemoAt
+      ? { at: this.pianoDemoAt, seq: PIANO_MELODY.map((off) => { const n = pianoNoteInfo(off, PIANO_BASE_MIDI); return { freq: n.freq, name: n.name }; }) }
+      : null;
+    return this.buildPianoView({ order: this.pianoOrder(), melody: PIANO_MELODY,
+      step: this.pianoStep, status: this.pianoStatus, demo }, forPlayerId);
   }
 
   // La mosaïque : chaque joueur ne reçoit QUE son fragment (son index + le mot
@@ -1698,7 +1755,10 @@ export class GameState {
         resoluParVote: !!world.resoluParVote, heroOnly: !!world.heroOnly,
         konamiGate: !!world.konamiGate,
         hintVideo: !!world.hintVideo,
+        pianoWorld: !!world.pianoWorld,
       },
+      // Monde 3 : piano réparti intégré (placement + partition + touches joueur)
+      piano: this.pianoWorldActive() ? this.pianoWorldPublic(me ? me.id : null) : null,
       // Vidéo-indice en cours de diffusion sur la borne (ou null)
       hintVideo: this.hintVideo,
       // Progression de la porte « Konami collectif » (Monde 6)

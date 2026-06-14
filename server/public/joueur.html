@@ -214,7 +214,10 @@ function render() {
     }
 
     if (!w.resoluParVote) {
-      if (w.konamiGate) {
+      if (w.pianoWorld && STATE.piano) {
+        // Monde 3 : piano réparti intégré — chaque téléphone a ses touches.
+        html += pianoController(STATE.piano);
+      } else if (w.konamiGate) {
         // Monde 6 : TOUS les joueurs saisissent le Konami, puis la commande en LEET.
         html += w6GateHTML(w, me);
       } else if (w.heroOnly && !me.isHero) {

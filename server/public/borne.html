@@ -1627,6 +1627,13 @@ function syncYT(s){
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }
+  // 💡 Vidéo-indice à l'écran (ex. Monde 1) : on met la musique de fond en sourdine
+  //    pour bien entendre l'indice (sinon syncYT relancerait l'ambiance par-dessus).
+  if (s.hintVideo) {
+    pauseBrief();
+    try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+    return;
+  }
   // Musique d'activité UNIQUEMENT pendant la phase 'activity' et tant qu'elle
   // n'est pas terminée — sinon le son (blind-test, Pac-Man) continue après
   // « STOP activité » (activity.state='done', phase='world').

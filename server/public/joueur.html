@@ -20,6 +20,9 @@
 </style>
 </head>
 <body class="scanlines">
+<!-- Barre flottante Game Master (Vincent) : visible pendant les activités du Monde 4
+     pour stopper l'activité en cours et revenir à la checklist des missions. -->
+<div id="gmbar" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;padding:8px;background:#14001aee;border-top:2px solid var(--neon);text-align:center"></div>
 <div class="wrap" id="app">
   <div class="card center"><span class="pixel blink">CONNEXION…</span></div>
 </div>
@@ -98,6 +101,7 @@ function render() {
   if (!STATE) return;
   const me = STATE.me;
   if (!me) { app.innerHTML = `<div class="card center"><h2 class="neon-pink">TOKEN INVALIDE</h2><p>Scanne ton QR code perso.</p></div>`; return; }
+  updateHeroBar(me);
 
   // --- PAC-MAN : contrôleur plein écran ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'pacman' && STATE.pacman) {
@@ -363,6 +367,15 @@ function controllerView(act) {
       <p><b>${esc(target)}</b> relève un défi…</p>
       <p class="muted">${esc(d.defi||'')}</p>
       <p class="muted">Regarde, tu voteras juste après ! 👀</p>
+    </div>`;
+  }
+  if (act.type === 'anecdote') {
+    const an = act.anecdote || {};
+    return `<div class="card center glow-box" style="border-color:var(--neon3)">
+      <div class="pill neon-yellow">📖 ANECDOTE</div>
+      <h2 class="neon-pink">${esc(an.titre||'')}</h2>
+      <p class="big">${esc(an.desc||'')}</p>
+      <p class="muted">Regarde la BORNE 📺 — c'est l'heure des histoires !</p>
     </div>`;
   }
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
@@ -1062,12 +1075,81 @@ function gageView(g, me) {
 function gmPlayerPanel(me) {
   const title = me.gameMaster ? '👑 POUVOIRS DU GAME MASTER' : '🎛️ CONTRÔLE HÔTE';
   const targets = STATE.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
-  return `<div class="card" style="border-color:var(--neon3);background:#1a1400">
+  return `${me.heroQuest ? heroQuestPanel(me) : ''}
+  <div class="card" style="border-color:var(--neon3);background:#1a1400">
     <div class="pill neon-yellow">${title}</div>
     <p class="muted">Distribue un gage à qui tu veux. Longue vie au roi.</p>
     <select id="gmTarget" style="width:100%;padding:10px;font-family:var(--term);font-size:20px">${targets}</select>
     <button class="btn warn mt" onclick="gmGage()">🎲 LANCER UN GAGE</button>
   </div>`;
+}
+
+// Monde 4 : checklist des MISSIONS du Game Master + bouton « valider le monde ».
+function heroQuestPanel(me) {
+  const q = me.heroQuest;
+  const g = q.games || {};
+  const row = (done, label, type, sub) => `
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+      <span style="font-size:18px">${done ? '✅' : '⬜'}</span>
+      <div style="flex:1">
+        <div style="font-size:14px;color:${done?'var(--ok)':'#fff'}">${label}</div>
+        ${sub ? `<div class="muted" style="font-size:11px">${sub}</div>` : ''}
+      </div>
+      ${type ? `<button class="btn ${done?'':'warn'}" style="font-size:11px;padding:8px 10px" onclick="heroLaunch('${type}')">${done?'↻':'▶'}</button>` : ''}
+    </div>`;
+  const gamesDone = !!(g.tetris && g.pacman && g.draw && g.pong);
+  const gamesBtns = `
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px">
+      <button class="btn ${g.tetris?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('tetris')">${g.tetris?'✅':''} Tetris</button>
+      <button class="btn ${g.pacman?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('pacman')">${g.pacman?'✅':''} Pac-Man</button>
+      <button class="btn ${g.draw?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('draw')">${g.draw?'✅':''} Dessine</button>
+      <button class="btn ${g.pong?'':'warn'}" style="flex:1;font-size:11px" onclick="heroLaunch('pong')">${g.pong?'✅':''} Pong</button>
+    </div>`;
+  return `<div class="card" style="border-color:var(--neon);background:#14001a">
+    <div class="pill neon-pink">👑 MISSIONS DU GAME MASTER</div>
+    <p class="muted" style="font-size:13px">Anime la soirée ! Accomplis chaque mission pour ouvrir le Monde 5.</p>
+    ${row(q.video, '🎉 Lancer une vidéo de fête', 'videoshow')}
+    ${row(q.blindtest, '🎵 Lancer un blind-test', 'blindtest')}
+    ${row(q.quiz, '❓ Lancer un quiz', 'quiz')}
+    ${row(q.roue, '🎰 Lancer une roue des gages', 'roue_des_gages')}
+    ${row(q.anecdote, '📖 Lancer une anecdote', 'anecdote')}
+    ${row(gamesDone, '🎮 Lancer tous les jeux', null, 'Tetris · Pac-Man · Dessine · Pong')}
+    ${gamesBtns}
+    <div class="mt" style="border-top:1px solid #ffffff22;padding-top:10px">
+      ${me.heroQuestComplete
+        ? `<button class="btn" style="width:100%;background:var(--ok);color:#001;font-size:14px" onclick="heroValidate()">✅ VALIDER LE MONDE → MONDE 5</button>`
+        : `<div class="muted center" style="font-size:12px">🔒 Termine toutes les missions pour valider le monde.</div>`}
+    </div>
+    <div id="heroMsg" class="center mt" style="font-size:12px"></div>
+  </div>`;
+}
+function heroLaunch(type){
+  api('/api/gm/hero', { action:'launch', payload:{ type } }).then(r=>{
+    const m = document.getElementById('heroMsg');
+    if (m && r && r.error) m.innerHTML = `<span style="color:var(--danger)">${esc(r.error)}</span>`;
+    poll();
+  });
+}
+function heroValidate(){
+  api('/api/gm/hero', { action:'validate' }).then(r=>{
+    const m = document.getElementById('heroMsg');
+    if (m) m.innerHTML = (r && r.ok)
+      ? '<span class="neon-cyan">✔ Monde validé !</span>'
+      : `<span style="color:var(--danger)">${esc((r && r.reason) || 'Impossible')}</span>`;
+    poll();
+  });
+}
+function heroStop(){ api('/api/gm/hero', { action:'stop' }).then(poll); }
+// Barre flottante : pendant une activité du Monde 4, Vincent peut la stopper
+// pour revenir à sa checklist de missions et lancer la suivante.
+function updateHeroBar(me){
+  const bar = document.getElementById('gmbar');
+  if (!bar) return;
+  const show = me.gameMaster && me.heroQuest && STATE.phase === 'activity';
+  if (!show){ bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+  bar.innerHTML = `<span class="pixel neon-yellow" style="font-size:11px;margin-right:10px">👑 GAME MASTER</span>
+    <button class="btn warn" style="font-size:12px;padding:8px 14px" onclick="heroStop()">⏹ STOP — revenir aux missions</button>`;
 }
 
 // --- Défis photo ---

@@ -23,6 +23,7 @@ import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord,
   pianoDemoSeq, pianoKeyLayout } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
+import { ANECDOTES } from '../data/anecdotes.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
 import { DRAW_WORDS } from '../data/draw_words.js';
 import { ENQUETE } from '../data/enquete.js';
@@ -82,6 +83,7 @@ export class GameState {
     this.glitchId = null; // id du joueur traître (tiré au sort)
     this.glitchRevealed = false;
     this.heroAwakened = false; // Vincent a-t-il reçu ses pouvoirs ?
+    this.heroQuest = null;     // Monde 4 : checklist des missions du Game Master (cf. awakenHero) — reset() le remet à null ici
     this.kidsDone = false; // les Pixels (enfants) ont-ils réussi leur défi ?
     // --- Monde 6 : porte « Konami collectif » ---
     this.w6Konami = {};  // { playerId: true } — qui a saisi la SÉQUENCE LÉGENDAIRE
@@ -439,6 +441,21 @@ export class GameState {
         return { ok: false, reason: world.nearMissMsg || 'Presque… essaie en LEET.' };
       }
     }
+    // Monde « Game Master » (Monde 4) : le mot-code RÉVEILLE les pouvoirs de
+    // Vincent — il ne valide PAS le monde. Vincent valide ensuite via ses missions.
+    if (world.heroWorld) {
+      if (this.heroAwakened) {
+        return { ok: false, reason: 'Pouvoirs déjà actifs — accomplis tes missions de Game Master !' };
+      }
+      if (normalize(code) === world.codeNormalise) {
+        this.awakenHero();
+        this.touch();
+        return { ok: true };
+      }
+      this.addLog(`❌ Mot refusé (Monde ${world.num}).`);
+      this.touch();
+      return { ok: false, reason: 'Mot incorrect.' };
+    }
     // Monde « piano » (Monde 3) : le mot-code DÉBLOQUE le piano réparti
     // (il ne valide PAS le monde : c'est la mélodie jouée qui le valide).
     if (world.pianoWorld) {
@@ -567,6 +584,7 @@ export class GameState {
   // Avance au monde suivant (coupe toute activité, réinitialise l'état piano).
   _advanceWorld() {
     this.activity = null;          // coupe une éventuelle vidéo de célébration
+    this.heroQuest = null;         // la quête Game Master ne concerne que le Monde 4
     this.pianoUnlocked = false;    // le piano du monde suivant repart verrouillé
     this.pianoStep = 0; this.pianoStatus = 'playing'; this.pianoDemoAt = 0; this.pianoWrongAt = 0;
     this.worldIndex += 1;
@@ -577,9 +595,53 @@ export class GameState {
   }
 
   awakenHero() {
+    if (this.heroAwakened) return; // déjà éveillé : on ne réinitialise pas la quête
     this.heroAwakened = true;
+    // Checklist des missions à accomplir pour ouvrir le Monde 5.
+    this.heroQuest = {
+      video: false,      // lancer une vidéo de fête
+      blindtest: false,  // lancer un blind-test
+      quiz: false,       // lancer un quiz
+      roue: false,       // lancer une roue des gages
+      anecdote: false,   // lancer une anecdote
+      games: { tetris: false, pacman: false, draw: false, pong: false }, // tous les jeux
+    };
     const v = this.players.find((p) => p.isHero);
-    if (v) this.addLog(`👑 ${v.name} est désormais le GAME MASTER !`);
+    if (v) this.addLog(`👑 ${v.name} est désormais le GAME MASTER ! Accomplis tes missions pour ouvrir le Monde 5.`);
+  }
+
+  // Enregistre l'accomplissement d'une mission du Game Master quand une activité
+  // est lancée au Monde 4. (Appelé en tête de startActivity.)
+  _recordHeroMission(type) {
+    if (!this.heroAwakened || !this.heroQuest) return;
+    if (this.currentWorld()?.id !== 'w4') return;
+    const q = this.heroQuest;
+    if (type === 'videoshow') q.video = true;
+    else if (type === 'blindtest') q.blindtest = true;
+    else if (type === 'quiz') q.quiz = true;
+    else if (type === 'roue_des_gages') q.roue = true;
+    else if (type === 'anecdote') q.anecdote = true;
+    else if (Object.prototype.hasOwnProperty.call(q.games, type)) q.games[type] = true;
+  }
+
+  // Toutes les missions du Game Master sont-elles accomplies ?
+  heroQuestComplete() {
+    const q = this.heroQuest;
+    if (!q) return false;
+    return q.video && q.blindtest && q.quiz && q.roue && q.anecdote
+      && Object.values(q.games).every(Boolean);
+  }
+
+  // Vincent valide le Monde 4 (possible seulement une fois la quête terminée).
+  heroValidateWorld() {
+    const w = this.currentWorld();
+    if (!w || !w.heroWorld) return { ok: false, reason: 'Pas le monde du Game Master.' };
+    if (!this.heroQuestComplete()) {
+      return { ok: false, reason: 'Termine d\'abord TOUTES tes missions de Game Master.' };
+    }
+    this.addLog('👑 Game Master : toutes les missions accomplies — passage au Monde 5 !');
+    this.completeWorld({ celebrate: false });
+    return { ok: true };
   }
 
   // ---- Gages --------------------------------------------------------
@@ -648,6 +710,8 @@ export class GameState {
   startActivity(type, opts = {}) {
     // Toute nouvelle activité annule un éventuel auto-lancement du briefing.
     if (this._briefTimer) { clearTimeout(this._briefTimer); this._briefTimer = null; }
+    // Monde 4 : coche la mission correspondante du Game Master (avant les early-returns des jeux).
+    this._recordHeroMission(type);
     if (type === 'pacman') return this.startPacman(opts);
     if (type === 'tetris') return this.startTetris(opts);
     if (type === 'tron') return this.startTron(opts);
@@ -823,6 +887,14 @@ export class GameState {
       this.activity.chyron = opts.chyron || '';
       this.activity.footer = opts.footer || '';
       this.activity.skipIntro = opts.skipIntro || false; // true = pas de sting, la vidéo démarre direct
+    }
+    // Anecdote : la borne affiche un prompt (souvenir / histoire) à raconter.
+    if (type === 'anecdote') {
+      const an = (opts.anecdote && opts.anecdote.titre)
+        ? opts.anecdote
+        : ANECDOTES[Math.floor(Math.random() * ANECDOTES.length)];
+      this.activity.anecdote = an;
+      this.addLog(`📖 Anecdote lancée : « ${an.titre} ».`);
     }
     // Briefing : les slides défilent en boucle sur la borne et le briefing
     // RESTE affiché jusqu'à ce que le GM clique « ▶ DÉMARRER ». Pas d'auto-
@@ -1859,6 +1931,9 @@ export class GameState {
       players: this.players.map((p) => ({
         id: p.id, name: p.name, avatar: p.avatar, connected: p.connected,
         lives: p.lives, coins: p.coins, ready: p.ready,
+        // Avancement des défis photo (le GM suit qui a pris combien de photos).
+        photoCount: this.photos.filter((ph) => ph.playerId === p.id).length,
+        photoTotal: (PHOTO_MISSIONS[p.avatar] || []).length,
       })),
       // Bloc privé (uniquement pour le joueur qui demande via son token)
       me: me && this.privateView(me, world),
@@ -1881,6 +1956,9 @@ export class GameState {
       isHero,
       // Le pouvoir Game Master n'apparaît qu'après le réveil au Monde 4
       gameMaster: isHero && this.heroAwakened,
+      // Quête du Game Master (Monde 4) : checklist + état d'avancement.
+      heroQuest: (isHero && this.heroAwakened && world && world.heroWorld) ? this.heroQuest : null,
+      heroQuestComplete: (isHero && world && world.heroWorld) ? this.heroQuestComplete() : false,
       // Indices perso pour le monde courant
       indices: world && world.indices ? (world.indices[me.avatar] || null) : null,
       // Monde 6 : ai-je déjà saisi la SÉQUENCE LÉGENDAIRE sur ma manette ?

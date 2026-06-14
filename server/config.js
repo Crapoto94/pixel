@@ -26,6 +26,14 @@ export const CONFIG = {
   //    Laisse vide ('') pour aucune ambiance.
   ambianceYoutube: 'https://www.youtube.com/watch?v=hUC9VCLH2xA&list=PL7Hq91kaxf0CHdrNHKvXfxCHhw2vhoPWV',
 
+  // 🎬 Ambiance sonore SPÉCIFIQUE pendant le BRIEFING (remplace l'ambiance ci-dessus
+  //    le temps du briefing, puis l'ambiance normale reprend). Vidéo unique en boucle.
+  //    Laisse vide ('') pour garder l'ambiance normale pendant le briefing.
+  briefingYoutube: 'https://www.youtube.com/watch?v=lDNGlG71AR8',
+
+  // 🎉 Vidéo de FÊTE que le GAME MASTER (Vincent) peut lancer au Monde 4.
+  feteYoutube: 'https://www.youtube.com/watch?v=7kyY29BHTZs',
+
   // 🎸 Blind-tests : une playlist YouTube par THÈME (jouées sur la BORNE, shuffle).
   //    Mets soit l'ID de playlist (PL…), soit l'URL complète : on en extrait l'ID.
   //    Laisse '' pour désactiver un thème.

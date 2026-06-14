@@ -47,9 +47,10 @@
 </style>
 </head>
 <body class="scanlines">
-<div id="yt-amb" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
-<div id="yt-bt"  style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
-<div id="yt-pac" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-amb"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-brief" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-bt"    style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-pac"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
@@ -83,6 +84,7 @@ function enableSound(){
   const h = document.getElementById('soundhint'); if (h) h.style.display = 'none';
   if (ytAmb) { try { ytAmb.unMute(); } catch(_){} } // déjà en train de jouer, on retire juste le mute
   else initYT(); // API pas encore prête, on démarre normalement
+  if (ytBrief) { try { ytBrief.unMute(); } catch(_){} }
 }
 document.getElementById('soundhint').addEventListener('click', enableSound);
 ['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: false }));
@@ -121,7 +123,7 @@ function buildWinVideo(){
   if (!el) return;
   try { document.documentElement.requestFullscreen(); } catch(_){}
   // Coupe tout le son de fond — la vidéo anniversaire prend la main.
-  try { if (ytAmb){ytAmb.pauseVideo();ytAmb.mute();} if (ytBt){ytBt.pauseVideo();ytBt.mute();} if (ytPac){ytPac.pauseVideo();ytPac.mute();} } catch(_){}
+  try { if (ytAmb){ytAmb.pauseVideo();ytAmb.mute();} if (ytBrief){ytBrief.pauseVideo();ytBrief.mute();} if (ytBt){ytBt.pauseVideo();ytBt.mute();} if (ytPac){ytPac.pauseVideo();ytPac.mute();} } catch(_){}
   if (window.YT && YT.Player){
     ytWin = new YT.Player('win-video-player', {
       height:'100%', width:'100%', videoId:'6EEGmdH9Vu0',
@@ -219,6 +221,19 @@ function render(){
     renderRoueBorne(STATE.activity); return;
   }
   if (roueCountTimer){ clearInterval(roueCountTimer); roueCountTimer = null; }
+  // --- Anecdote (le Game Master lance un souvenir à raconter) ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='anecdote'){
+    const an = STATE.activity.anecdote || {};
+    stage.innerHTML = `<div class="center">
+      <div class="card glow-box" style="display:inline-block;max-width:880px;border-color:var(--neon3)">
+        <div class="pill neon-yellow">📖 ANECDOTE</div>
+        <h1 class="big neon-pink">${esc(an.titre||'')}</h1>
+        <p class="big">${esc(an.desc||'')}</p>
+        <p class="big neon-cyan blink">À toi de raconter, Vincent ! 🎤</p>
+      </div></div>`;
+    tickerEl.textContent = 'ANECDOTE — Vincent raconte !';
+    return;
+  }
   // --- Diffusion vidéo (danse des canards, anecdotes…) ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='videoshow'){
     renderVideoBorne(STATE.activity); return;
@@ -1527,7 +1542,7 @@ function syncBlindtest(s) {
 }
 
 // =================== YOUTUBE (ambiance gaming + blind-test rock + pac-man) ===================
-let ytAmb = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
+let ytAmb = null, ytBrief = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
 
 window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; initYT(); }; // démarre muet sans attendre de clic
 
@@ -1542,6 +1557,18 @@ function initYT(){
         events:{
           onReady(e){ e.target.setShuffle(true); e.target.playVideo(); }, // muet jusqu'au 1er clic
           onStateChange(e){ if(e.data===YT.PlayerState.ENDED) e.target.nextVideo(); }
+        }
+      });
+    }
+    // Ambiance dédiée au BRIEFING (vidéo unique en boucle, muette jusqu'au 1er clic).
+    if (cfg.briefing && cfg.briefing.id) {
+      const bid = cfg.briefing.id, bstart = cfg.briefing.start || 0;
+      ytBrief = new YT.Player('yt-brief', {
+        height:'1', width:'1', videoId: bid,
+        playerVars:{ autoplay:1, loop:1, playlist:bid, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:bstart },
+        events:{
+          onReady(e){ try{ e.target.mute(); }catch(_){} }, // prêt, muet ; lancé pendant le briefing
+          onStateChange(e){ if(e.data===YT.PlayerState.ENDED){ try{ e.target.seekTo(bstart); e.target.playVideo(); }catch(_){} } }
         }
       });
     }
@@ -1601,8 +1628,10 @@ function initYT(){
 
 function syncYT(s){
   const a = s.activity;
+  const pauseBrief = () => { try { if (ytBrief) ytBrief.pauseVideo(); } catch(_){} };
   // 🎹 Piano (Monde 3) en cours : silence total — la borne joue la mélodie elle-même.
   if (s.piano) {
+    pauseBrief();
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }
@@ -1610,15 +1639,23 @@ function syncYT(s){
   // n'est pas terminée — sinon le son (blind-test, Pac-Man) continue après
   // « STOP activité » (activity.state='done', phase='world').
   const live = s.phase === 'activity' && !!a && a.state !== 'done';
+  const isBrief = live && a.type === 'briefing';
   const isBT = live && a.type === 'blindtest';
   const isPac = live && a.type === 'pacman';
   // Une chanson blind-test est posée uniquement quand le QCM est affiché.
   const songOn = isBT && a.sub === 'question' && !!a.playVideoId;
+  // 🎬 BRIEFING : ambiance sonore dédiée (si configurée) à la place de l'ambiance normale.
+  if (isBrief && ytBrief) {
+    try { ytBrief.unMute(); ytBrief.playVideo(); if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+    return;
+  }
   // Diffusion vidéo : l'iframe fournit le son → on coupe tout le reste.
   if (live && a.type === 'videoshow') {
+    pauseBrief();
     try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }
+  pauseBrief();
   try {
     if (isPac) {
       // 🟡 PAC-MAN : musique dédiée, ambiance et rock en pause

@@ -115,12 +115,17 @@ export const WORLDS = [
     titre: 'LE RÉVEIL DU PLAYER ONE',
     colis: 4,
     isTwist: true,
+    // Monde « Game Master » : le mot-code GAMEMASTER ne valide PAS le monde —
+    // il RÉVEILLE les pouvoirs de Vincent. Pour passer au Monde 5, Vincent doit
+    // accomplir toutes ses MISSIONS (cf. heroQuest dans state.js) puis valider.
+    heroWorld: true,
     intro:
       "⚡ RÉVÉLATION ⚡ « PLAYER ONE identifié : VINCENT. Tu n'es pas un joueur. " +
       "Tu es le GAME MASTER. Prends le contrôle. »",
     enigme:
       "Vincent reçoit ses POUVOIRS (panneau de contrôle sur son téléphone). " +
-      "Première énigme qu'il MÈNE : il doit utiliser un pouvoir pour aider le groupe à avancer.",
+      "Pour ouvrir le monde suivant, il doit ANIMER la soirée : lancer une vidéo de fête, " +
+      "un blind-test, un quiz, une roue, tous les jeux (Tetris, Pac-Man, Dessine, Pong) et une anecdote.",
     code: 'GAMEMASTER',
     codeNormalise: 'GAMEMASTER',
     colisContenu: [

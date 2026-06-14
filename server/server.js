@@ -110,6 +110,7 @@ app.get('/api/ytconfig', (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.json({
     ambiance: extractList(CONFIG.ambianceYoutube),
+    briefing: extractVideo(CONFIG.briefingYoutube),
     blindtest,
     pacman: extractVideo(CONFIG.pacmanYoutube),
   });
@@ -372,6 +373,46 @@ app.post('/api/gm/gage', (req, res) => {
   const allowed = p.isHost || (p.isHero && game.heroAwakened);
   if (!allowed) return res.status(403).json({ error: 'Pouvoir non débloqué.' });
   res.json(game.drawGage(req.body.pool || null, req.body.targetId || null));
+});
+
+// Extrait l'ID vidéo d'une URL/ID YouTube (pour la vidéo de fête du Game Master).
+function ytVideoId(url) {
+  const m = (url || '').match(/[?&]v=([^&]+)/) || (url || '').match(/youtu\.be\/([^?&]+)/);
+  return m ? m[1] : (url || '');
+}
+
+// Pouvoirs « Game Master » de Vincent : lancer les activités-missions du Monde 4
+// et valider le monde une fois toutes les missions accomplies.
+app.post('/api/gm/hero', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  const allowed = p.isHost || (p.isHero && game.heroAwakened);
+  if (!allowed) return res.status(403).json({ error: 'Pouvoir non débloqué.' });
+  const { action, payload = {} } = req.body || {};
+  if (action === 'validate') return res.json(game.heroValidateWorld());
+  if (action === 'stop') { game.stopActivity(); return res.json({ ok: true }); }
+  if (action === 'launch') {
+    const allowedTypes = ['videoshow', 'blindtest', 'quiz', 'roue_des_gages', 'tetris', 'pacman', 'draw', 'pong', 'anecdote'];
+    const type = payload.type;
+    if (!allowedTypes.includes(type)) return res.status(400).json({ error: 'Activité non autorisée.' });
+    let opts = payload.opts || {};
+    if (type === 'videoshow') {
+      // Vidéo de FÊTE (id côté serveur, le téléphone ne le connaît pas).
+      opts = {
+        video: ytVideoId(CONFIG.feteYoutube) || '7kyY29BHTZs',
+        topLabel: '🎉 SOIRÉE !', chyron: 'Le GAME MASTER lance la fête ! 🎶',
+        footer: 'Tout le monde danse 💃🕺', skipIntro: true,
+      };
+    } else if (type === 'blindtest' && !opts.theme) {
+      opts = { theme: 'rock' };
+    } else if (type === 'quiz' && !opts.deck) {
+      opts = { deck: 'videogame' };
+    } else if (type === 'roue_des_gages' && !opts.pool) {
+      opts = { pool: 'vincent' };
+    }
+    game.startActivity(type, opts);
+    return res.json({ ok: true });
+  }
+  return res.status(400).json({ error: 'Action inconnue.' });
 });
 
 // --- API GM console (Marc) — protégée par mot de passe --------------

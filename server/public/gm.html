@@ -198,6 +198,12 @@ function render(){
   <div class="card">
     <div class="pixel neon-cyan" style="font-size:11px">📸 DÉFIS PHOTO</div>
     <div class="muted mt" style="font-size:13px">Photos : <code>${S.photos ? S.photos.length : 0}</code> soumises</div>
+    <div class="mt" style="display:flex;flex-wrap:wrap;gap:6px">
+      ${S.players.map(p=>{
+        const c = p.photoCount||0, t = p.photoTotal||0, full = t>0 && c>=t;
+        return `<span class="pill ${full?'neon-cyan':''}" style="font-size:12px;${full?'':'background:#1a1a2a'}">${esc(p.name)} <b>${c}/${t}</b></span>`;
+      }).join('')}
+    </div>
     <div class="grid3 mt">
       <button class="btn warn" onclick="act('setPhotoPhase',{phase:'vote'})">📸 Ouvrir vote</button>
       <button class="btn secondary" onclick="act('setPhotoPhase',{phase:'results'})">🏆 Résultats</button>

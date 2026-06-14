@@ -26,9 +26,14 @@ export const CONFIG = {
   //    Laisse vide ('') pour aucune ambiance.
   ambianceYoutube: 'https://www.youtube.com/watch?v=hUC9VCLH2xA&list=PL7Hq91kaxf0CHdrNHKvXfxCHhw2vhoPWV',
 
-  // 🎸 Playlist blind-test CLASSIC ROCK (jouée sur la BORNE pendant le blind-test, shuffle).
-  //    L'ID de playlist seul suffit (ou laisser vide '').
-  blindtestPlaylist: 'PLOds7NNqmx4n1SA599PbsgB3UIez9zRXK',
+  // 🎸 Blind-tests : une playlist YouTube par THÈME (jouées sur la BORNE, shuffle).
+  //    Mets soit l'ID de playlist (PL…), soit l'URL complète : on en extrait l'ID.
+  //    Laisse '' pour désactiver un thème.
+  blindtestPlaylists: {
+    rock:     'PLOds7NNqmx4n1SA599PbsgB3UIez9zRXK',                              // 🎸 Rock
+    francais: 'https://www.youtube.com/watch?v=Q3Kvu6Kgp88&list=PL4N9oNbOHXBUqAU7etRfVkj8vtznT5Rf2', // 🎤 Chansons françaises
+    dessins:  '', // 📺 Dessins animés — ⚠️ colle ici l'URL/ID de ta playlist dessins animés
+  },
 
   // 🟡 Musique jouée pendant le mini-jeu PAC-MAN (vidéo unique, en boucle).
   pacmanYoutube: 'https://www.youtube.com/watch?v=OCsJ6nevK-A&t=10s',

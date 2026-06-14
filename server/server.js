@@ -100,10 +100,17 @@ app.get('/api/ytconfig', (req, res) => {
     const t = (url || '').match(/[?&]t=(\d+)/);
     return { id: m ? m[1] : '', start: t ? parseInt(t[1], 10) : 0 };
   }
+  // Blind-tests : map { theme: listId } (on extrait l'ID de chaque URL/ID)
+  const btSrc = CONFIG.blindtestPlaylists || {};
+  const blindtest = {};
+  for (const theme of Object.keys(btSrc)) {
+    const id = extractList(btSrc[theme]);
+    if (id) blindtest[theme] = id;
+  }
   res.set('Cache-Control', 'no-store');
   res.json({
     ambiance: extractList(CONFIG.ambianceYoutube),
-    blindtest: CONFIG.blindtestPlaylist || '',
+    blindtest,
     pacman: extractVideo(CONFIG.pacmanYoutube),
   });
 });
@@ -242,16 +249,17 @@ app.post('/api/photo/openvote', (req, res) => {
 // --- Blind-test dynamique : collecte de titres via IFrame API ---------
 // La BORNE poste chaque titre détecté (onStateChange PLAYING)
 app.post('/api/blindtest/addtrack', (req, res) => {
-  const { videoId, videoTitle } = req.body || {};
-  game.addPlaylistTrack(videoId, videoTitle);
-  res.json({ ok: true, total: game.playlistTracks.length });
+  const { theme, videoId, videoTitle } = req.body || {};
+  game.addPlaylistTrack(theme, videoId, videoTitle);
+  res.json({ ok: true, total: game.themeTrackCount(theme) });
 });
 
-// La BORNE poste TOUS les IDs de la playlist (getPlaylist) → titrage via oEmbed
+// La BORNE poste TOUS les IDs d'une playlist (getPlaylist) → titrage via oEmbed
 app.post('/api/blindtest/playlist', async (req, res) => {
+  const theme = req.body?.theme || 'rock';
   const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
-  const added = await game.ingestPlaylist(ids);
-  res.json({ ok: true, total: game.playlistTracks.length, added });
+  const added = await game.ingestPlaylist(theme, ids);
+  res.json({ ok: true, total: game.themeTrackCount(theme), added });
 });
 
 // --- Spotlight : vote de la salle (réussi / raté) --------------------
@@ -387,7 +395,7 @@ app.get('/api/gm/state', (req, res) => {
     quizMaster,
     enqueteMaster: game.enqueteMaster(),
     mosaicWord: game.activity && game.activity.type === 'mosaic' ? game.activity.word : null,
-    playlistTrackCount: game.playlistTracks.length,
+    playlistTrackCount: game.themeTrackCount(game.activity?.type === 'blindtest' ? game.activity.theme : null),
     // Mot secret du Dessine-moi (l'hôte le voit pour animer)
     drawWord: game.activity?.type === 'draw' ? game.activity.word : null,
     // Solution du monde courant (l'hôte doit pouvoir débloquer/aider)

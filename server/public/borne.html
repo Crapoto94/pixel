@@ -418,7 +418,10 @@ function activityView(act){
 function quizBorne(act){
   const letters=['A','B','C','D','E'];
   const reveal = act.sub==='reveal';
-  const title = act.type==='blindtest'?'🎵 BLIND-TEST':'❓ QUIZ ARCADE';
+  const BT_LABELS = { rock:'ROCK', francais:'CHANSONS FR', dessins:'DESSINS ANIMÉS' };
+  const title = act.type==='blindtest' ? ('🎵 BLIND-TEST '+(BT_LABELS[act.theme]||'')).trim() : '❓ QUIZ ARCADE';
+  // Blind-test = pastille VIOLETTE ; quiz = cyan.
+  const pill = act.type==='blindtest' ? 'class="pill" style="color:#fff;background:#7a5cff"' : 'class="pill neon-cyan"';
 
   // Fin de manche blind-test : classement + vainqueur + perdant
   if (act.sub==='final'){
@@ -445,7 +448,7 @@ function quizBorne(act){
   // Blind-test dynamique : avant la 1ère chanson (le GM doit appuyer sur ❓)
   if (act.dynamicBlindtest && !(act.choices && act.choices.length)) {
     return `<div class="center">
-      <div class="pill neon-cyan">${title}</div>
+      <div ${pill}>${title}</div>
       <p class="huge">🎵</p>
       <p class="big neon-yellow blink">Préparez vos oreilles…</p>
       <p class="muted">Le maître du jeu lance la première chanson.</p>
@@ -473,7 +476,7 @@ function quizBorne(act){
       ${act.leaderboard.map(p=>`<div>${p.correct?'✅':'❌'} ${esc(p.name)}${p.pts?` <span class="coins">+${p.pts}</span>`:''}</div>`).join('')||'<div class="muted center">Aucun joueur.</div>'}
     </div>`;
     return `<div class="center">
-      <div class="pill neon-cyan">${title} — ${qnum}</div>
+      <div ${pill}>${title} — ${qnum}</div>
       <h1 class="big neon-pink" style="margin:6px 0">${esc(act.prompt)}</h1>
       ${champ}
       <div style="display:flex;gap:22px;justify-content:center;align-items:flex-start;flex-wrap:wrap;max-width:1000px;margin:4px auto 0">
@@ -485,7 +488,7 @@ function quizBorne(act){
 
   // QUESTION en cours
   return `<div class="center">
-    <div class="pill neon-cyan">${title} — ${qnum}</div>
+    <div ${pill}>${title} — ${qnum}</div>
     <h1 class="big neon-pink" style="margin:10px 0">${esc(act.prompt)}</h1>
     ${act.type==='blindtest' && !reveal ? '<p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>':''}
     <div style="max-width:760px;margin:auto;text-align:left">${choices}</div>
@@ -1448,22 +1451,23 @@ function renderPhotoBorne() {
 // complète des IDs chargés ; le serveur en tire les titres via oEmbed. Aucun
 // défilement, aucune gêne pour la lecture. On retente car la liste met parfois
 // 1-2 s à se peupler, et on rafraîchit (les mix radio s'allongent en jouant).
-let _harvestTimer = null;
-function harvestTracks(player){
-  if (_harvestTimer) return;
+let BT_LISTS = {};          // { theme: listId } depuis /api/ytconfig
+let _btHarvesters = {};     // un lecteur dédié par thème (évite toute contamination)
+// Moissonne les IDs d'UN lecteur (lié à UN thème fixe) → serveur (titrage oEmbed).
+function harvestFrom(player, theme){
+  let n = 0;
   const grab = () => {
     let ids = [];
     try { ids = player.getPlaylist() || []; } catch(_){}
     if (ids && ids.length) {
       fetch('/api/blindtest/playlist', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ ids })
+        body: JSON.stringify({ theme, ids })
       }).catch(()=>{});
     }
   };
-  setTimeout(grab, 800);
-  let n = 0;
-  _harvestTimer = setInterval(() => { grab(); if (++n >= 12) { clearInterval(_harvestTimer); } }, 2500);
+  setTimeout(grab, 1000);
+  const iv = setInterval(() => { grab(); if (++n >= 8) { clearInterval(iv); try{ player.pauseVideo(); }catch(_){} } }, 3000);
 }
 
 // =================== BLIND-TEST DYNAMIQUE ===================
@@ -1501,21 +1505,31 @@ function initYT(){
         }
       });
     }
-    if (cfg.blindtest) {
-      ytBt = new YT.Player('yt-bt', {
+    // Blind-tests multi-thèmes : cfg.blindtest = { rock, francais, dessins }
+    BT_LISTS = (cfg.blindtest && typeof cfg.blindtest === 'object') ? cfg.blindtest : {};
+    // Un MOISSONNEUR caché et dédié par thème : il charge SA playlist (muette),
+    // moissonne ses titres puis se met en pause. Aucun mélange entre thèmes.
+    const host = document.createElement('div');
+    host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;left:-9999px';
+    document.body.appendChild(host);
+    Object.keys(BT_LISTS).forEach((theme) => {
+      if (!BT_LISTS[theme]) return;
+      const divId = 'yt-bt-h-' + theme;
+      const div = document.createElement('div'); div.id = divId; host.appendChild(div);
+      _btHarvesters[theme] = new YT.Player(divId, {
         height:'1', width:'1',
-        playerVars:{ listType:'playlist', list:cfg.blindtest, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
+        playerVars:{ listType:'playlist', list:BT_LISTS[theme], autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
-          onReady(e){ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); harvestTracks(e.target); }, // muet : on moissonne les titres
+          onReady(e){ try{ e.target.setShuffle(true); e.target.mute(); e.target.playVideo(); }catch(_){}; harvestFrom(e.target, theme); },
           onStateChange(e){
-            // Collecter le titre pour le blind-test dynamique
+            // Titre collecté tagué avec le thème FIXE de ce moissonneur (pas de contamination)
             if (e.data === YT.PlayerState.PLAYING) {
               try {
                 const d = e.target.getVideoData();
                 if (d && d.video_id && d.title) {
                   fetch('/api/blindtest/addtrack', {
                     method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ videoId: d.video_id, videoTitle: d.title }),
+                    body: JSON.stringify({ theme, videoId: d.video_id, videoTitle: d.title }),
                   }).catch(()=>{});
                 }
               } catch(_) {}
@@ -1524,7 +1538,13 @@ function initYT(){
           }
         }
       });
-    }
+    });
+    // Lecteur de LECTURE (joue la chanson piochée par le serveur, via son id).
+    ytBt = new YT.Player('yt-bt', {
+      height:'1', width:'1',
+      playerVars:{ autoplay:0, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
+      events:{ onReady(e){ try{ e.target.mute(); }catch(_){} } }
+    });
     if (cfg.pacman && cfg.pacman.id) {
       const pid = cfg.pacman.id, pstart = cfg.pacman.start || 0;
       ytPac = new YT.Player('yt-pac', {

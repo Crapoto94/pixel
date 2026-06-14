@@ -46,10 +46,13 @@ function randLetters(k) {
 export class GameState {
   constructor() {
     this.listeners = new Set(); // callbacks SSE
-    this.playlistTracks = []; // titres collectés depuis ytBt — survit au game reset()
+    this.playlistTracks = {}; // { theme: [{id,title}] } collectés depuis la borne — survit au reset()
     this._autoAdvanceTimer = null; // timer interne non persisté
     this.reset(false);
     this.load();
+    // Compat : anciens saves où playlistTracks était un tableau (rock seul).
+    if (Array.isArray(this.playlistTracks)) this.playlistTracks = { rock: this.playlistTracks };
+    if (!this.playlistTracks || typeof this.playlistTracks !== 'object') this.playlistTracks = {};
   }
 
   // ---- Cycle de vie -------------------------------------------------
@@ -275,11 +278,19 @@ export class GameState {
   }
 
   // ---- Blind-test dynamique (titres collectés via IFrame API) ----------
-  addPlaylistTrack(videoId, videoTitle) {
+  // Les titres sont rangés par THÈME (rock / francais / dessins / …).
+  themePool(theme) {
+    theme = theme || 'rock';
+    if (!this.playlistTracks[theme]) this.playlistTracks[theme] = [];
+    return this.playlistTracks[theme];
+  }
+  themeTrackCount(theme) {
+    return theme ? this.themePool(theme).length : 0;
+  }
+  addPlaylistTrack(theme, videoId, videoTitle) {
     if (!videoId || !videoTitle) return;
-    if (!this.playlistTracks.find(t => t.id === videoId)) {
-      this.playlistTracks.push({ id: videoId, title: videoTitle });
-    }
+    const pool = this.themePool(theme);
+    if (!pool.find(t => t.id === videoId)) pool.push({ id: videoId, title: videoTitle });
   }
 
   // Petit GET JSON sans dépendance (oEmbed YouTube — endpoint public, pas de clé)
@@ -298,20 +309,21 @@ export class GameState {
 
   // Reçoit la liste COMPLÈTE des IDs de la playlist (depuis getPlaylist() côté
   // borne) et récupère chaque titre via l'oEmbed YouTube, par petits lots.
-  async ingestPlaylist(ids) {
-    const todo = (ids || []).filter((id) => id && !this.playlistTracks.find((t) => t.id === id));
+  async ingestPlaylist(theme, ids) {
+    const pool = this.themePool(theme);
+    const todo = (ids || []).filter((id) => id && !pool.find((t) => t.id === id));
     let added = 0;
     const fetchTitle = async (id) => {
       const url = 'https://www.youtube.com/oembed?format=json&url='
         + encodeURIComponent('https://www.youtube.com/watch?v=' + id);
       const d = await this._getJson(url);
-      if (d && d.title) { this.addPlaylistTrack(id, d.title); added++; }
+      if (d && d.title) { this.addPlaylistTrack(theme, id, d.title); added++; }
     };
     for (let i = 0; i < todo.length; i += 6) {
       await Promise.all(todo.slice(i, i + 6).map(fetchTitle));
     }
     if (added) {
-      this.addLog(`🎵 Blind-test : ${this.playlistTracks.length} titres en mémoire (playlist complète).`);
+      this.addLog(`🎵 Blind-test (${theme}) : ${pool.length} titres en mémoire.`);
       this.touch();
     }
     return added;
@@ -324,7 +336,7 @@ export class GameState {
     const a = this.activity;
     if (!a || a.type !== 'blindtest') return;
     if ((a.asked || 0) >= (a.total || 15)) { this.blindtestFinish(); return; }
-    const pool = [...this.playlistTracks];
+    const pool = [...this.themePool(a.theme)];
     if (pool.length < 4) {
       this.addLog('🎵 Blind-test : pas encore assez de titres détectés — patientez quelques secondes…');
       this.touch();
@@ -760,6 +772,7 @@ export class GameState {
     // La 1ère chanson démarre automatiquement (si les titres sont déjà collectés ;
     // sinon le GM dispose d'un bouton de secours « Lancer la 1ère chanson »).
     if (type === 'blindtest') {
+      this.activity.theme = opts.theme || 'rock'; // rock | francais | dessins
       this.activity.dynamicBlindtest = true;
       this.activity.generatedQuestion = null;
       this.activity.playVideoId = null;
@@ -996,6 +1009,7 @@ export class GameState {
       myAnswer: forPlayerId && a.answers[forPlayerId] ? a.answers[forPlayerId].choice : null,
       // Blind-test dynamique
       dynamicBlindtest: a.dynamicBlindtest || false,
+      theme: a.theme || null,
       playVideoId: a.playVideoId || null,
       playRequestedAt: a.playRequestedAt || 0,
       firstCorrectName: reveal ? (a.firstCorrectName || null) : null,

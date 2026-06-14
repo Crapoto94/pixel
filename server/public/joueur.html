@@ -843,24 +843,32 @@ function pianoController(act){
 function pianoPress(off, freq){ if(window.SFX){ SFX.unlock(); SFX.note(freq); } api('/api/piano/press', { off }); }
 function pianoReplay(){ if(window.SFX) SFX.unlock(); api('/api/piano/replay', {}); }
 // Surligne MES touches en rythme pendant que la BORNE joue la mélodie (démo).
-const PIANO_STEP_MS = 420; // doit matcher la borne (PIANO_STEP)
-let _jpDemoAt = 0, _jpRaf = 0;
+let _jpDemoAt = 0, _jpRaf = 0, _jpWrongAt = 0;
 function detectPianoDemo(s){
-  const p = s && s.piano;
-  if (!p || !p.demo || !p.demo.at || p.myPos < 0) return;
-  if (p.demo.at === _jpDemoAt) return;       // démo déjà traitée
-  _jpDemoAt = p.demo.at;
-  startKeyDemoHighlight(p.demo.seq);
+  // Le piano peut venir du Monde 3 (s.piano) OU de l'activité (s.activity).
+  const p = (s && s.piano) || (s && s.activity && s.activity.type==='piano' ? s.activity : null);
+  if (!p || p.myPos < 0) return;
+  if (p.demo && p.demo.at && p.demo.at !== _jpDemoAt){
+    _jpDemoAt = p.demo.at;
+    startKeyDemoHighlight(p.demo.seq);
+  }
+  if (p.wrongAt && p.wrongAt !== _jpWrongAt){
+    _jpWrongAt = p.wrongAt;
+    flashKeysWrong();
+  }
 }
 function startKeyDemoHighlight(seq){
   cancelAnimationFrame(_jpRaf);
-  const start = performance.now(), total = seq.length * PIANO_STEP_MS;
+  // Tempo réel : chaque note dure n.dur secondes (rythme Mario).
+  const starts = []; let t = 0;
+  seq.forEach(n => { starts.push(t); t += (n.dur || 0.42) * 1000; });
+  const total = t, start = performance.now();
   let last = -1;
   const clearAll = () => { document.querySelectorAll('[id^="pk-"]').forEach(e=>{ e.style.boxShadow=''; e.style.filter=''; }); };
   const tick = () => {
     const el = performance.now() - start;
     if (el > total){ clearAll(); return; }
-    const idx = Math.floor(el / PIANO_STEP_MS);
+    let idx = 0; while (idx+1 < starts.length && starts[idx+1] <= el) idx++;
     if (idx !== last){
       clearAll();
       const k = document.getElementById('pk-' + (seq[idx] && seq[idx].off)); // n'existe que si la note est sur MON clavier
@@ -870,6 +878,15 @@ function startKeyDemoHighlight(seq){
     _jpRaf = requestAnimationFrame(tick);
   };
   tick();
+}
+// Erreur d'un joueur → flash rouge de mes touches (la séquence repart de zéro).
+function flashKeysWrong(){
+  cancelAnimationFrame(_jpRaf);
+  if (window.SFX && SFX.wrong) SFX.wrong();
+  if (navigator.vibrate) navigator.vibrate(180);
+  const keys = document.querySelectorAll('[id^="pk-"]');
+  keys.forEach(e=>{ e.style.boxShadow='0 0 0 4px #ff2e3e,0 0 22px #ff2e3e'; e.style.filter='brightness(1.1)'; });
+  setTimeout(()=> keys.forEach(e=>{ e.style.boxShadow=''; e.style.filter=''; }), 500);
 }
 
 function roueController(act){

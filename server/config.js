@@ -32,7 +32,7 @@ export const CONFIG = {
   blindtestPlaylists: {
     rock:     'PLOds7NNqmx4n1SA599PbsgB3UIez9zRXK',                              // 🎸 Rock
     francais: 'https://www.youtube.com/watch?v=Q3Kvu6Kgp88&list=PL4N9oNbOHXBUqAU7etRfVkj8vtznT5Rf2', // 🎤 Chansons françaises
-    dessins:  '', // 📺 Dessins animés — ⚠️ colle ici l'URL/ID de ta playlist dessins animés
+    dessins:  'https://www.youtube.com/watch?v=0WkSpUiOc00&list=PLjYX5fdqGi9ldXrOo8nLlw6NEs3iQamNo', // 📺 Dessins animés
   },
 
   // 🟡 Musique jouée pendant le mini-jeu PAC-MAN (vidéo unique, en boucle).

@@ -19,7 +19,8 @@ import { TronGame } from './tron.js';
 import { Game2048 } from './game2048.js';
 import { PongGame } from './pong.js';
 import { NOTE_PALETTE, MELODY, MOSAIC_DEFAULT_WORD, pickMosaicWord,
-  PIANO_KEYS_PER_PHONE, PIANO_BASE_MIDI, PIANO_MELODY, pianoNoteInfo } from '../data/collab.js';
+  PIANO_KEYS_PER_PHONE, PIANO_BASE_MIDI, PIANO_MELODY, pianoNoteInfo,
+  pianoDemoSeq, pianoKeyLayout } from '../data/collab.js';
 import { AVATAR_MISSION, SOCIAL_FACTS } from '../data/clues.js';
 import { PHOTO_MISSIONS } from '../data/photos.js';
 import { SPOTLIGHT_DEFIS } from '../data/spotlight.js';
@@ -93,6 +94,7 @@ export class GameState {
     this.pianoStep = 0;
     this.pianoStatus = 'playing';
     this.pianoDemoAt = 0;
+    this.pianoWrongAt = 0; // horodatage de la dernière erreur (→ on repart de zéro)
     this.votes = {}; // { voterId: targetId }
     this.clues = {}; // { playerId: { mission, clue } } — réseau d'indices
     this.photos = []; // [{id, playerId, playerName, avatar, missionIdx, missionLabel, url, uploadedAt}]
@@ -447,6 +449,7 @@ export class GameState {
         this.pianoUnlocked = true;
         this.pianoStep = 0;
         this.pianoStatus = 'playing';
+        this.pianoWrongAt = 0;
         this.pianoDemoAt = Date.now(); // la BORNE joue la mélodie à reproduire dès le réveil
         this.addLog(`🎹 ${p ? p.name : '?'} a trouvé « ${world.code} » — le PIANO RÉPARTI se réveille ! Écoutez la mélodie…`);
         this.touch();
@@ -565,7 +568,7 @@ export class GameState {
   _advanceWorld() {
     this.activity = null;          // coupe une éventuelle vidéo de célébration
     this.pianoUnlocked = false;    // le piano du monde suivant repart verrouillé
-    this.pianoStep = 0; this.pianoStatus = 'playing'; this.pianoDemoAt = 0;
+    this.pianoStep = 0; this.pianoStatus = 'playing'; this.pianoDemoAt = 0; this.pianoWrongAt = 0;
     this.worldIndex += 1;
     const next = this.currentWorld();
     if (next) this.addLog(`📦 COLIS ${next.colis} débloqué — PIXELS, livrez le colis !`);
@@ -1578,8 +1581,8 @@ export class GameState {
       const order = this.pianoOrder();
       const idx = order.indexOf(playerId);
       if (idx < 0) return;
-      const lo = idx * PIANO_KEYS_PER_PHONE, hi = lo + PIANO_KEYS_PER_PHONE - 1;
-      if (offset < lo || offset > hi) return; // pas ta touche
+      const seg = pianoKeyLayout(order.length, PIANO_MELODY)[idx];
+      if (offset < seg.lo || offset > seg.hi) return; // pas ta zone de touches
       if (PIANO_MELODY[this.pianoStep] === offset) {
         this.pianoStep += 1;
         if (this.pianoStep >= PIANO_MELODY.length) {
@@ -1590,6 +1593,12 @@ export class GameState {
           return;
         }
         this.touch();
+      } else {
+        // Mauvaise note → toute la séquence repart de zéro.
+        this.pianoStep = 0;
+        this.pianoWrongAt = Date.now();
+        this.addLog('🎹 Fausse note ! La séquence repart du début — réécoutez bien.');
+        this.touch();
       }
       return;
     }
@@ -1598,14 +1607,19 @@ export class GameState {
     if (!a || a.type !== 'piano' || a.status !== 'playing') return;
     const idx = a.order.indexOf(playerId);
     if (idx < 0) return;
-    const lo = idx * a.keysPerPhone, hi = lo + a.keysPerPhone - 1;
-    if (offset < lo || offset > hi) return;
+    const seg = pianoKeyLayout(a.order.length, a.melody)[idx];
+    if (offset < seg.lo || offset > seg.hi) return;
     if (a.melody[a.step] === offset) {
       a.step += 1;
       if (a.step >= a.melody.length) {
         a.status = 'win';
         this.addLog('🎹 Mélodie jouée en entier — BRAVO l\'orchestre réparti !');
       }
+      this.touch();
+    } else {
+      // Mauvaise note → on repart de zéro.
+      a.step = 0;
+      a.wrongAt = Date.now();
       this.touch();
     }
   }
@@ -1623,7 +1637,7 @@ export class GameState {
     if (!a || a.type !== 'piano') return;
     a.demo = {
       at: Date.now(),
-      seq: a.melody.map((off) => { const n = pianoNoteInfo(off, a.baseMidi); return { off, freq: n.freq, name: n.name }; }),
+      seq: pianoDemoSeq(a.melody, a.baseMidi),
     };
     a.step = 0;
     this.addLog('🎶 Démo de la mélodie jouée sur la borne (piano).');
@@ -1631,11 +1645,15 @@ export class GameState {
   }
 
   // Constructeur partagé : vue piano (placement + partition + touches joueur).
-  buildPianoView({ order, melody, step, status, demo }, forPlayerId) {
-    const kpp = PIANO_KEYS_PER_PHONE, base = PIANO_BASE_MIDI;
+  buildPianoView({ order, melody, step, status, demo, wrongAt }, forPlayerId) {
+    const base = PIANO_BASE_MIDI;
+    // Répartition adaptative : chaque téléphone reçoit une plage contiguë avec
+    // au moins une note de la séquence (cf. pianoKeyLayout).
+    const layout = pianoKeyLayout(order.length, melody);
+    const segOf = (off) => layout.findIndex((s) => off >= s.lo && off <= s.hi);
     const rangeLabel = (i) => {
-      const lo = pianoNoteInfo(i * kpp, base), hi = pianoNoteInfo(i * kpp + kpp - 1, base);
-      return `${lo.label}–${hi.label}`;
+      const lo = pianoNoteInfo(layout[i].lo, base), hi = pianoNoteInfo(layout[i].hi, base);
+      return layout[i].lo === layout[i].hi ? lo.label : `${lo.label}–${hi.label}`;
     };
     const placement = order.map((id, i) => ({
       pos: i + 1, name: this.player(id)?.name || '?', range: rangeLabel(i),
@@ -1650,14 +1668,14 @@ export class GameState {
     let nextPos = -1, nextName = null;
     if (status === 'playing' && step < melody.length) {
       const off = melody[step];
-      nextPos = Math.floor(off / kpp) + 1;
+      nextPos = segOf(off) + 1;
       nextName = pianoNoteInfo(off, base).name;
     }
     const idx = forPlayerId ? order.indexOf(forPlayerId) : -1;
     const myKeys = [];
     if (idx >= 0) {
-      for (let k = 0; k < kpp; k++) {
-        const off = idx * kpp + k;
+      const seg = layout[idx];
+      for (let off = seg.lo; off <= seg.hi; off++) {
         const n = pianoNoteInfo(off, base);
         myKeys.push({ off, name: n.name, label: n.label, white: n.white, freq: n.freq,
           next: status === 'playing' && melody[step] === off });
@@ -1669,6 +1687,7 @@ export class GameState {
       nPhones: order.length, placement, slots, nextPos, nextName,
       myPos: idx, myKeys,
       demo: demo || null,
+      wrongAt: wrongAt || 0,
     };
   }
 
@@ -1676,16 +1695,16 @@ export class GameState {
   pianoPublic(forPlayerId) {
     const a = this.activity;
     return this.buildPianoView({ order: a.order, melody: a.melody, step: a.step, status: a.status,
-      demo: a.demo ? { at: a.demo.at, seq: a.demo.seq } : null }, forPlayerId);
+      demo: a.demo ? { at: a.demo.at, seq: a.demo.seq } : null, wrongAt: a.wrongAt }, forPlayerId);
   }
 
   // Vue publique du piano INTÉGRÉ au Monde 3 (ou null si pas en piano-monde).
   pianoWorldPublic(forPlayerId) {
     const demo = this.pianoDemoAt
-      ? { at: this.pianoDemoAt, seq: PIANO_MELODY.map((off) => { const n = pianoNoteInfo(off, PIANO_BASE_MIDI); return { off, freq: n.freq, name: n.name }; }) }
+      ? { at: this.pianoDemoAt, seq: pianoDemoSeq(PIANO_MELODY, PIANO_BASE_MIDI) }
       : null;
     return this.buildPianoView({ order: this.pianoOrder(), melody: PIANO_MELODY,
-      step: this.pianoStep, status: this.pianoStatus, demo }, forPlayerId);
+      step: this.pianoStep, status: this.pianoStatus, demo, wrongAt: this.pianoWrongAt }, forPlayerId);
   }
 
   // La mosaïque : chaque joueur ne reçoit QUE son fragment (son index + le mot

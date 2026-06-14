@@ -619,20 +619,22 @@ function pianoBorneLocked(w){
 }
 
 // Détection sonore du piano réparti (démo, note jouée, victoire)
-const PIANO_STEP = 0.42; // durée d'une note de la démo (s) — sert aussi au surlignage
-let _pn = { demoAt: 0, step: 0, win: false };
+let _pn = { demoAt: 0, step: 0, win: false, wrongAt: 0 };
 // Surligne, en rythme, la note courante de la partition pendant que la borne
-// joue la mélodie (les téléphones font de même de leur côté).
+// joue la mélodie (les téléphones font de même de leur côté). Le tempo suit
+// désormais la durée (n.dur) de chaque note → vrai rythme Mario.
 let _bdRaf = 0;
 function startBorneDemoHighlight(seq){
   cancelAnimationFrame(_bdRaf);
-  const start = performance.now(), stepMs = PIANO_STEP * 1000, total = seq.length * stepMs;
+  const starts = []; let t = 0;
+  seq.forEach(n => { starts.push(t); t += (n.dur || 0.42) * 1000; });
+  const total = t, start = performance.now();
   let last = -1;
   const clearAll = () => { for (let i = 0; i < seq.length; i++){ const e = document.getElementById('btnote-'+i); if (e){ e.style.boxShadow=''; e.style.transform=''; } } };
   const tick = () => {
     const el = performance.now() - start;
     if (el > total){ clearAll(); return; }
-    const idx = Math.floor(el / stepMs);
+    let idx = 0; while (idx+1 < starts.length && starts[idx+1] <= el) idx++;
     if (idx !== last){
       clearAll();
       const c = document.getElementById('btnote-'+idx);
@@ -643,17 +645,29 @@ function startBorneDemoHighlight(seq){
   };
   tick();
 }
+// Flash rouge de toute la partition quand les joueurs se trompent (retour à zéro).
+function flashBorneWrong(){
+  cancelAnimationFrame(_bdRaf);
+  const notes = document.querySelectorAll('[id^="btnote-"]');
+  notes.forEach(e => { e.style.boxShadow='0 0 0 3px #ff2e3e,0 0 18px #ff2e3e'; e.style.transform='scale(1.1)'; });
+  setTimeout(() => notes.forEach(e => { e.style.boxShadow=''; e.style.transform=''; }), 500);
+}
 function detectPiano(s){
   // Piano = activité OU intégré au Monde 3 (s.piano). Même forme de données.
   const a = (s.activity && s.activity.type==='piano') ? s.activity : (s.piano || null);
-  if(!a){ _pn = { demoAt:0, step:0, win:false }; return; }
+  if(!a){ _pn = { demoAt:0, step:0, win:false, wrongAt:0 }; return; }
   // La BORNE joue UNIQUEMENT la mélodie de référence (démo / rejouer séquence).
   // Les notes pressées par les joueurs sont jouées par LEUR smartphone, pas ici.
   // Le SURLIGNAGE est toujours actif ; le SON seulement si le son est activé.
   if(a.demo && a.demo.at && a.demo.at!==_pn.demoAt){
     _pn.demoAt = a.demo.at;
-    if(SOUND_ON && window.SFX) a.demo.seq.forEach((n,i)=>{ SFX.note(n.freq, i*PIANO_STEP, 0.34); });
+    if(SOUND_ON && window.SFX){ let t = 0; a.demo.seq.forEach(n => { SFX.note(n.freq, t, Math.max(0.18,(n.dur||0.42)*0.9)); t += (n.dur||0.42); }); }
     startBorneDemoHighlight(a.demo.seq); // touches qui s'allument en rythme
+  }
+  if(a.wrongAt && a.wrongAt!==_pn.wrongAt){
+    _pn.wrongAt = a.wrongAt;
+    if(SOUND_ON && window.SFX && SFX.wrong) SFX.wrong();
+    flashBorneWrong();
   }
   if(a.status==='win' && !_pn.win){ if(SOUND_ON && window.SFX) SFX.win(); _pn.win = true; }
   _pn.step = a.step;

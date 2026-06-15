@@ -1341,18 +1341,9 @@ export class GameState {
     this.touch();
   }
 
-  // Démarre le compte à rebours de 30 s avant le film de fin d'enquête.
+  // Lance immédiatement le film d'anniversaire après le débrief.
   _startEnqueteFinale() {
-    const a = this.activity;
-    if (!a) return;
-    a.finaleAt = Date.now();
-    this.addLog('🎬 Fin du débrief — film dans 30 s ou via GM.');
-    if (this._enqueteFinaleTimer) clearTimeout(this._enqueteFinaleTimer);
-    this._enqueteFinaleTimer = setTimeout(() => {
-      this._enqueteFinaleTimer = null;
-      this._playEnqueteFinale();
-    }, 15000);
-    this.touch();
+    this._playEnqueteFinale();
   }
 
   _playEnqueteFinale() {

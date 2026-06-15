@@ -34,21 +34,21 @@ export const ENQUETE = {
   // Texte affiché sur CHAQUE téléphone pendant le briefing en slides.
   phoneBrief: "🔪 MEURTRE À SAINT-MAUR\nRegardez la borne 📺",
 
-  // Briefing d'OUVERTURE en SLIDES (défilent sur la BORNE ~10 min, ambiance
-  //  mystérieuse), AVANT l'acte 1. `sec` = durée d'affichage de la slide.
+  // Briefing d'OUVERTURE en SLIDES (défilent sur la BORNE, ambiance mystérieuse),
+  //  AVANT l'acte 1. `sec` = durée d'affichage de la slide (12 s chacune).
   briefingSlides: [
-    { title: "DOSSIER 94100", text: "SAINT-MAUR-DES-FOSSÉS. Une nuit d'hiver. La boucle de la Marne dort sous le givre. À l'Hôtel de Ville, une seule fenêtre reste allumée : la salle des mariages.", sec: 45 },
-    { title: "03 h 12 — L'APPEL", text: "Un agent de sécurité pousse la lourde porte de la salle des mariages. Ce qu'il découvre le fera trembler jusqu'au matin… et vous tiendra éveillés toute la nuit.", sec: 42 },
-    { title: "LA VICTIME", text: "Nathalie NEVES, directrice des finances de la mairie. Étendue au sol, élégante jusque dans la mort, le visage tourné vers la table d'honneur. Comme si elle attendait encore quelqu'un.", sec: 50 },
-    { title: "CINQUANTE COUPES", text: "Autour d'elle, cinquante coupes de champagne. Toutes brisées. Une seule, intacte, encore pleine. Un toast funèbre. Personne ne porte cinquante coupes par hasard. C'est un message.", sec: 52 },
-    { title: "AUCUNE EFFRACTION", text: "Portes verrouillées de l'intérieur. Fenêtres closes. Aucune trace de lutte. Le meurtrier connaissait les lieux. Il connaissait les codes. Il était… de la maison.", sec: 50 },
-    { title: "LES PARAPHEURS PERDUS", text: "Dans le tiroir de la victime : des magazines municipaux annotés au stylo rouge, et trois mots griffonnés à la hâte — « les parapheurs perdus ». Une dette que quelqu'un est venu réclamer.", sec: 52 },
-    { title: "LE SCANDALE", text: "Des années durant, un marché de communication de la mairie aurait été truqué. Fausses factures. Bons de commande réécrits après signature. Des centaines de milliers d'euros évaporés dans l'encre.", sec: 55 },
-    { title: "LE RÉSEAU", text: "Qui falsifiait ? Qui payait ? Qui couvrait ? Et qui, un soir de trop, a voulu parler ? La mort de Nathalie Neves ne cache pas un crime. Elle en cache toute une chaîne.", sec: 52 },
-    { title: "LA BRIGADE, C'EST VOUS", text: "Cette nuit, vous êtes les enquêteurs. Sept regards, sept mémoires. Aucun de vous ne détient la vérité entière — mais chacun en tient un fragment. Seuls, vous êtes aveugles. Ensemble, redoutables.", sec: 52 },
-    { title: "LA MÉTHODE", text: "Rien ne vous sera donné en clair. La BORNE affiche les DOCUMENTS — articles, registres, plans, e-mails. Vos téléphones gardent vos PIÈCES À CONVICTION. Croisez. Déduisez. Tapez le code de chaque acte.", sec: 55 },
-    { title: "HUIT ACTES", text: "Huit actes vous séparent du nom du meurtrier. Huit verrous. Huit vérités. Au bout du couloir : un dossier refermé… ou une affaire enterrée à jamais.", sec: 48 },
-    { title: "L'ENQUÊTE COMMENCE", text: "Inspecteurs, prenez place. La nuit sera longue. Le premier dossier s'ouvre maintenant. ACTE 1 — La revue de presse.", sec: 40 },
+    { title: "DOSSIER 94100", text: "SAINT-MAUR-DES-FOSSÉS. Une nuit d'hiver. La boucle de la Marne dort sous le givre. À l'Hôtel de Ville, une seule fenêtre reste allumée : la salle des mariages.", sec: 12 },
+    { title: "03 h 12 — L'APPEL", text: "Un agent de sécurité pousse la lourde porte de la salle des mariages. Ce qu'il découvre le fera trembler jusqu'au matin… et vous tiendra éveillés toute la nuit.", sec: 12 },
+    { title: "LA VICTIME", text: "Nathalie NEVES, directrice des finances de la mairie. Étendue au sol, élégante jusque dans la mort, le visage tourné vers la table d'honneur. Comme si elle attendait encore quelqu'un.", sec: 12 },
+    { title: "CINQUANTE COUPES", text: "Autour d'elle, cinquante coupes de champagne. Toutes brisées. Une seule, intacte, encore pleine. Un toast funèbre. Personne ne porte cinquante coupes par hasard. C'est un message.", sec: 12 },
+    { title: "AUCUNE EFFRACTION", text: "Portes verrouillées de l'intérieur. Fenêtres closes. Aucune trace de lutte. Le meurtrier connaissait les lieux. Il connaissait les codes. Il était… de la maison.", sec: 12 },
+    { title: "LES PARAPHEURS PERDUS", text: "Dans le tiroir de la victime : des magazines municipaux annotés au stylo rouge, et trois mots griffonnés à la hâte — « les parapheurs perdus ». Une dette que quelqu'un est venu réclamer.", sec: 12 },
+    { title: "LE SCANDALE", text: "Des années durant, un marché de communication de la mairie aurait été truqué. Fausses factures. Bons de commande réécrits après signature. Des centaines de milliers d'euros évaporés dans l'encre.", sec: 12 },
+    { title: "LE RÉSEAU", text: "Qui falsifiait ? Qui payait ? Qui couvrait ? Et qui, un soir de trop, a voulu parler ? La mort de Nathalie Neves ne cache pas un crime. Elle en cache toute une chaîne.", sec: 12 },
+    { title: "LA BRIGADE, C'EST VOUS", text: "Cette nuit, vous êtes les enquêteurs. Sept regards, sept mémoires. Aucun de vous ne détient la vérité entière — mais chacun en tient un fragment. Seuls, vous êtes aveugles. Ensemble, redoutables.", sec: 12 },
+    { title: "LA MÉTHODE", text: "Rien ne vous sera donné en clair. La BORNE affiche les DOCUMENTS — articles, registres, plans, e-mails. Vos téléphones gardent vos PIÈCES À CONVICTION. Croisez. Déduisez. Tapez le code de chaque acte.", sec: 12 },
+    { title: "HUIT ACTES", text: "Huit actes vous séparent du nom du meurtrier. Huit verrous. Huit vérités. Au bout du couloir : un dossier refermé… ou une affaire enterrée à jamais.", sec: 12 },
+    { title: "L'ENQUÊTE COMMENCE", text: "Inspecteurs, prenez place. La nuit sera longue. Le premier dossier s'ouvre maintenant. ACTE 1 — La revue de presse.", sec: 12 },
   ],
 
   acts: [
@@ -61,6 +61,9 @@ export const ENQUETE = {
       kind: 'press',
       title: 'LA REVUE DE PRESSE',
       place: "Hôtel de Ville de Saint-Maur — salle des mariages",
+      // Les pièces ci-dessous NE s'affichent PAS d'emblée : ce sont des indices
+      // révélés UN PAR UN par le MJ (bouton « Donner un indice »).
+      fragmentsHidden: true,
       sources: [
         {
           source: "Europe 1",
@@ -130,6 +133,7 @@ export const ENQUETE = {
       article: {
         source: "ORGANIGRAMME + COUPURE DE PRESSE AGRAFÉE",
         date: "—",
+        hideHeader: true, // la borne n'affiche PAS l'en-tête « 📄 … — — », juste le contenu
         body:
           "MAIRE › DIRECTEUR GÉNÉRAL DES SERVICES : Frédéric ERZEN (signature « F. E. ») › " +
           "Direction des Finances (Nathalie NEVES) · Systèmes d'Information (DSI) · Services techniques.\n" +
@@ -315,8 +319,10 @@ export const ENQUETE = {
       kind: 'map',
       title: 'LE DERNIER PARCOURS — TRACEUR GPS',
       place: "Boucle de la Marne — du RER de Champigny à La Varenne",
+      // Les pièces (repères/méthode) sont des indices révélés UN PAR UN par le MJ.
+      fragmentsHidden: true,
       article: {
-        source: "TRACEUR GPS de N. NEVES — 10 derniers points (REMONTÉS DANS LE DÉSORDRE)",
+        source: "TRACEUR GPS de N. NEVES — 10 derniers points",
         date: "Soir du crime",
         body:
           "• Place des Molènes ............. 21 h 53\n" +
@@ -328,13 +334,12 @@ export const ENQUETE = {
           "• L'atelier du golfeur .......... 21 h 29\n" +
           "• La Varenne–Chennevières ....... 22 h 09\n" +
           "• Stade Chéron .................. 21 h 12\n" +
-          "• Place Adamville ............... 21 h 38\n" +
-          "Remettez les points DANS L'ORDRE DES HEURES, puis reliez-les sur le plan.",
+          "• Place Adamville ............... 21 h 38",
       },
       scene:
-        "Le traceur GPS de la directrice a enregistré ses 10 derniers arrêts avant le crime — mais " +
-        "ils sont remontés DANS LE DÉSORDRE. Remettez-les dans l'ordre des heures, reliez-les sur " +
-        "le plan : son dernier parcours dessine une LETTRE, votre CLÉ pour la fin de l'enquête.",
+        "Le traceur GPS de la directrice a gardé en mémoire ses 10 derniers arrêts, cette nuit-là. " +
+        "Son tout dernier parcours dessine une LETTRE — votre CLÉ pour la fin de l'enquête. " +
+        "À vous de le faire réapparaître.",
       map: {
         instruction: "Reliez les 10 points DANS L'ORDRE DES HEURES (GPS) : quelle lettre se dessine ?",
         river: true,
@@ -383,43 +388,45 @@ export const ENQUETE = {
       num: 6,
       key: 'a6',
       kind: 'logic',
-      title: 'LES QUATRE DSI (ET L\'ADJOINT)',
+      title: 'LA NUIT DES SUSPECTS',
       place: "Boucle de la Marne — nuit du crime",
+      // La table des alibis n'apparaît PAS sur la borne : chaque joueur détient
+      // un fait brut sur un suspect ; l'alibi (ou son absence) est à DÉDUIRE.
       article: {
         source: "TABLEAU DES ALIBIS — nuit du crime",
         date: "Nuit du crime",
+        hideOnBorne: true,
         body:
-          "Cinq mobiles : quatre anciens DSI (BLAISE, GUILLAUME, MARC, DJALAL) et l'adjoint VINCENT, " +
-          "« celui qui a les dents qui rayent le parquet ».\n" +
-          "Contrainte clé : le tueur est entré dans le local d'archives SANS effraction — il en " +
-          "connaissait le code. Donc un ANCIEN DSI dont le badge n'a jamais été désactivé.",
+          "Cinq suspects, cinq mobiles. Chacun des enquêteurs détient un fait sur l'un d'eux ; à la " +
+          "table de recouper ce qui tient debout et ce qui s'effondre.",
       },
       scene:
-        "Un seul n'a pas d'alibi. Chacun de vous tient l'alibi de quelqu'un. Éliminez ceux qui " +
-        "sont couverts ; celui qui reste, et qui pouvait ouvrir les archives, est le tueur. " +
-        "(La lettre du plan vous a déjà soufflé son initiale.)",
+        "Cinq hommes en voulaient à la mairie. Cette nuit-là, chacun jure être ailleurs… mais un " +
+        "seul ment. À vous de confronter leurs emplois du temps : lequel ne tient pas debout ?",
       riddle:
-        "Après élimination des alibis : qui est le seul ancien DSI sans alibi, au badge d'archives " +
-        "encore actif ? (son prénom)",
+        "Un seul suspect n'a aucun emploi du temps vérifiable cette nuit-là — et il pouvait entrer " +
+        "dans les archives. Qui est le meurtrier ? (son prénom)",
       answer: 'GUILLAUME',
       hints: [
-        "Barrez ceux qui ont un alibi solide : Blaise, Marc, Djalal, Vincent. Que reste-t-il ?",
-        "L'adjoint Vincent a le mobile parfait mais était filmé sur les marchés : couvert. Le tueur est ancien DSI.",
-        "Le plan dessinait un G. Réponse : GUILLAUME.",
+        "Le meurtrier est entré dans les archives sans rien forcer : il en connaissait le code. Qui, parmi eux, avait encore un accès valide ?",
+        "Recoupe chaque fait : un paiement, un tampon de passeport, une scène de théâtre, des caméras… trois de ces emplois du temps sont vérifiables ailleurs. Un quatrième suspect n'a tout simplement pas le bon profil d'accès.",
+        "Il reste un ancien DSI dont personne ne peut dire où il était. Réponse : GUILLAUME.",
       ],
       humor:
-        "Note de l'inspecteur : Vincent l'adjoint a un alibi béton ET un sourire à 32 dents qui " +
-        "rayent le parquet. Les deux sont suspects, un seul est puni par la loi.",
+        "Note de l'inspecteur : cinq suspects, cinq sourires gênés. L'un d'eux ment avec un aplomb " +
+        "qui force presque le respect.",
       reveal:
-        "ACTE 6 — Par élimination : GUILLAUME. Ancien DSI parti sans bruit après le « ménage » des " +
-        "archives, sans alibi, badge actif, initiale G. C'est lui. Reste à comprendre les 50 verres.",
+        "ACTE 6 — Par élimination : GUILLAUME. Trois suspects étaient vérifiables ailleurs (La Rochelle, " +
+        "scène du Théâtre, étranger), l'adjoint n'avait pas accès aux archives — restait l'ancien DSI " +
+        "au badge jamais désactivé, sans le moindre emploi du temps. C'est lui. Reste à comprendre les 50 verres.",
       fragments: [
-        { label: "Alibi — BLAISE", text: "BLAISE : retraité à La Rochelle (450 km) la nuit du crime. Couvert." },
-        { label: "Alibi — MARC", text: "MARC : animait une soirée au Théâtre de Saint-Maur, 200 témoins. Couvert." },
-        { label: "Alibi — DJALAL", text: "DJALAL : en mission à l'étranger, muté. Couvert." },
-        { label: "Alibi — VINCENT", text: "VINCENT (adjoint) : filmé toute la soirée sur les marchés de Noël (La Varenne, Adamville). Mobile énorme, mais couvert." },
-        { label: "Fiche — GUILLAUME", text: "GUILLAUME : ancien DSI parti discrètement. Pas d'alibi connu. (Fait neutre — à recouper avec la contrainte.)" },
-        { label: "Contrainte d'accès", text: "Le tueur connaissait le CODE du local d'archives → forcément un ancien DSI au badge actif." },
+        { label: "Au sujet de BLAISE", text: "Sa carte bancaire a réglé un dîner à La Rochelle à 22 h 41. (Saint-Maur est à 450 km.)" },
+        { label: "Au sujet de MARC", text: "À l'heure du crime, une photo le montre micro en main sur la scène du Théâtre de Saint-Maur, salle comble." },
+        { label: "Au sujet de DJALAL", text: "Son passeport porte un tampon d'entrée à l'étranger daté de l'avant-veille. Aucun retour enregistré depuis." },
+        { label: "Au sujet de VINCENT", text: "VINCENT est l'ADJOINT au maire (jamais à la DSI). Les caméras des marchés de Noël l'ont filmé sans interruption de 20 h à 23 h." },
+        { label: "Au sujet de GUILLAUME", text: "Ancien DSI. Parti précipitamment il y a quelques mois. Pour cette nuit-là, il n'a fourni aucun emploi du temps et personne ne se souvient de l'avoir croisé." },
+        { label: "La porte des archives", text: "Le meurtrier est entré dans le local d'archives sans forcer : il en connaissait le code. Seuls les anciens de la DSI au badge non désactivé l'ont encore." },
+        { label: "Note de la DSI", text: "À un départ, le badge est coupé sous 48 h… sauf oubli. Un seul oubli a été signalé : celui d'un agent parti dans la précipitation." },
       ],
     },
 

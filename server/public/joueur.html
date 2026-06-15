@@ -1018,9 +1018,16 @@ function enqueteController(act) {
     <p style="font-size:15px"><b class="neon-pink">Énigme :</b> ${esc(a.riddle||'')}</p>
     ${docs ? `<div class="pill neon-cyan mt">🗂️ TES DOCUMENTS — ouvre-les et lis-les à voix haute</div>${docs}
       <p class="muted" style="font-size:12px">Aucun joueur n'a tout : c'est en recoupant VOS documents que le code apparaît.</p>` : ''}
-    ${frags ? `<div class="pill neon-cyan mt">🔍 TES PIÈCES À CONVICTION</div>${frags}
-      <p class="muted" style="font-size:12px">Partage-les à voix haute avec la table : seule l'addition de toutes les pièces donne le code.</p>`
-      : (docs ? '' : `<p class="muted mt">Tu n'as pas de pièce sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`)}
+    ${frags ? `<div class="pill neon-cyan mt">🔍 TES INDICES</div>${frags}
+      ${(act.myFragmentsPending>0)
+        ? `<p class="muted" style="font-size:12px">🔒 Il te reste <b>${act.myFragmentsPending}</b> indice(s) à venir — le MJ les dévoile un par un. Lis ceux-ci à voix haute !</p>`
+        : `<p class="muted" style="font-size:12px">Partage tes indices à voix haute : c'est en recoupant ceux de toute la table que le code apparaît.</p>`}`
+      : (act.fragmentsHidden && act.myFragmentsPending>0
+          ? `<div class="card center" style="border-color:var(--neon4);background:#100a02;margin-top:8px">
+              <div class="pill" style="color:var(--neon4)">🔒 TU DÉTIENS ${act.myFragmentsPending} INDICE(S)</div>
+              <p style="font-size:13px">Le MJ les dévoilera un par un. Reste attentif·ve à la borne et à la table !</p>
+            </div>`
+          : (docs ? '' : `<p class="muted mt">Tu n'as pas d'indice sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`))}
     <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase"
       value="${esc(_enqDraft)}" oninput="_enqDraft=this.value" onkeydown="if(event.key==='Enter')enqueteCode()" autocomplete="off" />
     <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>

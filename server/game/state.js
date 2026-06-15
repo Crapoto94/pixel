@@ -797,7 +797,7 @@ export class GameState {
       this.activity.lastWrong = 0;
       this.activity.done = false;
       this._enqueteDistribute();
-      // Briefing d'OUVERTURE en slides (sur la borne, ~10 min) AVANT l'acte 1 ;
+      // Briefing d'OUVERTURE en slides (sur la borne, 12 s/slide) AVANT l'acte 1 ;
       // pendant ce temps les téléphones affichent « MEURTRE À SAINT-MAUR ».
       this.activity.sub = 'briefing';
       this.activity.briefAt = Date.now();
@@ -1155,11 +1155,13 @@ export class GameState {
     a.frag = {};
     a.docDist = {};
     if (!act) return;
+    a.fragRevealed = 0; // pièces déjà dévoilées (acts « fragmentsHidden » : 1 par indice MJ)
     const players = this.players.filter((p) => p.connected);
     if (!players.length) return;
     (act.fragments || []).forEach((f, i) => {
       const owner = players[i % players.length];
-      (a.frag[owner.id] = a.frag[owner.id] || []).push(f);
+      // _i = rang global de la pièce (sert à la révélation progressive par le MJ)
+      (a.frag[owner.id] = a.frag[owner.id] || []).push({ ...f, _i: i });
     });
     // Documents À VISUALISER (journal, mails, annuaire…) : un par joueur, à ouvrir
     // sur SON téléphone. Répartis en décalé pour qu'aucun joueur n'ait tout.
@@ -1169,7 +1171,7 @@ export class GameState {
     });
   }
 
-  // Fin du briefing en slides → on ouvre l'ACTE 1 (auto après ~10 min, ou via le MJ).
+  // Fin du briefing en slides → on ouvre l'ACTE 1 (auto en fin de slides, ou via le MJ).
   enqueteStartActs() {
     const a = this.activity;
     if (!a || a.type !== 'enquete' || a.sub !== 'briefing') return;
@@ -1216,6 +1218,17 @@ export class GameState {
     if (!a || a.type !== 'enquete') return;
     const act = ENQUETE.acts[a.actIndex];
     if (!act) return;
+    // Actes « fragmentsHidden » (ex. Acte 1) : « Donner un indice » dévoile la
+    // PIÈCE suivante sur le téléphone du joueur qui la détient (une par une).
+    if (act.fragmentsHidden) {
+      const total = (act.fragments || []).length;
+      if ((a.fragRevealed || 0) < total) {
+        a.fragRevealed = (a.fragRevealed || 0) + 1;
+        this.addLog(`💡 Indice ${a.fragRevealed}/${total} dévoilé (Acte ${act.num}) — sur le téléphone du joueur concerné.`);
+        this.touch();
+      }
+      return;
+    }
     a.hints = a.hints || {};
     const cur = a.hints[a.actIndex] || 0;
     if (cur < (act.hints || []).length) {
@@ -1283,12 +1296,22 @@ export class GameState {
         // Acte à DOCUMENTS répartis : la borne n'affiche QUE l'énigme ; les
         // documents (journal, mails, annuaire…) sont à ouvrir sur les téléphones.
         hasDocs: !!(act.docs && act.docs.length),
+        // Pièces dévoilées une par une par le MJ (sinon affichées d'emblée).
+        fragmentsHidden: !!act.fragmentsHidden,
       },
       hintList: act ? (act.hints || []).slice(0, nHints) : [],
       // Le « mur d'enquête » : révélations des actes déjà résolus
       wall: acts.slice(0, idx).map((x) => ({ num: x.num, title: x.title, reveal: x.reveal })),
       lastWrong: a.lastWrong || 0,
-      myFragments: forPlayerId ? (a.frag?.[forPlayerId] || []) : [],
+      // Pièces du joueur. Pour un acte « fragmentsHidden », on ne renvoie que
+      // celles déjà dévoilées par le MJ (rang _i < fragRevealed).
+      myFragments: forPlayerId
+        ? (a.frag?.[forPlayerId] || []).filter((f) => !(act && act.fragmentsHidden) || (f._i ?? 0) < (a.fragRevealed || 0))
+        : [],
+      // Nb de pièces du joueur encore À VENIR (pour afficher « le MJ va révéler… »).
+      myFragmentsPending: (forPlayerId && act && act.fragmentsHidden)
+        ? (a.frag?.[forPlayerId] || []).filter((f) => (f._i ?? 0) >= (a.fragRevealed || 0)).length
+        : 0,
       // Documents que CE joueur détient et peut ouvrir (bodies envoyés au seul porteur).
       myDocs: forPlayerId ? (a.docDist?.[forPlayerId] || []) : [],
       finale: a.done ? ENQUETE.finale : null,
@@ -1300,6 +1323,7 @@ export class GameState {
     const a = this.activity;
     if (!a || a.type !== 'enquete') return null;
     const act = ENQUETE.acts[a.actIndex];
+    const fragHidden = !!(act && act.fragmentsHidden);
     return {
       done: !!a.done,
       sub: a.sub || 'acts',
@@ -1308,8 +1332,11 @@ export class GameState {
       num: act ? act.num : null,
       title: act ? act.title : null,
       answer: act ? act.answer : null,
-      hintsShown: a.hints?.[a.actIndex] || 0,
-      hintsTotal: act ? (act.hints || []).length : 0,
+      // Acte « fragmentsHidden » : le bouton « Donner un indice » dévoile les
+      // PIÈCES une par une → on remonte ce compteur (sinon les hints classiques).
+      fragmentsHidden: fragHidden,
+      hintsShown: fragHidden ? (a.fragRevealed || 0) : (a.hints?.[a.actIndex] || 0),
+      hintsTotal: fragHidden ? ((act.fragments || []).length) : (act ? (act.hints || []).length : 0),
       attempts: a.attempts || 0,
     };
   }

@@ -1038,9 +1038,13 @@ function renderEnqueteBorne(a){
         <p style="font-size:19px;line-height:1.4;margin:6px 0 0">${esc(s.summary)}</p>
       </div>`).join('')}
     </div>` : '';
-  const artBlock = (!act.sources && (art.body)) ? `
+  const artHeader = (art.hideHeader || !art.source) ? '' :
+    `<div class="pill neon-yellow">📄 ${esc(art.source||'')}${(art.date && art.date!=='—')?(' — '+esc(art.date)):''}</div>`;
+  // hideOnBorne : l'article ne s'affiche PAS sur la borne (ex. table des alibis,
+  // à déduire sur les téléphones).
+  const artBlock = (!act.sources && art.body && !art.hideOnBorne) ? `
     <div class="card glow-box" style="text-align:left;border-color:var(--neon3);margin-top:14px">
-      <div class="pill neon-yellow">📄 ${esc(art.source||'')}${art.date?(' — '+esc(art.date)):''}</div>
+      ${artHeader}
       <p style="font-size:20px;line-height:1.5;white-space:pre-line">${esc(art.body||'')}</p>
     </div>` : '';
   const mapBlock = act.map ? enqueteMapSvg(act.map) : '';
@@ -1089,7 +1093,7 @@ function renderEnqueteBorne(a){
 }
 
 // =================== BRIEFING D'ENQUÊTE (slides sur la borne) ===================
-// Les slides défilent ~10 min (ambiance mystérieuse). Le passage à l'acte 1 est
+// Les slides défilent (12 s chacune, ambiance mystérieuse). Le passage à l'acte 1 est
 // piloté par le SERVEUR (minuterie) ; ici on ne fait que dérouler l'affichage,
 // calé sur l'horloge LOCALE de la borne (pas de décalage serveur/client).
 let enqBriefIv = null, enqBriefKey = null, enqBriefStart = 0;

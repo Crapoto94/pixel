@@ -842,7 +842,8 @@ export class GameState {
       this.activity.topLabel = opts.topLabel || '📺 VIDÉO';
       this.activity.chyron = opts.chyron || '';
       this.activity.footer = opts.footer || '';
-      this.activity.skipIntro = opts.skipIntro || false; // true = pas de sting, la vidéo démarre direct
+      this.activity.skipIntro = opts.skipIntro || false;
+      this.activity.borneOnly = opts.borneOnly || false;
     }
     // Hero-quiz (Anecdote 3) : la borne joue une vidéo, puis VINCENT devine.
     //  Bonne réponse → écran « BRAVO VINCENT » (feux d'artifice + musique).
@@ -1305,7 +1306,7 @@ export class GameState {
     a.debriefSlide = 0;
     a.debriefAt = Date.now();
     if (this._enqueteDebriefTimer) clearTimeout(this._enqueteDebriefTimer);
-    this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 90000);
+    this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 8000);
   }
 
   _advanceEnqueteDebrief() {
@@ -1319,7 +1320,7 @@ export class GameState {
       a.sub = null;
       this._startEnqueteFinale();
     } else {
-      this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 90000);
+      this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 8000);
     }
     this.touch();
   }
@@ -1350,7 +1351,7 @@ export class GameState {
     this._enqueteFinaleTimer = setTimeout(() => {
       this._enqueteFinaleTimer = null;
       this._playEnqueteFinale();
-    }, 30000);
+    }, 90000);
     this.touch();
   }
 
@@ -1484,6 +1485,7 @@ export class GameState {
       attempts: a.attempts || 0,
       debriefSlide: a.debriefSlide ?? null,
       debriefTotal: ENQUETE.acts.length + 1,
+      finaleAt: a.finaleAt || null,
     };
   }
 

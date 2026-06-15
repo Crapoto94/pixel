@@ -255,23 +255,25 @@ function render(){
 
   ${S.activity && S.activity.type === 'enquete' && S.enqueteMaster ? (()=>{
     const em = S.enqueteMaster;
+    const btnFilm = `<button class="btn mt" style="background:#5b1fa8;border-color:#9b59b6;color:#fff" onclick="act('enquetePlayFinale')">🎬 Lancer le film anniversaire</button>`;
     if (em.sub === 'debrief') return `<div class="card" style="border-color:var(--ok)">
       <div class="pixel" style="font-size:11px;color:var(--ok)">🕵️ ENQUÊTE — DÉBRIEF — diapo ${(em.debriefSlide||0)+1}/${em.debriefTotal||9}</div>
       <div class="muted mt" style="font-size:13px">Les diapos défilent automatiquement (8 s). Avancez ou passez directement au film.</div>
       <div class="grid mt">
         <button class="btn warn" onclick="act('enqueteDebriefNext')">⏭ Diapo suivante</button>
-        <button class="btn danger" onclick="act('enqueteDebriefSkip')">⏩ Passer au film</button>
+        <button class="btn danger" onclick="act('enqueteDebriefSkip')">⏩ Passer les slides</button>
       </div>
+      ${btnFilm}
     </div>`;
     if (em.done) {
-      const secsLeft = em.finaleAt ? Math.max(0, 30 - Math.round((Date.now() - em.finaleAt) / 1000)) : null;
+      const secsLeft = em.finaleAt ? Math.max(0, 90 - Math.round((Date.now() - em.finaleAt) / 1000)) : null;
       const countdown = secsLeft !== null && secsLeft > 0
         ? `<div class="muted mt" style="font-size:13px">🎬 Film dans <b>${secsLeft} s</b>…</div>` : '';
       return `<div class="card" style="border-color:var(--ok)">
       <div class="pixel" style="font-size:11px;color:var(--ok)">🕵️ ENQUÊTE — RÉSOLUE ✔</div>
       <div class="mt">Affaire close. Coupable : <code>GUILLAUME</code>.</div>
       ${countdown}
-      <button class="btn mt" onclick="act('enquetePlayFinale')">🎬 Lancer le film maintenant</button></div>`;
+      ${btnFilm}</div>`;
     }
     if (em.sub === 'briefing') return `<div class="card" style="border-color:var(--neon)">
       <div class="pixel neon-pink" style="font-size:11px">🗂️ ENQUÊTE — BRIEFING EN COURS</div>

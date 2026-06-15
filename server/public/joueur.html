@@ -44,10 +44,34 @@ let lastSse = 0;
 // On ne redessine QUE si l'état a vraiment changé : sinon le polling (~1/s)
 // recréerait l'<input> et effacerait le code en cours de frappe + le focus.
 let _lastJoueurJson = null;
+let _prevEnqCount = -1;
+function playTing(){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1047, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1568, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.55, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 1.4);
+  } catch(_){}
+}
+function checkEnqHint(s){
+  const a = s && s.activity;
+  if (!a || a.type !== 'enquete'){ _prevEnqCount = -1; return; }
+  const eq = a.enquete;
+  if (!eq){ _prevEnqCount = -1; return; }
+  const cur = (eq.hintList||[]).length + (eq.myFragments||[]).length;
+  if (_prevEnqCount >= 0 && cur > _prevEnqCount) playTing();
+  _prevEnqCount = cur;
+}
 function applyState(s){
   const j = JSON.stringify(s);
   if (j === _lastJoueurJson) return;
   _lastJoueurJson = j;
+  checkEnqHint(s);
   STATE = s; render();
   detectPianoDemo(s); // surligne mes touches si la borne (re)joue la mélodie
 }

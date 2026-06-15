@@ -270,6 +270,7 @@ export const ENQUETE = {
       num: 4,
       key: 'a4',
       kind: 'logic',
+      fragmentsHidden: true,
       title: 'LE FALSIFICATEUR EN CHEF',
       place: "Direction des Finances — régie comptable & salle des serveurs",
       article: {
@@ -505,6 +506,7 @@ export const ENQUETE = {
       num: 6,
       key: 'a6',
       kind: 'logic',
+      fragmentsHidden: true,
       title: 'LA NUIT DES SUSPECTS',
       place: "Boucle de la Marne — nuit du crime",
       // La table des alibis n'apparaît PAS sur la borne : chaque joueur détient
@@ -554,6 +556,7 @@ export const ENQUETE = {
       num: 7,
       key: 'a7',
       kind: 'count',
+      fragmentsHidden: true,
       title: 'CINQUANTE BONS, CINQUANTE VERRES',
       place: "Quartier de La Varenne — bennes, rue Saint-Hilaire",
       article: {

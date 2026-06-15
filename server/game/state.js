@@ -74,6 +74,7 @@ export class GameState {
     if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
     if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
+    if (this._enqueteFinaleTimer) { clearTimeout(this._enqueteFinaleTimer); this._enqueteFinaleTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.tron = null;   // partie Tron en cours
@@ -138,7 +139,7 @@ export class GameState {
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
       g2048Timer, g2048, pongTimer, pong,
-      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, _enqueteBriefTimer, _enqueteDebriefTimer, ...data } = this;
+      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, _enqueteBriefTimer, _enqueteDebriefTimer, _enqueteFinaleTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -380,6 +381,7 @@ export class GameState {
     this.phase = 'world';
     this.worldIndex = 0;
     this.addLog('🕹️ INSERT COIN — la partie commence !');
+    this.ambientRestartAt = Date.now();
     // Le 1er colis n'était jamais réclamé : la borne le demande au lancement.
     const w1 = this.currentWorld();
     if (w1) this.addLog(`📦 COLIS ${w1.colis} — PIXELS, livrez le premier colis !`);
@@ -1315,7 +1317,7 @@ export class GameState {
     a.debriefAt = Date.now();
     if (a.debriefSlide >= total) {
       a.sub = null;
-      this._enqueteMaybeCompleteWorld();
+      this._startEnqueteFinale();
     } else {
       this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 8000);
     }
@@ -1334,8 +1336,47 @@ export class GameState {
     a.sub = null;
     a.debriefSlide = null;
     this.addLog('⏩ GM : débrief passé — passage au film.');
-    this._enqueteMaybeCompleteWorld();
+    this._startEnqueteFinale();
     this.touch();
+  }
+
+  // Démarre le compte à rebours de 30 s avant le film de fin d'enquête.
+  _startEnqueteFinale() {
+    const a = this.activity;
+    if (!a) return;
+    a.finaleAt = Date.now();
+    this.addLog('🎬 Fin du débrief — film dans 30 s ou via GM.');
+    if (this._enqueteFinaleTimer) clearTimeout(this._enqueteFinaleTimer);
+    this._enqueteFinaleTimer = setTimeout(() => {
+      this._enqueteFinaleTimer = null;
+      this._playEnqueteFinale();
+    }, 30000);
+    this.touch();
+  }
+
+  _playEnqueteFinale() {
+    const url = CONFIG.enqueteFinaleVideo || CONFIG.feteYoutube || '';
+    const videoId = url.match(/(?:[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1] || '';
+    if (!videoId) {
+      this._enqueteMaybeCompleteWorld();
+      return;
+    }
+    this.startActivity('videoshow', {
+      video: videoId,
+      topLabel: '🔓 DOSSIER 94100 — CLOS',
+      chyron: 'Toute la lumière est faite sur l\'affaire.',
+      skipIntro: true,
+    });
+    if (this._celebrateTimer) clearTimeout(this._celebrateTimer);
+    this._celebrateTimer = setTimeout(() => {
+      this._celebrateTimer = null;
+      this._enqueteMaybeCompleteWorld();
+    }, 90000);
+  }
+
+  enquetePlayFinale() {
+    if (this._enqueteFinaleTimer) { clearTimeout(this._enqueteFinaleTimer); this._enqueteFinaleTimer = null; }
+    this._playEnqueteFinale();
   }
 
   // Si l'enquête résolue est CELLE du Monde 5 (enqueteWorld), on valide le monde
@@ -1466,6 +1507,7 @@ export class GameState {
     if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
     if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
+    if (this._enqueteFinaleTimer) { clearTimeout(this._enqueteFinaleTimer); this._enqueteFinaleTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;

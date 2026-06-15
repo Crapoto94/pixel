@@ -263,10 +263,16 @@ function render(){
         <button class="btn danger" onclick="act('enqueteDebriefSkip')">⏩ Passer au film</button>
       </div>
     </div>`;
-    if (em.done) return `<div class="card" style="border-color:var(--ok)">
+    if (em.done) {
+      const secsLeft = em.finaleAt ? Math.max(0, 30 - Math.round((Date.now() - em.finaleAt) / 1000)) : null;
+      const countdown = secsLeft !== null && secsLeft > 0
+        ? `<div class="muted mt" style="font-size:13px">🎬 Film dans <b>${secsLeft} s</b>…</div>` : '';
+      return `<div class="card" style="border-color:var(--ok)">
       <div class="pixel" style="font-size:11px;color:var(--ok)">🕵️ ENQUÊTE — RÉSOLUE ✔</div>
       <div class="mt">Affaire close. Coupable : <code>GUILLAUME</code>.</div>
-      <button class="btn mt" onclick="act('stopActivity')">⏹ Terminer</button></div>`;
+      ${countdown}
+      <button class="btn mt" onclick="act('enquetePlayFinale')">🎬 Lancer le film maintenant</button></div>`;
+    }
     if (em.sub === 'briefing') return `<div class="card" style="border-color:var(--neon)">
       <div class="pixel neon-pink" style="font-size:11px">🗂️ ENQUÊTE — BRIEFING EN COURS</div>
       <div class="muted mt" style="font-size:13px">Les slides défilent sur la borne (12 s chacune). Les téléphones affichent « MEURTRE À SAINT-MAUR ». L'acte 1 démarrera automatiquement.</div>

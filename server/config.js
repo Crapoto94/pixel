@@ -52,6 +52,7 @@ export const CONFIG = {
     rock:     'PLOds7NNqmx4n1SA599PbsgB3UIez9zRXK',                              // 🎸 Rock
     francais: 'https://www.youtube.com/watch?v=Q3Kvu6Kgp88&list=PL4N9oNbOHXBUqAU7etRfVkj8vtznT5Rf2', // 🎤 Chansons françaises
     dessins:  'https://www.youtube.com/watch?v=0WkSpUiOc00&list=PLjYX5fdqGi9ldXrOo8nLlw6NEs3iQamNo', // 📺 Dessins animés
+    annees83: 'https://www.youtube.com/watch?v=qeMFqkcPYcg&list=PLDintB9nu_R7TcqqnLx2zeMQD0XDTECF6', // 🕺 Blind-test 83
   },
 
   // 🟡 Musique jouée pendant le mini-jeu PAC-MAN (vidéo unique, en boucle).

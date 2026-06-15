@@ -103,7 +103,7 @@ function render(){
 
   ${S.activity && S.activity.type === 'blindtest' && S.activity.dynamicBlindtest ? `
   <div class="card" style="border-color:var(--neon3)">
-    <div class="pixel neon-yellow" style="font-size:11px">🎵 BLIND-TEST ${({rock:'ROCK',francais:'CHANSONS FR',dessins:'DESSINS ANIMÉS'})[S.activity.theme]||''} · ${S.playlistTrackCount||0} titres · manche ${Math.min(S.activity.asked||0,S.activity.total||15)}/${S.activity.total||15}</div>
+    <div class="pixel neon-yellow" style="font-size:11px">🎵 BLIND-TEST ${({rock:'ROCK',francais:'CHANSONS FR',dessins:'DESSINS ANIMÉS',annees83:'ANNÉES 83'})[S.activity.theme]||''} · ${S.playlistTrackCount||0} titres · manche ${Math.min(S.activity.asked||0,S.activity.total||15)}/${S.activity.total||15}</div>
     ${S.activity.sub === 'final'
       ? `<div class="mt">🏁 Manche terminée.
           ${(S.activity.winnerNames&&S.activity.winnerNames.length) ? '<br>🏆 Vainqueur : <b>'+S.activity.winnerNames.map(esc).join(', ')+'</b>' : ''}
@@ -127,6 +127,7 @@ function render(){
       <button class="btn" style="background:#7a5cff;color:#fff" onclick="startAct('blindtest',{theme:'rock'})">🎸 Blind-test Rock</button>
       <button class="btn" style="background:#7a5cff;color:#fff" onclick="startAct('blindtest',{theme:'francais'})">🎤 Blind-test Chansons FR</button>
       <button class="btn" style="background:#7a5cff;color:#fff" onclick="startAct('blindtest',{theme:'dessins'})">📺 Blind-test Dessins animés</button>
+      <button class="btn" style="background:#7a5cff;color:#fff" onclick="startAct('blindtest',{theme:'annees83'})">🕺 Blind-test 83</button>
       <button class="btn secondary" onclick="startAct('roue_des_gages')">🎰 Roue</button>
       <button class="btn secondary" onclick="startAct('boss_final',{hp:100})">👾 Boss</button>
       <button class="btn warn" onclick="startAct('pixel_pad',{len:4,target:10})">🧒 Défi Pixels</button>

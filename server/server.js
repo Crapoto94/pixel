@@ -494,6 +494,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'enqueteHint': game.enqueteHint(); break;
     case 'enqueteHintUnlock': game.enqueteHintUnlock(); break;
     case 'enqueteSkip': game.enqueteSkip(); break;
+    case 'ambientPlay': game.setAmbientPaused(false); break;
+    case 'ambientStop': game.setAmbientPaused(true); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });

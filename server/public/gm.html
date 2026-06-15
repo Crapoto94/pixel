@@ -95,6 +95,10 @@ function render(){
       ${S.hintVideo ? `<button class="btn" onclick="act('clearHint')">⏹ Couper l'indice 💡</button>` : ''}
       <button class="btn danger" onclick="if(confirm('Tout réinitialiser ?'))act('reset')">⟲ RESET</button>
     </div>
+    <div class="grid mt" style="border-top:1px solid #222;padding-top:10px;margin-top:10px">
+      <button class="btn ${S.ambientPaused ? 'warn' : 'secondary'}" onclick="act('ambientPlay')" ${S.ambientPaused ? '' : 'disabled'}>▶ Musique fond</button>
+      <button class="btn ${!S.ambientPaused ? '' : 'secondary'}" onclick="act('ambientStop')" ${!S.ambientPaused ? '' : 'disabled'} style="${!S.ambientPaused ? 'background:#3a1200;border-color:#c04000;color:#ffaa00' : ''}">⏸ Couper</button>
+    </div>
   </div>
 
   ${S.activity && S.activity.type === 'blindtest' && S.activity.dynamicBlindtest ? `

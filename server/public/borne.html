@@ -1859,7 +1859,8 @@ function syncYT(s){
     } else {
       if (ytPac) ytPac.pauseVideo();
       if (ytBt) ytBt.mute();
-      if (ytAmb) ytAmb.playVideo();
+      if (s.ambientPaused) { if (ytAmb) ytAmb.pauseVideo(); }
+      else { if (ytAmb) ytAmb.playVideo(); }
     }
   } catch(_){}
 }

@@ -93,6 +93,7 @@ export class GameState {
     this.w6Reboot = false; // quelqu'un a tapé REBOOT → on guide vers le LEET
     // Vidéo-indice diffusée sur la borne à la demande d'un joueur (ex. Monde 1)
     this.hintVideo = null; // { video, start, at } ou null
+    this.ambientPaused = false; // GM peut couper/relancer la playlist d'ambiance
     // --- Monde 3 : piano réparti intégré au monde (un demi-octave/téléphone) ---
     this.pianoUnlocked = false; // le mot-code (OCTAVE) débloque le piano
     this.pianoStep = 0;
@@ -1217,6 +1218,12 @@ export class GameState {
   }
 
   // GM bypasse le verrou 3 min : l'indice devient disponible immédiatement.
+  setAmbientPaused(paused) {
+    this.ambientPaused = !!paused;
+    this.addLog(paused ? '🔇 GM : musique d\'ambiance coupée.' : '🔊 GM : musique d\'ambiance relancée.');
+    this.touch();
+  }
+
   enqueteHintUnlock() {
     const a = this.activity;
     if (!a || a.type !== 'enquete') return;
@@ -2001,6 +2008,7 @@ export class GameState {
       piano: (this.pianoWorldActive() && this.pianoUnlocked) ? this.pianoWorldPublic(me ? me.id : null) : null,
       // Vidéo-indice en cours de diffusion sur la borne (ou null)
       hintVideo: this.hintVideo,
+      ambientPaused: this.ambientPaused,
       // Progression de la porte « Konami collectif » (Monde 6)
       w6: world && world.konamiGate ? {
         doneCount: this.players.filter((p) => p.connected && this.w6Konami[p.id]).length,

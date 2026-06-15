@@ -1793,7 +1793,12 @@ function initYT(){
   }).catch(()=>{});
 }
 
+let _lastAmbRestart = 0;
 function syncYT(s){
+  if (s.ambientRestartAt && s.ambientRestartAt !== _lastAmbRestart) {
+    _lastAmbRestart = s.ambientRestartAt;
+    try { if (ytAmb) { ytAmb.playVideoAt(0); if (SOUND_ON) ytAmb.unMute(); } } catch(_){}
+  }
   const a = s.activity;
   const pauseBrief = () => { try { if (ytBrief) ytBrief.pauseVideo(); } catch(_){} };
   const pauseEnq = () => { try { if (ytEnq) ytEnq.pauseVideo(); } catch(_){} };

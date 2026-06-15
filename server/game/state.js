@@ -94,6 +94,7 @@ export class GameState {
     // Vidéo-indice diffusée sur la borne à la demande d'un joueur (ex. Monde 1)
     this.hintVideo = null; // { video, start, at } ou null
     this.ambientPaused = false; // GM peut couper/relancer la playlist d'ambiance
+    this.ambientRestartAt = Date.now(); // timestamp bumped au reset → borne repart du début
     // --- Monde 3 : piano réparti intégré au monde (un demi-octave/téléphone) ---
     this.pianoUnlocked = false; // le mot-code (OCTAVE) débloque le piano
     this.pianoStep = 0;
@@ -2009,6 +2010,7 @@ export class GameState {
       // Vidéo-indice en cours de diffusion sur la borne (ou null)
       hintVideo: this.hintVideo,
       ambientPaused: this.ambientPaused,
+      ambientRestartAt: this.ambientRestartAt,
       // Progression de la porte « Konami collectif » (Monde 6)
       w6: world && world.konamiGate ? {
         doneCount: this.players.filter((p) => p.connected && this.w6Konami[p.id]).length,

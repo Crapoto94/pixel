@@ -233,22 +233,6 @@ export const ENQUETE = {
             "46xx → sous-sol → Archives & reprographie\n\n" +
             "MATRICULE d'un agent = code de sa direction (DGS, DSI, RH…) + les 3 chiffres de son poste.",
         },
-        {
-          id: 'repertoire',
-          label: 'RÉPERTOIRE DES POSTES',
-          title: '📞 RÉPERTOIRE DES POSTES — agents nominatifs',
-          body:
-            "Extrait — agents identifiés dans ce bâtiment :\n\n" +
-            "4101  N. NEVES ............ Directrice Finances\n" +
-            "4112  C. LENOIR ........... Chargée de mission Finances\n" +
-            "4201  F. ERZEN ............ Directeur Général des Services\n" +
-            "4207  Secrétariat DGS ..... (poste commun, bureau 2A)\n" +
-            "4301  F. COUPAYE .......... Directeur DSI\n" +
-            "4312  F. COUPAYE .......... Poste secondaire — bureau 3B\n" +
-            "4401  S. MARAIS ........... Directrice RH\n" +
-            "4415  RH Recrutement ...... (poste commun)\n\n" +
-            "Rappel : MATRICULE = code direction + 3 derniers chiffres du poste.",
-        },
       ],
       scene:
         "Deux signalements anonymes, signés « F. », dorment dans la messagerie. L'un est sincère, " +

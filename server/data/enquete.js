@@ -534,8 +534,7 @@ export const ENQUETE = {
       num: 7,
       key: 'a7',
       kind: 'count',
-      fragmentsHidden: true,
-      title: 'CINQUANTE BONS, CINQUANTE VERRES',
+      title: 'Des verres et des bons',
       place: "Quartier de La Varenne — bennes, rue Saint-Hilaire",
       article: {
         source: "RAPPORT DU LÉGISTE — éclats de verre",
@@ -550,12 +549,10 @@ export const ENQUETE = {
         "Chaque bon falsifié à son nom = un verre brisé. Personne n'a le total : il est réparti " +
         "en liasses sur vos téléphones. Faites la somme, vérifiez que c'est bien un multiple de 10.",
       riddle:
-        "Additionnez toutes les liasses de la table. Combien de bons (= de verres brisés) au total ?",
+        "cinquante verres cassés. Tu l'as ? C'est bon ?",
       answer: '50',
       hints: [
-        "Liasses : une douzaine (12), 9, 11, 8 et 10. Faites la somme.",
-        "12 + 9 + 11 + 8 + 10 — et ça doit tomber sur un multiple de 10.",
-        "Réponse : 50.",
+        "Le total doit être un MULTIPLE DE 10 (rapport du légiste). Si ce n'est pas le cas, recomptez.",
       ],
       humor:
         "Note de l'inspecteur : le légiste a recompté trois fois. À 49 il s'est ouvert une bière, " +

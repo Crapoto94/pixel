@@ -1216,6 +1216,15 @@ export class GameState {
     return { ok: false, reason: 'Code incorrect.' };
   }
 
+  // GM bypasse le verrou 3 min : l'indice devient disponible immédiatement.
+  enqueteHintUnlock() {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete') return;
+    a.actStartedAt = Date.now() - ENQUETE_HINT_LOCK_MS;
+    this.addLog('⚡ GM : verrou 3 min levé — indices disponibles maintenant.');
+    this.touch();
+  }
+
   // Combien de temps reste-t-il avant de pouvoir demander un indice (ms) ?
   enqueteHintLockRemaining() {
     const a = this.activity;

@@ -367,7 +367,47 @@ function controllerView(act) {
       <p class="muted">Regarde la BORNE 📺 — c'est l'heure des histoires !</p>
     </div>`;
   }
+  if (act.type === 'heroquiz') {
+    return heroQuizController(act);
+  }
   return `<div class="card center"><h2>ACTIVITÉ EN COURS</h2><p>Regarde la BORNE.</p></div>`;
+}
+// Anecdote 3 : seul VINCENT (le héros) saisit les initiales.
+function heroQuizController(act){
+  const me = STATE.me || {};
+  if (act.sub === 'win'){
+    return `<div class="card center glow-box" style="border-color:var(--neon3)">
+      <div class="pill neon-yellow">🎆 BRAVO VINCENT !</div>
+      <p class="big">${me.isHero?'Tu as trouvé ! 🏆':'Vincent a trouvé ! 🏆'}</p>
+      <p class="muted">Regarde la BORNE 📺</p>
+    </div>`;
+  }
+  if (!me.isHero){
+    return `<div class="card center glow-box" style="border-color:var(--neon3)">
+      <div class="pill neon-pink">💡 ANECDOTE</div>
+      <p class="big">Regarde la BORNE 📺</p>
+      <p>C'est à <b class="neon-yellow">VINCENT</b> de deviner !</p>
+    </div>`;
+  }
+  const wrong = act.lastWrong && (Date.now()-act.lastWrong < 3000)
+    ? '<p class="pixel" style="font-size:11px;color:var(--danger)">✘ Pas tout à fait… réessaie !</p>' : '';
+  return `<div class="card glow-box" style="border-color:var(--neon3)">
+    <div class="pill neon-pink">💡 ANECDOTE — À TOI, VINCENT 👑</div>
+    <p style="font-size:15px"><b class="neon-pink">${esc(act.question||'Qui est-ce ?')}</b></p>
+    <p class="muted" style="font-size:13px">Réponse attendue : ${esc(act.hintLabel||'la réponse')}.</p>
+    <input id="hqInput" type="text" placeholder="INITIALES" style="text-transform:uppercase"
+      onkeydown="if(event.key==='Enter')heroQuizAnswer()" autocomplete="off" />
+    <button class="btn warn mt" onclick="heroQuizAnswer()">🔓 VALIDER</button>
+    <div id="hqMsg" class="center mt">${wrong}</div>
+  </div>`;
+}
+function heroQuizAnswer(){
+  const el = document.getElementById('hqInput'); const v = el ? el.value : '';
+  api('/api/heroquiz/answer', { answer: v }).then(r=>{
+    const m = document.getElementById('hqMsg');
+    if (m) m.innerHTML = r.ok ? '<span class="neon-cyan pixel" style="font-size:11px">✔ BRAVO !</span>'
+                              : `<span class="pixel" style="font-size:10px;color:var(--danger)">${esc(r.reason||'NON')}</span>`;
+  });
 }
 
 function renderVideoPlayer(me) {

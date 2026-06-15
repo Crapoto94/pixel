@@ -313,49 +313,66 @@ export const ENQUETE = {
       num: 5,
       key: 'a5',
       kind: 'map',
-      title: 'LE PARCOURS DANS LA VILLE',
-      place: "Boucle de la Marne — sites remarquables de Saint-Maur",
+      title: 'LE DERNIER PARCOURS — TRACEUR GPS',
+      place: "Boucle de la Marne — du RER de Champigny à La Varenne",
+      article: {
+        source: "TRACEUR GPS de N. NEVES — 10 derniers points (REMONTÉS DANS LE DÉSORDRE)",
+        date: "Soir du crime",
+        body:
+          "• Place des Molènes ............. 21 h 53\n" +
+          "• RER Champigny–Saint-Maur ...... 21 h 04\n" +
+          "• Collège Louis Blanc ........... 21 h 46\n" +
+          "• Infocom94 ..................... 22 h 01\n" +
+          "• Mairie ........................ 21 h 21\n" +
+          "• Impasse de la Ferme ........... 22 h 17\n" +
+          "• L'atelier du golfeur .......... 21 h 29\n" +
+          "• La Varenne–Chennevières ....... 22 h 09\n" +
+          "• Stade Chéron .................. 21 h 12\n" +
+          "• Place Adamville ............... 21 h 38\n" +
+          "Remettez les points DANS L'ORDRE DES HEURES, puis reliez-les sur le plan.",
+      },
       scene:
-        "Dernière tournée de la directrice : sept sites publics, SANS numéros. Vos pièces ne " +
-        "donnent pas l'ordre tout cuit — elles donnent des contraintes (« X précède Y », « Z est " +
-        "le dernier »…). Reconstituez l'ordre, tracez le parcours : il dessine une LETTRE, votre CLÉ.",
+        "Le traceur GPS de la directrice a enregistré ses 10 derniers arrêts avant le crime — mais " +
+        "ils sont remontés DANS LE DÉSORDRE. Remettez-les dans l'ordre des heures, reliez-les sur " +
+        "le plan : son dernier parcours dessine une LETTRE, votre CLÉ pour la fin de l'enquête.",
       map: {
-        instruction: "Déduisez l'ordre des 7 sites à partir des contraintes, puis tracez : quelle lettre ?",
+        instruction: "Reliez les 10 points DANS L'ORDRE DES HEURES (GPS) : quelle lettre se dessine ?",
         river: true,
-        // Ordre du parcours = index du tableau (1er site = index 0) → dessine un « G ».
-        // lbl = côté étiquette ; short = libellé compact (le nom complet reste dans les indices).
+        // Ordre chronologique (= ordre du tableau) → le tracé dessine un « G ».
         landmarks: [
-          { name: "Hôtel de Ville", short: "Hôtel de Ville", x: 72, y: 24, lbl: 'l' },
-          { name: "Théâtre de Saint-Maur", short: "Théâtre", x: 40, y: 16, lbl: 't' },
-          { name: "Conservatoire à rayonnement régional", short: "Conservatoire", x: 22, y: 42, lbl: 'r' },
-          { name: "Église Saint-Nicolas (Vieux Saint-Maur)", short: "Église St-Nicolas", x: 28, y: 78, lbl: 'r' },
-          { name: "Abbaye / Tour Rabelais", short: "Abbaye (T. Rabelais)", x: 64, y: 85, lbl: 'b' },
-          { name: "Gare de Saint-Maur–Créteil (RER A)", short: "Gare St-Maur–Créteil", x: 84, y: 56, lbl: 'l' },
-          { name: "Villa Médicis (La Varenne)", short: "Villa Médicis", x: 54, y: 55, lbl: 't' },
+          { name: "RER Champigny–Saint-Maur (21h04)", short: "RER Champigny–St-Maur", x: 70, y: 22, lbl: 't' },
+          { name: "Stade Chéron (21h12)", short: "Stade Chéron", x: 46, y: 14, lbl: 't' },
+          { name: "Mairie (21h21)", short: "Mairie", x: 24, y: 24, lbl: 'l' },
+          { name: "L'atelier du golfeur (21h29)", short: "Atelier du golfeur", x: 15, y: 50, lbl: 'l' },
+          { name: "Place Adamville (21h38)", short: "Place Adamville", x: 24, y: 76, lbl: 'l' },
+          { name: "Collège Louis Blanc (21h46)", short: "Collège Louis Blanc", x: 50, y: 85, lbl: 'b' },
+          { name: "Place des Molènes (21h53)", short: "Place des Molènes", x: 78, y: 76, lbl: 'b' },
+          { name: "Infocom94 (22h01)", short: "Infocom94", x: 87, y: 52, lbl: 'r' },
+          { name: "La Varenne–Chennevières (22h09)", short: "La Varenne–Chenneviè.", x: 70, y: 52, lbl: 't' },
+          { name: "Impasse de la Ferme (22h17)", short: "Impasse de la Ferme", x: 58, y: 52, lbl: 'b' },
         ],
         letter: 'G',
       },
       riddle:
-        "Une fois l'ordre des 7 sites déduit, le tracé dessine une lettre. Tapez CETTE LETTRE.",
+        "Triez les 10 points GPS par heure, reliez-les dans l'ordre sur le plan : quelle LETTRE " +
+        "dessine le dernier parcours de Nathalie NEVES ? (1 lettre)",
       answer: 'G',
       hints: [
-        "Placez d'abord les extrêmes : départ = siège du maire ; fin = Villa Médicis ; la gare juste avant la fin.",
-        "Au centre : Théâtre → Conservatoire en 2-3 ; puis Église → Abbaye en 4-5. Reliez : ça fait un crochet.",
-        "Le tracé dessine un G — une initiale qui revient. Réponse : G.",
+        "Commencez par le plus TÔT (21 h 04 = RER Champigny–Saint-Maur) et finissez par le plus TARD (22 h 17 = Impasse de la Ferme).",
+        "Le tracé fait une grande BOUCLE OUVERTE (haut → gauche → bas → droite), puis une petite barre qui rentre vers le CENTRE.",
+        "Cette barre vers l'intérieur transforme un « C » en… G. Réponse : G.",
       ],
       humor:
-        "Note de l'inspecteur : la directrice notait ses tournées au dos de tickets de parking. " +
-        "L'un mène à un kebab. On a vérifié. Par conscience professionnelle.",
+        "Note de l'inspecteur : 10 arrêts en 1 h 13, dont un « atelier du golfeur ». La victime " +
+        "peaufinait son swing avant de mourir. On respecte le professionnalisme.",
       reveal:
-        "ACTE 5 — Le parcours dessine un G. Gardez cette lettre : elle décodera le dernier message. " +
-        "Et elle pointe déjà une initiale parmi les suspects…",
+        "ACTE 5 — Remis dans l'ordre des heures, le dernier parcours dessine un G. Gardez cette " +
+        "lettre : elle décodera le message final. Et elle pointe déjà une initiale parmi les suspects…",
       fragments: [
-        { label: "Contrainte 1", text: "Le parcours COMMENCE au siège du maire (en haut à droite du plan)." },
-        { label: "Contrainte 2", text: "La Villa Médicis est le tout DERNIER arrêt." },
-        { label: "Contrainte 3", text: "La Gare RER vient JUSTE AVANT la Villa Médicis." },
-        { label: "Contrainte 4", text: "Le Théâtre est le 2ᵉ arrêt, et le Conservatoire le suit IMMÉDIATEMENT." },
-        { label: "Contrainte 5", text: "L'Abbaye (Tour Rabelais) est l'AVANT-AVANT-DERNIER arrêt (5ᵉ sur 7)." },
-        { label: "Contrainte 6", text: "L'Église Saint-Nicolas vient JUSTE AVANT l'Abbaye." },
+        { label: "Repère — départ & fin", text: "Le 1ᵉʳ point (21 h 04) est le RER Champigny–Saint-Maur ; le DERNIER (22 h 17), l'Impasse de la Ferme." },
+        { label: "Méthode", text: "Reliez les points dans l'ordre des HEURES — pas dans l'ordre de la liste affichée." },
+        { label: "Forme", text: "Le tracé fait une grande boucle ouverte… puis une petite barre qui RENTRE vers le centre." },
+        { label: "La clé", text: "La lettre obtenue est une INITIALE qu'on retrouvera chez un suspect (acte 6) et qui sert de clé (acte 8)." },
       ],
     },
 

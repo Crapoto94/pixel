@@ -240,6 +240,11 @@ function render(){
     tickerEl.textContent = 'ANECDOTE — Vincent raconte !';
     return;
   }
+  // --- Hero-quiz (Anecdote 3) : vidéo puis Vincent devine, puis BRAVO VINCENT ---
+  if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='heroquiz'){
+    renderHeroQuiz(STATE.activity); return;
+  }
+  if (hqKey){ hqKey = null; destroyHeroQuiz(); }
   // --- Diffusion vidéo (danse des canards, anecdotes…) ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='videoshow'){
     renderVideoBorne(STATE.activity); return;
@@ -762,6 +767,102 @@ function renderVideoBorne(a){
   startShowPlayer(a.skipIntro ? null : (a.intro || SHOW_INTRO), a.video || '7kyY29BHTZs');
 }
 function destroyShowPlayer(){ try { if (ytShow) { ytShow.destroy(); ytShow = null; } } catch(_){ ytShow = null; } }
+
+// =================== HERO-QUIZ (Anecdote 3 : Vincent devine) ===================
+let hqKey = null, ytHQ = null, _fxRaf = 0, _fxStop = false;
+function destroyHeroQuiz(){
+  try { if (ytHQ){ ytHQ.destroy(); ytHQ = null; } } catch(_){ ytHQ = null; }
+  _fxStop = true; cancelAnimationFrame(_fxRaf);
+}
+function renderHeroQuiz(a){
+  const key = a.startedAt + ':' + a.sub;
+  if (hqKey === key) return;        // construit une seule fois par état
+  hqKey = key;
+  destroyHeroQuiz(); _fxStop = false;
+  try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+
+  if (a.sub === 'win'){
+    // 🎆 BRAVO VINCENT — feux d'artifice + musique de fête.
+    stage.innerHTML = `<div class="center" style="position:relative">
+      <canvas id="fxcanvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>
+      <div style="position:relative;z-index:2">
+        <h1 class="huge pixel neon-yellow glow-box" style="display:inline-block;padding:14px 30px;font-size:clamp(34px,8vw,84px)">🎆 BRAVO VINCENT ! 🎆</h1>
+        <p class="big neon-cyan" style="margin-top:18px">Tu as trouvé ! 🏆</p>
+      </div>
+      <div id="ythqwin" style="position:fixed;width:1px;height:1px;left:-9px;top:-9px"></div>
+    </div>`;
+    tickerEl.textContent = '🎆 BRAVO VINCENT — bonne réponse à l\'anecdote !';
+    if (SOUND_ON && window.SFX) { try { SFX.win(); setTimeout(()=>SFX.twist&&SFX.twist(), 500); } catch(_){} }
+    startFireworks();
+    // musique de fête (vidéo) si configurée
+    if (a.celebrateVideo){
+      if (window.YT && YT.Player){
+        ytHQ = new YT.Player('ythqwin', { height:'1', width:'1', videoId:a.celebrateVideo,
+          playerVars:{ autoplay:1, loop:1, playlist:a.celebrateVideo, controls:0, fs:0, modestbranding:1, mute: SOUND_ON?0:1 },
+          events:{ onReady(e){ try{ if(SOUND_ON){e.target.unMute();e.target.setVolume(100);} e.target.playVideo(); }catch(_){} } } });
+      } else {
+        const el = document.getElementById('ythqwin');
+        if (el) el.outerHTML = `<iframe width="1" height="1" style="border:0"
+          src="https://www.youtube.com/embed/${a.celebrateVideo}?autoplay=1&loop=1&playlist=${a.celebrateVideo}&rel=0" allow="autoplay; encrypted-media"></iframe>`;
+      }
+    }
+    return;
+  }
+
+  // sub 'play' : la borne joue la vidéo-anecdote + consigne pour Vincent.
+  stage.innerHTML = `<div class="center">
+    <div style="background:#c026d3;color:#fff;font-family:var(--pixel);font-size:20px;padding:8px 14px;border-radius:6px;display:inline-block;animation:blink 1s steps(1) infinite">${esc(a.topLabel||'💡 ANECDOTE')}</div>
+    <div style="max-width:820px;margin:14px auto;border:4px solid #c45cff;border-radius:12px;overflow:hidden;background:#000">
+      <div style="aspect-ratio:16/9"><div id="ythq" style="width:100%;height:100%"></div></div>
+    </div>
+    <div class="card glow-box" style="display:inline-block;border-color:var(--neon3)">
+      <p class="big neon-yellow">👑 VINCENT, à toi !</p>
+      <p class="big">${esc(a.question||'Qui est-ce ?')}</p>
+      <p class="big neon-cyan blink">Tape ${esc(a.hintLabel||'la réponse')} sur ton téléphone.</p>
+    </div>
+  </div>`;
+  tickerEl.textContent = '💡 ANECDOTE — Vincent doit deviner les initiales !';
+  if (a.video){
+    if (window.YT && YT.Player){
+      ytHQ = new YT.Player('ythq', { height:'100%', width:'100%', videoId:a.video,
+        playerVars:{ autoplay:1, controls:1, playsinline:1, rel:0, modestbranding:1, fs:0 },
+        events:{ onReady(e){ try{ if(SOUND_ON){e.target.unMute();e.target.setVolume(100);} e.target.playVideo(); }catch(_){} } } });
+    } else {
+      const el = document.getElementById('ythq');
+      if (el) el.outerHTML = `<iframe width="100%" height="100%" style="border:0"
+        src="https://www.youtube.com/embed/${a.video}?autoplay=1&playsinline=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+    }
+  }
+}
+// Feux d'artifice (canvas) — particules colorées qui éclatent en boucle.
+function startFireworks(){
+  const cv = document.getElementById('fxcanvas'); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const resize = () => { cv.width = cv.clientWidth; cv.height = cv.clientHeight; };
+  resize();
+  const COL = ['#ff2e88','#2effd5','#ffe600','#7a5cff','#38ff9c','#ff6b3c','#3c9cff'];
+  let parts = [];
+  const burst = () => {
+    const x = Math.random()*cv.width, y = Math.random()*cv.height*0.6 + cv.height*0.05;
+    const c = COL[Math.floor(Math.random()*COL.length)];
+    const n = 38 + Math.floor(Math.random()*22);
+    for (let i=0;i<n;i++){ const ang=(Math.PI*2*i)/n, sp=1.6+Math.random()*3.4;
+      parts.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:1,c}); }
+  };
+  let t=0;
+  const tick = () => {
+    if (_fxStop) return;
+    ctx.fillStyle = 'rgba(8,2,20,0.28)'; ctx.fillRect(0,0,cv.width,cv.height);
+    if ((t++ % 26) === 0) burst();
+    parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.04; p.life-=0.012;
+      ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=p.c;
+      ctx.fillRect(p.x,p.y,3,3); });
+    ctx.globalAlpha=1;
+    parts = parts.filter(p=>p.life>0);
+    _fxRaf = requestAnimationFrame(tick);
+  };
+  tick();
+}
 function startShowPlayer(intro, main){
   // Sans l'API YouTube : on saute le sting et on joue la vidéo principale.
   if (!(window.YT && YT.Player)){
@@ -1726,6 +1827,12 @@ function syncYT(s){
   if (isEnq && ytEnq) {
     pauseBrief();
     try { ytEnq.unMute(); ytEnq.playVideo(); if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+    return;
+  }
+  // Hero-quiz (Anecdote 3) : la vidéo / la fête fournissent le son → on coupe le reste.
+  if (live && a.type === 'heroquiz') {
+    pauseBrief(); pauseEnq();
+    try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
     return;
   }
   // Diffusion vidéo : l'iframe fournit le son → on coupe tout le reste.

@@ -138,6 +138,8 @@ function render(){
       <button class="btn warn" onclick="startAct('enquete')">🕵️ Enquête</button>
       <button class="btn warn" onclick="duckDance()">🦆 Danse des canards</button>
       <button class="btn warn" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
+      <button class="btn warn" onclick="anecdote(2,'wN_-cmnOAfs')">💡 Anecdote 2</button>
+      <button class="btn" style="background:#c026d3;color:#fff" onclick="anecdote3()">🎬 Anecdote 3 (Vincent devine)</button>
       <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(1)">🎉 Fête 1</button>
       <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(2)">🎉 Fête 2</button>
       <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(3)">🎉 Fête 3</button>
@@ -362,6 +364,18 @@ function anecdote(n,video){
   startAct('videoshow',{video,topLabel:'💡 ANECDOTE #'+n,
     chyron:'ANECDOTE #'+n+' 🍿<br>OUVREZ GRAND LES OREILLES !',
     footer:'Une petite histoire pour Vincent… 🎬'});
+}
+// Anecdote 3 : la borne joue la vidéo, PUIS Vincent doit deviner les initiales.
+// Bonne réponse (JFO) → BRAVO VINCENT + feux d'artifice + musique.
+function anecdote3(){
+  act('startActivity',{type:'heroquiz',opts:{
+    video:'EMWY25VsbNU',
+    topLabel:'💡 ANECDOTE #3',
+    question:'VINCENT : qui est-ce ?',
+    hintLabel:'ses 3 INITIALES',
+    answer:'JFO',
+    celebrateVideo:'6EEGmdH9Vu0', // musique de la vidéo anniversaire pour le BRAVO
+  }});
 }
 function fete(n){
   const videos = { 1:'HpCZqG7lxD8', 2:'NoxgPqw4rSY', 3:'dhCDATSf3Ss' };

@@ -836,6 +836,18 @@ export class GameState {
       this.activity.footer = opts.footer || '';
       this.activity.skipIntro = opts.skipIntro || false; // true = pas de sting, la vidéo démarre direct
     }
+    // Hero-quiz (Anecdote 3) : la borne joue une vidéo, puis VINCENT devine.
+    //  Bonne réponse → écran « BRAVO VINCENT » (feux d'artifice + musique).
+    if (type === 'heroquiz') {
+      this.activity.video = opts.video || '';
+      this.activity.topLabel = opts.topLabel || '💡 ANECDOTE';
+      this.activity.question = opts.question || 'Qui est-ce ?';
+      this.activity.hintLabel = opts.hintLabel || '';
+      this.activity.answer = opts.answer || '';        // gardé côté serveur (jamais envoyé)
+      this.activity.celebrateVideo = opts.celebrateVideo || '';
+      this.activity.sub = 'play';                      // play → win
+      this.activity.lastWrong = 0;
+    }
     // Anecdote : la borne affiche un prompt (souvenir / histoire) à raconter.
     if (type === 'anecdote') {
       const an = (opts.anecdote && opts.anecdote.titre)
@@ -1004,6 +1016,12 @@ export class GameState {
     if (!a) return null;
     if (a.type === 'music_seq') return this.musicPublic(forPlayerId);
     if (a.type === 'piano') return this.pianoPublic(forPlayerId);
+    if (a.type === 'heroquiz') return {
+      type: 'heroquiz', state: a.state, sub: a.sub,
+      video: a.video, topLabel: a.topLabel, question: a.question, hintLabel: a.hintLabel,
+      celebrateVideo: a.sub === 'win' ? a.celebrateVideo : null,
+      wonAt: a.wonAt || 0, lastWrong: a.lastWrong || 0,
+    };
     if (a.type === 'mosaic') return this.mosaicPublic(forPlayerId);
     if (a.type === 'enquete') return this.enquetePublic(forPlayerId);
     if (a.type === 'draw') return this._drawPublic(forPlayerId);
@@ -1871,6 +1889,26 @@ export class GameState {
     }
     this.phase = 'world';
     this.touch();
+  }
+
+  // ---- Hero-quiz (Anecdote 3) : seul VINCENT peut répondre -----------
+  heroQuizAnswer(playerId, text) {
+    const a = this.activity;
+    if (!a || a.type !== 'heroquiz') return { ok: false, reason: 'Pas de question en cours.' };
+    if (a.sub === 'win') return { ok: false, reason: 'Déjà gagné !' };
+    const p = this.player(playerId);
+    if (!(p && p.isHero)) return { ok: false, reason: 'Réservé à VINCENT (Player One).' };
+    if (normalize(text) === normalize(a.answer)) {
+      a.sub = 'win';
+      a.wonAt = Date.now();
+      this.addLog('🎆 BRAVO VINCENT — bonne réponse à l\'anecdote !');
+      this.touch();
+      return { ok: true };
+    }
+    a.lastWrong = Date.now();
+    this.addLog('❌ Anecdote : réponse de Vincent refusée.');
+    this.touch();
+    return { ok: false, reason: 'Pas tout à fait… réessaie.' };
   }
 
   // ---- Vue publique (envoyée aux clients) --------------------------

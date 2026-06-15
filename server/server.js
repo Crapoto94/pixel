@@ -362,6 +362,12 @@ app.post('/api/piano/replay', (req, res) => {
   res.json({ ok: true });
 });
 
+// Hero-quiz (Anecdote 3) : Vincent propose les initiales
+app.post('/api/heroquiz/answer', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  res.json(game.heroQuizAnswer(p.id, req.body.answer || ''));
+});
+
 // --- API Game Master (Vincent éveillé OU Marc l'hôte) ---------------
 app.post('/api/gm/gage', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

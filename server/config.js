@@ -39,6 +39,9 @@ export const CONFIG = {
   // 🎉 Vidéo de FÊTE que le GAME MASTER (Vincent) peut lancer au Monde 4.
   feteYoutube: 'https://www.youtube.com/watch?v=7kyY29BHTZs',
 
+  // 🎬 Vidéo spéciale jouée UNIQUEMENT sur la borne à la fin de l'enquête (post-débrief).
+  enqueteFinaleVideo: 'https://www.youtube.com/watch?v=6EEGmdH9Vu0',
+
   // 🎸 Blind-tests : une playlist YouTube par THÈME (jouées sur la BORNE, shuffle).
   //    Mets soit l'ID de playlist (PL…), soit l'URL complète : on en extrait l'ID.
   //    Laisse '' pour désactiver un thème.

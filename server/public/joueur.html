@@ -175,6 +175,14 @@ function render() {
   mosKey = null;
   // --- DIFFUSION VIDÉO : vidéo plein écran + bandeau ---
   if (STATE.phase === 'activity' && STATE.activity && STATE.activity.type === 'videoshow') {
+    if (STATE.activity.borneOnly) {
+      main.innerHTML = `<div class="card center" style="margin-top:40px">
+        <div style="font-size:48px">🎬</div>
+        <div class="pixel neon-yellow" style="font-size:22px;margin-top:12px">${esc(STATE.activity.topLabel||'VIDÉO')}</div>
+        <div class="muted mt">${esc(STATE.activity.chyron||'Regardez la borne !')}</div>
+      </div>`;
+      return;
+    }
     renderVideoPlayer(me); return;
   }
   videoKey = null;

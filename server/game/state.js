@@ -1357,21 +1357,14 @@ export class GameState {
   _playEnqueteFinale() {
     const url = CONFIG.enqueteFinaleVideo || CONFIG.feteYoutube || '';
     const videoId = url.match(/(?:[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1] || '';
-    if (!videoId) {
-      this._enqueteMaybeCompleteWorld();
-      return;
-    }
+    if (!videoId) return;
     this.startActivity('videoshow', {
       video: videoId,
-      topLabel: '🔓 DOSSIER 94100 — CLOS',
-      chyron: 'Toute la lumière est faite sur l\'affaire.',
+      topLabel: '🎬 ANNIVERSAIRE',
+      chyron: 'Bonne fête Vincent !',
       skipIntro: true,
+      borneOnly: true,
     });
-    if (this._celebrateTimer) clearTimeout(this._celebrateTimer);
-    this._celebrateTimer = setTimeout(() => {
-      this._celebrateTimer = null;
-      this._enqueteMaybeCompleteWorld();
-    }, 90000);
   }
 
   enquetePlayFinale() {

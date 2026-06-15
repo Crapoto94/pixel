@@ -430,8 +430,7 @@ export const ENQUETE = {
             "• L'atelier du golfeur .......... 21 h 29\n" +
             "• La Varenne–Chennevières ....... 22 h 09\n" +
             "• Stade Chéron .................. 21 h 12\n" +
-            "• Place Adamville ............... 21 h 38\n\n" +
-            "👉 Remettez ces 10 points dans l'ordre des heures, puis reliez-les sur le plan de la borne.",
+            "• Place Adamville ............... 21 h 38",
         },
       ],
       scene:
@@ -461,8 +460,8 @@ export const ENQUETE = {
         "dessine le dernier parcours de Nathalie NEVES ? (1 lettre)",
       answer: 'G',
       hints: [
-        "Commencez par le plus TÔT (21 h 04 = RER Champigny–Saint-Maur) et finissez par le plus TARD (22 h 17 = Impasse de la Ferme).",
-        "Le tracé fait une grande BOUCLE OUVERTE (haut → gauche → bas → droite), puis une petite barre qui rentre vers le CENTRE.",
+        "Remettez ces 10 points dans l'ordre des heures",
+        "puis reliez-les sur le plan de la borne.",
         "Cette barre vers l'intérieur transforme un « C » en… G. Réponse : G.",
       ],
       humor:

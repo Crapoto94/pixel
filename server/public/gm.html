@@ -266,7 +266,7 @@ function render(){
       ${btnFilm}
     </div>`;
     if (em.done) {
-      const secsLeft = em.finaleAt ? Math.max(0, 90 - Math.round((Date.now() - em.finaleAt) / 1000)) : null;
+      const secsLeft = em.finaleAt ? Math.max(0, 15 - Math.round((Date.now() - em.finaleAt) / 1000)) : null;
       const countdown = secsLeft !== null && secsLeft > 0
         ? `<div class="muted mt" style="font-size:13px">🎬 Film dans <b>${secsLeft} s</b>…</div>` : '';
       return `<div class="card" style="border-color:var(--ok)">

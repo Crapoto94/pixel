@@ -1351,7 +1351,7 @@ export class GameState {
     this._enqueteFinaleTimer = setTimeout(() => {
       this._enqueteFinaleTimer = null;
       this._playEnqueteFinale();
-    }, 90000);
+    }, 15000);
     this.touch();
   }
 

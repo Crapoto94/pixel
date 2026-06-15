@@ -1780,7 +1780,7 @@ function initYT(){
         height:'1', width:'1',
         playerVars:{ listType:'playlist', list:cfg.ambiance, autoplay:1, loop:1, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
         events:{
-          onReady(e){ e.target.setShuffle(true); e.target.playVideo(); }, // muet jusqu'au 1er clic
+          onReady(e){ e.target.setShuffle(true); e.target.setVolume(50); e.target.playVideo(); }, // muet jusqu'au 1er clic
           onStateChange(e){ if(e.data===YT.PlayerState.ENDED) e.target.nextVideo(); }
         }
       });
@@ -1877,7 +1877,7 @@ let _lastAmbRestart = 0;
 function syncYT(s){
   if (s.ambientRestartAt && s.ambientRestartAt !== _lastAmbRestart) {
     _lastAmbRestart = s.ambientRestartAt;
-    try { if (ytAmb) { ytAmb.playVideoAt(0); if (SOUND_ON) ytAmb.unMute(); } } catch(_){}
+    try { if (ytAmb) { ytAmb.playVideoAt(0); if (SOUND_ON) { ytAmb.unMute(); ytAmb.setVolume(50); } } } catch(_){}
   }
   const a = s.activity;
   const pauseBrief = () => { try { if (ytBrief) ytBrief.pauseVideo(); } catch(_){} };
@@ -1956,7 +1956,7 @@ function syncYT(s){
       if (ytPac) ytPac.pauseVideo();
       if (ytBt) ytBt.mute();
       if (s.ambientPaused) { if (ytAmb) ytAmb.pauseVideo(); }
-      else { if (ytAmb) { if (SOUND_ON) ytAmb.unMute(); ytAmb.playVideo(); } }
+      else { if (ytAmb) { if (SOUND_ON) { ytAmb.unMute(); ytAmb.setVolume(50); } ytAmb.playVideo(); } }
     }
   } catch(_){}
 }

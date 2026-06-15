@@ -263,6 +263,8 @@ export const ENQUETE = {
 
     // ===============================================================
     //  ACTE 4 — LA TABLE DES COMPTES → ÉLIMINER les homonymes (LEJARRE)
+    //  Tous les docs sont sur les TÉLÉPHONES. La table est globale (visible
+    //  par tous). Les 4 autres docs sont répartis un par joueur.
     // ===============================================================
     {
       num: 4,
@@ -270,59 +272,135 @@ export const ENQUETE = {
       kind: 'logic',
       title: 'LE FALSIFICATEUR EN CHEF',
       place: "Direction des Finances — régie comptable & salle des serveurs",
-      // La table est sur les TÉLÉPHONES (doc global), pas sur la borne.
       article: {
         source: "TABLE DES COMPTES ADMIN & PRESTATAIRES — restaurée",
         date: "—",
         hideOnBorne: true,
-        body:
-          "Carla LENOIR ...... comptable titulaire ... compte AD-114 (marché régulier) ... EN POSTE\n" +
-          "Kevin LARENNE ..... stagiaire BTS ......... compte AD-207 (temporaire) ........ parti en fin de stage\n" +
-          "Camus LEJARRE ..... prestataire info ...... compte AD-666 (HORS MARCHÉ) ....... PARTI sans préavis\n" +
-          "Sté NOVERIA ....... maintenance ........... compte AD-300 (marché régulier) ... actif\n" +
-          "Indice serveur : les journaux d'audit ont été PURGÉS la nuit du 24 par le compte AD-666.",
+        body: "→ documents sur les téléphones",
       },
       docs: [
+        // ── Doc global : visible par TOUS les joueurs ──
         {
           id: 'comptes',
           label: '📋 TABLE DES COMPTES',
           title: '💼 TABLE DES COMPTES ADMIN & PRESTATAIRES — restaurée',
           global: true,
           body:
-            "Carla LENOIR ...... comptable titulaire ... compte AD-114 (marché régulier) ... EN POSTE\n" +
-            "Kevin LARENNE ..... stagiaire BTS ......... compte AD-207 (temporaire) ........ parti en fin de stage\n" +
-            "Camus LEJARRE ..... prestataire info ...... compte AD-666 (HORS MARCHÉ) ....... PARTI sans préavis\n" +
-            "Sté NOVERIA ....... maintenance ........... compte AD-300 (marché régulier) ... actif\n\n" +
-            "⚠️ Indice serveur : les journaux d'audit ont été PURGÉS la nuit du 24 par le compte AD-666.",
+            "Comptes actifs et archivés — Direction des Finances & prestataires :\n\n" +
+            "Carla LENOIR ......... Comptable titulaire ......... AD-114  Marché public ........ EN POSTE\n" +
+            "Christophe LAVAL ..... Responsable marchés ......... AD-115  Marché public ........ EN POSTE\n" +
+            "Céline LEFEBVRE ...... Assistante comptable ......... AD-116  Marché public ........ Contrat terminé\n" +
+            "Kevin LARENNE ........ Stagiaire BTS (6 mois) ....... AD-207  Temporaire ........... Parti — fin de stage\n" +
+            "Sté NOVERIA .......... Maintenance informatique ...... AD-300  Marché public ........ Actif\n" +
+            "Claude LERMITE ....... Consultant audit externe ...... AD-410  Marché public ........ Mission terminée\n" +
+            "Cameron LYLE ......... Stagiaire RH (Licence 3) ...... AD-445  Temporaire ........... Parti — fin de stage\n" +
+            "Camus LEJARRE ........ Prestataire systèmes & réseaux  AD-666  ⚠️ HORS MARCHÉ ...... PARTI sans préavis\n\n" +
+            "⚠️  Journal serveur : les journaux d'audit ont été PURGÉS nuit du 24 par le compte AD-666.",
+        },
+        // ── Docs répartis : un par joueur (round-robin) ──
+        {
+          id: 'log_connexions',
+          label: '🖥️ LOG DES CONNEXIONS',
+          title: '🖥️ LOG SYSTÈME — Serveur FINSERV-01 (nuit du 23 au 24)',
+          body:
+            "23 h 12 — AD-114 (C. LENOIR) ............. Connexion FIN-COMPTA\n" +
+            "23 h 47 — AD-114 (C. LENOIR) ............. Déconnexion\n" +
+            "00 h 03 — AD-666 (identité masquée) ...... Connexion ADMIN\n" +
+            "00 h 17 — AD-666 ......................... PURGE : journal_audit_T3.log [SUPPRIMÉ]\n" +
+            "00 h 18 — AD-666 ......................... PURGE : journal_audit_T4.log [SUPPRIMÉ]\n" +
+            "00 h 19 — AD-666 ......................... PURGE : journal_audit_T5.log [SUPPRIMÉ]\n" +
+            "00 h 20 — AD-666 ......................... Déconnexion\n\n" +
+            "⚠️  Aucun badge nominatif enregistré dans les locaux après 22 h 05\n" +
+            "    (registre contrôle d'accès). Qui utilisait AD-666 depuis l'extérieur ?",
+        },
+        {
+          id: 'repertoire',
+          label: '📇 RÉPERTOIRE PRESTATAIRES',
+          title: '📇 RÉPERTOIRE DES PRESTATAIRES — noms en L (extrait RH)',
+          body:
+            "LARENNE Kevin ....... Stagiaire fin d'études — BTS Comptabilité\n" +
+            "                      Durée : 6 mois — Départ normal en juillet 2013\n\n" +
+            "LAVAL Christophe .... Responsable coordination marchés publics\n" +
+            "                      Toujours en poste — aucune irrégularité signalée\n\n" +
+            "LEFEBVRE Céline ..... Assistante comptable (remplacement congé maternité)\n" +
+            "                      Contrat terminé — départ prévu, aucune anomalie\n\n" +
+            "LEJARRE Camus ....... Technicien systèmes & réseaux — « prestataire libre »\n" +
+            "                      Compte AD-666 créé sur dérogation DGS (hors marché)\n" +
+            "                      Départ non planifié — 29 juillet 2013\n\n" +
+            "LENOIR Carla ........ Comptable titulaire, référente bons de commande\n" +
+            "                      En poste — dernière revue annuelle : satisfaisante\n\n" +
+            "LERMITE Claude ...... Consultant audit informatique (mission ponctuelle)\n" +
+            "                      Mission terminée — rapport remis, aucun incident\n\n" +
+            "LYLE Cameron ........ Stagiaire RH — Licence 3\n" +
+            "                      Départ normal en fin de stage",
+        },
+        {
+          id: 'bon_commande',
+          label: '📄 BON DE COMMANDE FALSIFIÉ',
+          title: '📄 BON DE COMMANDE n° BC-2013-047 (pièce à conviction)',
+          body:
+            "MAIRIE DE SAINT-MAUR-DES-FOSSÉS — Direction des Finances\n\n" +
+            "N°      : BC-2013-047\n" +
+            "Date    : 14 mars 2013\n" +
+            "Objet   : Production « Saint-Maur Le Mag » n° 52 — 20 000 ex.\n" +
+            "Fournisseur : Idéepôle (filiale Bygmalion)\n\n" +
+            "┌─────────────────────────────────────────────────────┐\n" +
+            "│ Montant INITIAL signé par le DGS :   36 000,00 €   │\n" +
+            "│                                [barré, encre rouge] │\n" +
+            "│ Montant RÉÉCRIT (autre écriture) :   58 500,00 €   │\n" +
+            "└─────────────────────────────────────────────────────┘\n\n" +
+            "Signataire d'origine : F. ERZEN — DGS\n" +
+            "Visa comptable       : N. NEVES\n\n" +
+            "→ Écart : 22 500 € — qui a réécrit ce montant après signature ?",
+        },
+        {
+          id: 'fiche_lejarre',
+          label: '🗂️ FICHE PRESTATAIRE — LEJARRE',
+          title: '🗂️ FICHE PRESTATAIRE CONFIDENTIELLE — LEJARRE Camus',
+          body:
+            "Nom : LEJARRE Camus          Né : 14/04/1979\n" +
+            "Fonction : Technicien systèmes & réseaux (indépendant)\n" +
+            "Période : mars 2011 → juillet 2013\n\n" +
+            "Accès accordés :\n" +
+            "  • Compte admin AD-666 (créé sur dérogation DGS — HORS marché public)\n" +
+            "  • Régie comptable : OUI\n" +
+            "  • Salle des serveurs : OUI\n" +
+            "  • Télé-accès VPN : OUI (code non révoqué à ce jour)\n\n" +
+            "Fin de mission : DÉPART NON PLANIFIÉ — 29 juillet 2013\n" +
+            "Motif déclaré  : « convenances personnelles »\n" +
+            "Badge RH : désactivation signalée non traitée (oubli de procédure)\n\n" +
+            "Note RH : « M. Lejarre est parti avec ses affaires un mardi matin,\n" +
+            "          sans prévenir. Un collègue l'a vu charger des cartons dans\n" +
+            "          sa voiture à 7 h 30. Son bureau était vide à 9 h. »",
         },
       ],
       scene:
         "Erzen savait gonfler des montants, pas pirater un logiciel. Un « falsificateur en chef » " +
-        "a ouvert la compta et effacé les logs, puis a filé se mettre au vert. Plusieurs noms " +
-        "partagent les initiales C.L. dans la TABLE : démêlez avec vos pièces.",
+        "a ouvert la compta et effacé les logs, puis a filé. Plusieurs noms commencent par L dans " +
+        "la TABLE — et vos documents individuels contiennent les éléments pour éliminer les innocents.",
       riddle:
-        "Qui est le falsificateur en chef ? Trois personnes ont les initiales C.L. : éliminez les " +
-        "innocents grâce à vos pièces et à la table. (nom de famille)",
+        "Qui est le falsificateur en chef ? Lisez vos documents à voix haute et recoupez : " +
+        "un seul nom est HORS marché, a purgé les logs la nuit du 24, et a disparu sans préavis. (nom de famille)",
       answer: 'LEJARRE',
       hints: [
-        "Cherchez le compte HORS MARCHÉ qui a PURGÉ les logs la nuit du 24 (c'est dans la table).",
-        "Lenoir est en poste, Larenne (stagiaire) est parti normalement. Reste le prestataire hors marché qui a fui.",
-        "Réponse : LEJARRE.",
+        "Dans la table, repérez le seul compte créé HORS marché public (colonne statut).",
+        "Le log des connexions montre que AD-666 a purgé 3 fichiers à minuit — depuis l'extérieur (aucun badge dans les locaux après 22 h 05). Le VPN était encore actif.",
+        "Réponse : LEJARRE (fiche prestataire + compte AD-666 + départ précipité).",
       ],
       humor:
         "Note de l'inspecteur : Lejarre a fui si vite qu'il a laissé son mug « World's Best " +
         "Falsificateur » encore tiède, et 14 pizzas facturées au budget « fournitures de bureau ».",
       reveal:
-        "ACTE 4 — Le falsificateur en chef est Camus LEJARRE : prestataire fantôme (compte AD-666, " +
-        "hors marché), il a purgé les logs la nuit du 24 puis s'est volatilisé à la campagne. Le " +
-        "réseau est complet : ERZEN + NEVES + LEJARRE. Reste le tueur. Suivez la ville.",
+        "ACTE 4 — Le falsificateur en chef est Camus LEJARRE : compte AD-666 créé hors marché sur " +
+        "dérogation d'Erzen, accès VPN jamais révoqué, logs purgés à distance la nuit du 24, puis " +
+        "cavale au petit matin. Le réseau est complet : ERZEN + NEVES + LEJARRE. Reste le tueur.",
       fragments: [
-        { label: "Pièce D1 — le compte", text: "Le falsificateur opérait depuis un compte admin créé HORS marché public. (Lequel, dans la table ?)" },
-        { label: "Pièce D2 — la purge", text: "C'est CE compte qui a purgé les journaux d'audit la nuit du 24." },
-        { label: "Pièce D3 — la cavale", text: "L'homme a quitté la mairie sans préavis et est « parti se mettre au vert »." },
-        { label: "Pièce D4 — homonyme 1", text: "Carla LENOIR a aussi les initiales C.L. … mais elle est TOUJOURS en poste. Écartez-la." },
-        { label: "Pièce D5 — homonyme 2", text: "Kevin LARENNE (initiales inversées) n'était qu'un stagiaire BTS, parti normalement. Écartez-le." },
-        { label: "Pièce D6 — témoin", text: "« Le magicien des chiffres : il faisait disparaître une ligne comptable comme un lapin. »" },
+        { label: "Pièce D1 — le compte", text: "Le falsificateur opérait depuis un compte admin créé HORS marché public, sur dérogation du DGS. (Lequel, dans la table ?)" },
+        { label: "Pièce D2 — la purge", text: "C'est CE compte qui a purgé les journaux d'audit dans la nuit du 24 — depuis l'extérieur des locaux." },
+        { label: "Pièce D3 — le VPN", text: "Son accès VPN n'avait jamais été révoqué. Il pouvait se connecter de n'importe où, même depuis chez lui." },
+        { label: "Pièce D4 — la cavale", text: "Il est parti un mardi matin avec ses cartons, sans préavis. Son bureau était vide avant 9 h." },
+        { label: "Pièce D5 — homonymes", text: "Plusieurs noms commencent par L dans la table. Éliminez les marchés réguliers, les stagaires partis normalement, et les missions terminées sans incident." },
+        { label: "Pièce D6 — témoin", text: "« Il faisait disparaître une ligne comptable comme un lapin. Techniquement brillant — et parfaitement discret. »" },
       ],
     },
 

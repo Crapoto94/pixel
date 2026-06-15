@@ -354,26 +354,6 @@ export const ENQUETE = {
             "Visa comptable       : N. NEVES\n\n" +
             "→ Écart : 22 500 € — qui a réécrit ce montant après signature ?",
         },
-        {
-          id: 'fiche_lejarre',
-          label: '🗂️ FICHE PRESTATAIRE — LEJARRE',
-          title: '🗂️ FICHE PRESTATAIRE CONFIDENTIELLE — LEJARRE Camus',
-          body:
-            "Nom : LEJARRE Camus          Né : 14/04/1979\n" +
-            "Fonction : Technicien systèmes & réseaux (indépendant)\n" +
-            "Période : mars 2011 → juillet 2013\n\n" +
-            "Accès accordés :\n" +
-            "  • Compte admin AD-666 (créé sur dérogation DGS — HORS marché public)\n" +
-            "  • Régie comptable : OUI\n" +
-            "  • Salle des serveurs : OUI\n" +
-            "  • Télé-accès VPN : OUI (code non révoqué à ce jour)\n\n" +
-            "Fin de mission : DÉPART NON PLANIFIÉ — 29 juillet 2013\n" +
-            "Motif déclaré  : « convenances personnelles »\n" +
-            "Badge RH : désactivation signalée non traitée (oubli de procédure)\n\n" +
-            "Note RH : « M. Lejarre est parti avec ses affaires un mardi matin,\n" +
-            "          sans prévenir. Un collègue l'a vu charger des cartons dans\n" +
-            "          sa voiture à 7 h 30. Son bureau était vide à 9 h. »",
-        },
       ],
       scene:
         "Erzen savait gonfler des montants, pas pirater un logiciel. Un « falsificateur en chef » " +

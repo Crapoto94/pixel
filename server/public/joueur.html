@@ -425,6 +425,13 @@ function heroQuizController(act){
       <p class="muted">Regarde la BORNE 📺</p>
     </div>`;
   }
+  if (act.sub === 'play'){
+    return `<div class="card center glow-box" style="border-color:var(--neon3)">
+      <div class="pill neon-pink">💡 ANECDOTE</div>
+      <p class="big">Regarde la BORNE 📺</p>
+      <p class="muted">La question arrive dans quelques secondes…</p>
+    </div>`;
+  }
   if (!me.isHero){
     return `<div class="card center glow-box" style="border-color:var(--neon3)">
       <div class="pill neon-pink">💡 ANECDOTE</div>

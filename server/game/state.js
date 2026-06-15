@@ -75,6 +75,7 @@ export class GameState {
     if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
     if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
     if (this._enqueteFinaleTimer) { clearTimeout(this._enqueteFinaleTimer); this._enqueteFinaleTimer = null; }
+    if (this._hqTimer) { clearTimeout(this._hqTimer); this._hqTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.tron = null;   // partie Tron en cours
@@ -139,7 +140,7 @@ export class GameState {
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
       g2048Timer, g2048, pongTimer, pong,
-      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, _enqueteBriefTimer, _enqueteDebriefTimer, _enqueteFinaleTimer, ...data } = this;
+      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, _enqueteBriefTimer, _enqueteDebriefTimer, _enqueteFinaleTimer, _hqTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -854,8 +855,10 @@ export class GameState {
       this.activity.hintLabel = opts.hintLabel || '';
       this.activity.answer = opts.answer || '';        // gardé côté serveur (jamais envoyé)
       this.activity.celebrateVideo = opts.celebrateVideo || '';
-      this.activity.sub = 'play';                      // play → win
+      this.activity.sub = 'play';                      // play → question → win
       this.activity.lastWrong = 0;
+      if (this._hqTimer) clearTimeout(this._hqTimer);
+      this._hqTimer = setTimeout(() => { this._hqTimer = null; this.heroQuizReveal(); }, 30000);
     }
     // Anecdote : la borne affiche un prompt (souvenir / histoire) à raconter.
     if (type === 'anecdote') {
@@ -1494,6 +1497,7 @@ export class GameState {
     if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
     if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
     if (this._enqueteFinaleTimer) { clearTimeout(this._enqueteFinaleTimer); this._enqueteFinaleTimer = null; }
+    if (this._hqTimer) { clearTimeout(this._hqTimer); this._hqTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;
@@ -2060,6 +2064,15 @@ export class GameState {
   }
 
   // ---- Hero-quiz (Anecdote 3) : seul VINCENT peut répondre -----------
+  heroQuizReveal() {
+    const a = this.activity;
+    if (!a || a.type !== 'heroquiz' || a.sub !== 'play') return;
+    if (this._hqTimer) { clearTimeout(this._hqTimer); this._hqTimer = null; }
+    a.sub = 'question';
+    this.addLog('❓ Anecdote JFO : la question est posée à Vincent.');
+    this.touch();
+  }
+
   heroQuizAnswer(playerId, text) {
     const a = this.activity;
     if (!a || a.type !== 'heroquiz') return { ok: false, reason: 'Pas de question en cours.' };

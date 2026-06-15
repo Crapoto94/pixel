@@ -162,6 +162,8 @@ function render(){
       <button class="btn secondary" onclick="startAct('quiz',{deck:'cultureT'})">🏛️ Culture T</button>
       <button class="btn secondary" onclick="startAct('quiz',{deck:'saintmaur'})">🏘️ Saint-Maur</button>
     </div>
+    ${S.activity && S.activity.type === 'heroquiz' && S.activity.sub === 'play'
+      ? `<button class="btn mt" style="background:#c026d3;color:#fff" onclick="act('heroQuizReveal')">❓ Poser la question maintenant</button>` : ''}
     <button class="btn danger mt" onclick="act('stopActivity')">⏹ STOP activité</button>
     <div class="mt"><a href="/print-enquete" target="_blank" style="color:var(--neon3);font-size:13px">🖨️ Imprimer le matériel d'enquête (cartes + plan + solution MJ)</a></div>
   </div>

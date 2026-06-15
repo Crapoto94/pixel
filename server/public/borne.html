@@ -1860,7 +1860,7 @@ function syncYT(s){
       if (ytPac) ytPac.pauseVideo();
       if (ytBt) ytBt.mute();
       if (s.ambientPaused) { if (ytAmb) ytAmb.pauseVideo(); }
-      else { if (ytAmb) ytAmb.playVideo(); }
+      else { if (ytAmb) { if (SOUND_ON) ytAmb.unMute(); ytAmb.playVideo(); } }
     }
   } catch(_){}
 }

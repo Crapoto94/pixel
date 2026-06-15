@@ -37,18 +37,18 @@ export const ENQUETE = {
   // Briefing d'OUVERTURE en SLIDES (défilent sur la BORNE, ambiance mystérieuse),
   //  AVANT l'acte 1. `sec` = durée d'affichage de la slide (12 s chacune).
   briefingSlides: [
-    { title: "DOSSIER 94100", text: "SAINT-MAUR-DES-FOSSÉS. Une nuit d'hiver. La boucle de la Marne dort sous le givre. À l'Hôtel de Ville, une seule fenêtre reste allumée : la salle des mariages.", sec: 12 },
-    { title: "03 h 12 — L'APPEL", text: "Un agent de sécurité pousse la lourde porte de la salle des mariages. Ce qu'il découvre le fera trembler jusqu'au matin… et vous tiendra éveillés toute la nuit.", sec: 12 },
-    { title: "LA VICTIME", text: "Nathalie NEVES, directrice des finances de la mairie. Étendue au sol, élégante jusque dans la mort, le visage tourné vers la table d'honneur. Comme si elle attendait encore quelqu'un.", sec: 12 },
-    { title: "CINQUANTE COUPES", text: "Autour d'elle, cinquante coupes de champagne. Toutes brisées. Une seule, intacte, encore pleine. Un toast funèbre. Personne ne porte cinquante coupes par hasard. C'est un message.", sec: 12 },
-    { title: "AUCUNE EFFRACTION", text: "Portes verrouillées de l'intérieur. Fenêtres closes. Aucune trace de lutte. Le meurtrier connaissait les lieux. Il connaissait les codes. Il était… de la maison.", sec: 12 },
-    { title: "LES PARAPHEURS PERDUS", text: "Dans le tiroir de la victime : des magazines municipaux annotés au stylo rouge, et trois mots griffonnés à la hâte — « les parapheurs perdus ». Une dette que quelqu'un est venu réclamer.", sec: 12 },
-    { title: "LE SCANDALE", text: "Des années durant, un marché de communication de la mairie aurait été truqué. Fausses factures. Bons de commande réécrits après signature. Des centaines de milliers d'euros évaporés dans l'encre.", sec: 12 },
-    { title: "LE RÉSEAU", text: "Qui falsifiait ? Qui payait ? Qui couvrait ? Et qui, un soir de trop, a voulu parler ? La mort de Nathalie Neves ne cache pas un crime. Elle en cache toute une chaîne.", sec: 12 },
-    { title: "LA BRIGADE, C'EST VOUS", text: "Cette nuit, vous êtes les enquêteurs. Sept regards, sept mémoires. Aucun de vous ne détient la vérité entière — mais chacun en tient un fragment. Seuls, vous êtes aveugles. Ensemble, redoutables.", sec: 12 },
-    { title: "LA MÉTHODE", text: "Rien ne vous sera donné en clair. La BORNE affiche les DOCUMENTS — articles, registres, plans, e-mails. Vos téléphones gardent vos PIÈCES À CONVICTION. Croisez. Déduisez. Tapez le code de chaque acte.", sec: 12 },
-    { title: "HUIT ACTES", text: "Huit actes vous séparent du nom du meurtrier. Huit verrous. Huit vérités. Au bout du couloir : un dossier refermé… ou une affaire enterrée à jamais.", sec: 12 },
-    { title: "L'ENQUÊTE COMMENCE", text: "Inspecteurs, prenez place. La nuit sera longue. Le premier dossier s'ouvre maintenant. ACTE 1 — La revue de presse.", sec: 12 },
+    { title: "DOSSIER 94100", text: "SAINT-MAUR-DES-FOSSÉS. Une nuit d'hiver. La boucle de la Marne dort sous le givre. À l'Hôtel de Ville, une seule fenêtre reste allumée : la salle des mariages.", sec: 10 },
+    { title: "03 h 12 — L'APPEL", text: "Un agent de sécurité pousse la lourde porte de la salle des mariages. Ce qu'il découvre le fera trembler jusqu'au matin… et vous tiendra éveillés toute la nuit.", sec: 10 },
+    { title: "LA VICTIME", text: "Nathalie NEVES, directrice des finances de la mairie. Étendue au sol, élégante jusque dans la mort, le visage tourné vers la table d'honneur. Comme si elle attendait encore quelqu'un.", sec: 10 },
+    { title: "CINQUANTE COUPES", text: "Autour d'elle, cinquante coupes de champagne. Toutes brisées. Une seule, intacte, encore pleine. Un toast funèbre. Personne ne porte cinquante coupes par hasard. C'est un message.", sec: 10 },
+    { title: "AUCUNE EFFRACTION", text: "Portes verrouillées de l'intérieur. Fenêtres closes. Aucune trace de lutte. Le meurtrier connaissait les lieux. Il connaissait les codes. Il était… de la maison.", sec: 10 },
+    { title: "LES PARAPHEURS PERDUS", text: "Dans le tiroir de la victime : des magazines municipaux annotés au stylo rouge, et trois mots griffonnés à la hâte — « les parapheurs perdus ». Une dette que quelqu'un est venu réclamer.", sec: 10 },
+    { title: "LE SCANDALE", text: "Des années durant, un marché de communication de la mairie aurait été truqué. Fausses factures. Bons de commande réécrits après signature. Des centaines de milliers d'euros évaporés dans l'encre.", sec: 10 },
+    { title: "LE RÉSEAU", text: "Qui falsifiait ? Qui payait ? Qui couvrait ? Et qui, un soir de trop, a voulu parler ? La mort de Nathalie Neves ne cache pas un crime. Elle en cache toute une chaîne.", sec: 10 },
+    { title: "LA BRIGADE, C'EST VOUS", text: "Cette nuit, vous êtes les enquêteurs. Sept regards, sept mémoires. Aucun de vous ne détient la vérité entière — mais chacun en tient un fragment. Seuls, vous êtes aveugles. Ensemble, redoutables.", sec: 10 },
+    { title: "LA MÉTHODE", text: "Rien ne vous sera donné en clair. La BORNE affiche les DOCUMENTS — articles, registres, plans, e-mails. Vos téléphones gardent vos PIÈCES À CONVICTION. Croisez. Déduisez. Tapez le code de chaque acte.", sec: 10 },
+    { title: "HUIT ACTES", text: "Huit actes vous séparent du nom du meurtrier. Huit verrous. Huit vérités. Au bout du couloir : un dossier refermé… ou une affaire enterrée à jamais.", sec: 10 },
+    { title: "L'ENQUÊTE COMMENCE", text: "Inspecteurs, prenez place. La nuit sera longue. Le premier dossier s'ouvre maintenant. ACTE 1 — La revue de presse.", sec: 10 },
   ],
 
   acts: [
@@ -593,7 +593,8 @@ export const ENQUETE = {
     },
 
     // ===============================================================
-    //  ACTE 8 — LE MESSAGE CODÉ → CÉSAR, clé = G (PARAPHEUR)
+    //  ACTE 8 — LE MESSAGE CODÉ → CÉSAR, clé = G (PARAPHEURS)
+    //  César +7 : PARAPHEURS → WHYHWOLBYZ  (S + 7 = Z)
     // ===============================================================
     {
       num: 8,
@@ -610,10 +611,10 @@ export const ENQUETE = {
       },
       // César : texte = clair décalé de +shift. Clé G = 7ᵉ lettre → reculer de 7.
       cipher: {
-        ciphertext: 'WHYHWOLBY',
+        ciphertext: 'WHYHWOLBYZ',
         keyLetter: 'G',
         shift: 7,
-        plain: 'PARAPHEUR',
+        plain: 'PARAPHEURS',
         help: "Clé = la lettre du plan. Trouvez son rang dans l'alphabet, puis reculez CHAQUE lettre d'autant.",
       },
       scene:
@@ -621,20 +622,20 @@ export const ENQUETE = {
         "et la date (2013). Le décalage n'est pas donné : c'est le rang de la lettre du plan. " +
         "Décodez le mot — il nomme l'objet du mobile et clôt le dossier.",
       riddle:
-        "Décodez « WHYHWOLBY ». La clé est la lettre du plan (acte 5) ; son rang dans l'alphabet = " +
+        "Décodez « WHYHWOLBYZ ». La clé est la lettre du plan (acte 5) ; son rang dans l'alphabet = " +
         "le décalage à reculer. Quel mot obtenez-vous ?",
-      answer: 'PARAPHEUR',
+      answer: 'PARAPHEURS',
       hints: [
         "La lettre du plan était G. G est la 7ᵉ lettre → reculez chaque lettre de 7 rangs.",
-        "W − 7 = P ; H − 7 = A ; Y − 7 = R … continuez.",
-        "Réponse : PARAPHEUR.",
+        "W−7=P · H−7=A · Y−7=R · H−7=A · W−7=P · O−7=H · L−7=E · B−7=U · Y−7=R · Z−7=S",
+        "Réponse : PARAPHEURS.",
       ],
       humor:
         "Note de l'inspecteur : Guillaume chiffre ses messages au poil… mais son mot de passe wifi " +
         "reste « azerty1234 ». Le génie a ses angles morts.",
       reveal:
-        "DOSSIER CLOS — Le meurtrier est GUILLAUME, ancien DSI. Mobile : la VENGEANCE des parapheurs " +
-        "perdus. Il avait retrouvé dans une benne le parapheur contenant les bons qu'il avait " +
+        "DOSSIER CLOS — Le meurtrier est GUILLAUME, ancien DSI. Mobile : la VENGEANCE des PARAPHEURS " +
+        "perdus. Il avait retrouvé dans une benne les parapheurs contenant les bons qu'il avait " +
         "rédigés, falsifiés par le DGS Frédéric ERZEN — épaulé par le falsificateur en chef Camus " +
         "LEJARRE (en cavale) — et payés par la directrice Nathalie NEVES. 50 bons salis, 50 verres " +
         "brisés. L'affaire Idéepôle aura fait une victime de plus.",

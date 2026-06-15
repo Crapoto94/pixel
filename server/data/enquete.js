@@ -485,7 +485,6 @@ export const ENQUETE = {
       num: 6,
       key: 'a6',
       kind: 'logic',
-      fragmentsHidden: true,
       title: 'LA NUIT DES SUSPECTS',
       place: "Boucle de la Marne — nuit du crime",
       // La table des alibis n'apparaît PAS sur la borne : chaque joueur détient

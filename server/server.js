@@ -182,6 +182,15 @@ app.post('/api/w6/konami', (req, res) => {
   res.json(game.submitW6Konami(p.id, req.body.code || ''));
 });
 
+// Enquête : un joueur demande l'indice suivant (actes classiques sans fragmentsHidden)
+app.post('/api/enquete/hint', (req, res) => {
+  const p = requirePlayer(req, res); if (!p) return;
+  const rem = game.enqueteHintLockRemaining();
+  if (rem > 0) return res.json({ ok: false, remaining: rem });
+  game.enqueteHint();
+  res.json({ ok: true });
+});
+
 // Vidéo-indice : un joueur demande un indice → la borne diffuse la vidéo du monde
 app.post('/api/hint', (req, res) => {
   const p = requirePlayer(req, res); if (!p) return;

@@ -1041,6 +1041,15 @@ function enqueteController(act) {
             </div>`
           : (docs ? '' : `<p class="muted mt">Tu n'as pas d'indice sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`))}
     ${hints ? `<div class="pill neon-pink mt" style="font-size:11px">💡 INDICES DU MJ</div>${hints}` : ''}
+    ${(!act.fragmentsHidden && (act.hintsLeft||0) > 0) ? (() => {
+      const rem = Math.max(0, (act.hintUnlockAt||0) - Date.now());
+      if (rem > 0) {
+        const m = Math.floor(rem/60000), s = Math.ceil((rem%60000)/1000);
+        return `<div style="margin-top:10px;padding:10px;border:1px dashed #555;border-radius:8px;text-align:center;color:#888;font-size:13px">
+          ⏳ Indice disponible dans ${m}:${String(s).padStart(2,'0')}</div>`;
+      }
+      return `<button class="btn mt" style="width:100%;background:#1a0029;border-color:var(--neon);color:var(--neon)" onclick="requestEnqHint()">💡 Demander un indice (${act.hintsLeft} restant${act.hintsLeft>1?'s':''})</button>`;
+    })() : ''}
     <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase"
       value="${esc(_enqDraft)}" oninput="_enqDraft=this.value" onkeydown="if(event.key==='Enter')enqueteCode()" autocomplete="off" />
     <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>
@@ -1091,6 +1100,14 @@ function toggleEnqDoc(id){
   const btn = document.getElementById('enqdocbtn-'+id);
   if (el) el.style.display = _enqOpenDocs[id] ? 'block' : 'none';
   if (btn) btn.innerHTML = btn.innerHTML.replace(/^[▶▼]/, _enqOpenDocs[id] ? '▼' : '▶');
+}
+function requestEnqHint(){
+  api('/api/enquete/hint').then(r=>{
+    if (r && !r.ok && r.remaining) {
+      const s = Math.ceil(r.remaining/1000), m = Math.floor(s/60);
+      alert(`⏳ Indice disponible dans ${m}:${String(s%60).padStart(2,'0')}`);
+    }
+  });
 }
 function enqueteCode(){
   const el = document.getElementById('enqCode');

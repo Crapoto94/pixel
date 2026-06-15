@@ -1305,7 +1305,7 @@ export class GameState {
     a.debriefSlide = 0;
     a.debriefAt = Date.now();
     if (this._enqueteDebriefTimer) clearTimeout(this._enqueteDebriefTimer);
-    this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 8000);
+    this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 90000);
   }
 
   _advanceEnqueteDebrief() {
@@ -1319,7 +1319,7 @@ export class GameState {
       a.sub = null;
       this._startEnqueteFinale();
     } else {
-      this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 8000);
+      this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 90000);
     }
     this.touch();
   }

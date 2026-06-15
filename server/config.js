@@ -36,6 +36,9 @@ export const CONFIG = {
   //    Laisse vide ('') pour garder l'ambiance normale pendant l'enquête.
   enqueteYoutube: 'https://www.youtube.com/watch?v=b0bRw1faiws',
 
+  // 🔓 Musique jouée pendant le débrief et l'attente de la vidéo d'anniversaire.
+  debriefYoutube: 'https://www.youtube.com/watch?v=2kbf_Y6taTI',
+
   // 🎉 Vidéo de FÊTE que le GAME MASTER (Vincent) peut lancer au Monde 4.
   feteYoutube: 'https://www.youtube.com/watch?v=7kyY29BHTZs',
 

@@ -112,6 +112,7 @@ app.get('/api/ytconfig', (req, res) => {
     ambiance: extractList(CONFIG.ambianceYoutube),
     briefing: extractVideo(CONFIG.briefingYoutube),
     enquete: extractVideo(CONFIG.enqueteYoutube),
+    debrief: extractVideo(CONFIG.debriefYoutube),
     blindtest,
     pacman: extractVideo(CONFIG.pacmanYoutube),
   });
@@ -505,6 +506,8 @@ app.post('/api/gm/action', (req, res) => {
     case 'enqueteSkip': game.enqueteSkip(); break;
     case 'ambientPlay': game.setAmbientPaused(false); break;
     case 'ambientStop': game.setAmbientPaused(true); break;
+    case 'enqueteDebriefNext': game.enqueteDebriefNext(); break;
+    case 'enqueteDebriefSkip': game.enqueteDebriefSkip(); break;
     default: return res.status(400).json({ error: 'Action inconnue: ' + action });
   }
   res.json({ ok: true });

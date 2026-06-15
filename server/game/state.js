@@ -73,6 +73,7 @@ export class GameState {
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
     if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
+    if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
     this.pacman = null; // partie Pac-Man en cours
     this.tetris = null; // partie Tetris en cours
     this.tron = null;   // partie Tron en cours
@@ -137,7 +138,7 @@ export class GameState {
     //  - pacman (partie en cours, recréée à chaque manche)
     const { listeners, pacmanTimer, pacman, tetrisTimer, tetris, tronTimer, tron,
       g2048Timer, g2048, pongTimer, pong,
-      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, _enqueteBriefTimer, ...data } = this;
+      _autoAdvanceTimer, _roueTimer, _briefTimer, _drawTimer, _celebrateTimer, _enqueteBriefTimer, _enqueteDebriefTimer, ...data } = this;
     try {
       fs.writeFileSync(SAVE_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
@@ -1204,7 +1205,7 @@ export class GameState {
         a.done = true;
         a.frag = {};
         this.addLog('🔓 ENQUÊTE RÉSOLUE — l\'affaire des parapheurs perdus est élucidée !');
-        this._enqueteMaybeCompleteWorld(); // Monde 5 : la résolution ouvre le Monde 6
+        this._startEnqueteDebrief(); // débrief en diapos avant le passage au monde suivant
       } else {
         this._enqueteDistribute();
       }
@@ -1286,11 +1287,54 @@ export class GameState {
     if (a.actIndex >= ENQUETE.acts.length) {
       a.done = true; a.frag = {};
       this.addLog('🔓 ENQUÊTE débloquée jusqu\'au bout par le GM.');
-      this._enqueteMaybeCompleteWorld(); // Monde 5 : la résolution ouvre le Monde 6
+      this._startEnqueteDebrief();
     } else {
       this._enqueteDistribute();
       this.addLog(`⏭ GM : passage forcé à l'acte ${act ? act.num + 1 : '?'}.`);
     }
+    this.touch();
+  }
+
+  // ---- Débrief en diapos après résolution de l'enquête ----------------
+  _startEnqueteDebrief() {
+    const a = this.activity;
+    if (!a) return;
+    a.sub = 'debrief';
+    a.debriefSlide = 0;
+    a.debriefAt = Date.now();
+    if (this._enqueteDebriefTimer) clearTimeout(this._enqueteDebriefTimer);
+    this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 8000);
+  }
+
+  _advanceEnqueteDebrief() {
+    this._enqueteDebriefTimer = null;
+    const a = this.activity;
+    if (!a || a.sub !== 'debrief') return;
+    const total = ENQUETE.acts.length + 1;
+    a.debriefSlide = (a.debriefSlide || 0) + 1;
+    a.debriefAt = Date.now();
+    if (a.debriefSlide >= total) {
+      a.sub = null;
+      this._enqueteMaybeCompleteWorld();
+    } else {
+      this._enqueteDebriefTimer = setTimeout(() => this._advanceEnqueteDebrief(), 8000);
+    }
+    this.touch();
+  }
+
+  enqueteDebriefNext() {
+    if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
+    this._advanceEnqueteDebrief();
+  }
+
+  enqueteDebriefSkip() {
+    const a = this.activity;
+    if (!a || a.sub !== 'debrief') return;
+    if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
+    a.sub = null;
+    a.debriefSlide = null;
+    this.addLog('⏩ GM : débrief passé — passage au film.');
+    this._enqueteMaybeCompleteWorld();
     this.touch();
   }
 
@@ -1363,7 +1407,18 @@ export class GameState {
         const globals = act ? (act.docs || []).filter(d => d.global && !privIds.has(d.id)) : [];
         return [...priv, ...globals];
       })(),
-      finale: a.done ? ENQUETE.finale : null,
+      finale: (a.done && a.sub !== 'debrief') ? ENQUETE.finale : null,
+      // Débrief en diapos (sub='debrief') : contenu de la diapo courante
+      debrief: a.sub === 'debrief' ? (() => {
+        const idx = a.debriefSlide || 0;
+        const total = ENQUETE.acts.length + 1;
+        if (idx < ENQUETE.acts.length) {
+          const sl = ENQUETE.acts[idx];
+          return { slide: idx, total, type: 'act', num: sl.num, title: sl.title, text: sl.reveal };
+        }
+        const f = ENQUETE.finale;
+        return { slide: idx, total, type: 'finale', title: f.title, culprit: f.culprit, role: f.role, mobile: f.mobile, cast: f.cast };
+      })() : null,
     };
   }
 
@@ -1389,6 +1444,8 @@ export class GameState {
       hintUnlockAt: (a.actStartedAt || 0) + ENQUETE_HINT_LOCK_MS,
       hintLockRemaining: this.enqueteHintLockRemaining(),
       attempts: a.attempts || 0,
+      debriefSlide: a.debriefSlide ?? null,
+      debriefTotal: ENQUETE.acts.length + 1,
     };
   }
 
@@ -1404,6 +1461,7 @@ export class GameState {
     if (this._drawTimer) { clearTimeout(this._drawTimer); this._drawTimer = null; }
     if (this._celebrateTimer) { clearTimeout(this._celebrateTimer); this._celebrateTimer = null; }
     if (this._enqueteBriefTimer) { clearTimeout(this._enqueteBriefTimer); this._enqueteBriefTimer = null; }
+    if (this._enqueteDebriefTimer) { clearTimeout(this._enqueteDebriefTimer); this._enqueteDebriefTimer = null; }
     this.pacman = null;
     this.tetris = null;
     this.tron = null;

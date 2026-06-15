@@ -603,6 +603,7 @@ export const ENQUETE = {
       num: 8,
       key: 'a8',
       kind: 'cipher',
+      fragmentsHidden: true,
       title: 'LE MESSAGE CODÉ',
       place: "Villa Médicis (La Varenne) — réveillon de la mairie",
       article: {

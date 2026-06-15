@@ -255,6 +255,14 @@ function render(){
 
   ${S.activity && S.activity.type === 'enquete' && S.enqueteMaster ? (()=>{
     const em = S.enqueteMaster;
+    if (em.sub === 'debrief') return `<div class="card" style="border-color:var(--ok)">
+      <div class="pixel" style="font-size:11px;color:var(--ok)">🕵️ ENQUÊTE — DÉBRIEF — diapo ${(em.debriefSlide||0)+1}/${em.debriefTotal||9}</div>
+      <div class="muted mt" style="font-size:13px">Les diapos défilent automatiquement (8 s). Avancez ou passez directement au film.</div>
+      <div class="grid mt">
+        <button class="btn warn" onclick="act('enqueteDebriefNext')">⏭ Diapo suivante</button>
+        <button class="btn danger" onclick="act('enqueteDebriefSkip')">⏩ Passer au film</button>
+      </div>
+    </div>`;
     if (em.done) return `<div class="card" style="border-color:var(--ok)">
       <div class="pixel" style="font-size:11px;color:var(--ok)">🕵️ ENQUÊTE — RÉSOLUE ✔</div>
       <div class="mt">Affaire close. Coupable : <code>GUILLAUME</code>.</div>

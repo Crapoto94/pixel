@@ -49,7 +49,8 @@
 <body class="scanlines">
 <div id="yt-amb"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-brief" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
-<div id="yt-enq"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-enq"     style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-debrief" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-bt"    style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-pac"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
@@ -1007,6 +1008,35 @@ function renderEnqueteBorne(a){
   if (enqBriefIv){ clearInterval(enqBriefIv); enqBriefIv = null; enqBriefKey = null; }
   // Affiche le "mur d'enquête" : pitch, acte courant (article + énigme + indices),
   // et les révélations des actes déjà résolus.
+  if (a.sub === 'debrief' && a.debrief) {
+    const d = a.debrief;
+    const prog = Array.from({length: d.total}, (_,i) =>
+      `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;margin:0 3px;background:${i<d.slide?'var(--ok)':(i===d.slide?'var(--neon)':'#ffffff33')}"></span>`).join('');
+    if (d.type === 'act') {
+      stage.innerHTML = `<div style="max-width:900px;margin:0 auto;text-align:center">
+        <div class="center" style="margin-bottom:12px">${prog}</div>
+        <div class="pill" style="color:var(--ok)">✔ ACTE ${d.num} — RÉSOLU</div>
+        <h2 class="neon-yellow pixel" style="font-size:28px;margin:12px 0">${esc(d.title||'')}</h2>
+        <div class="card" style="text-align:left;border-color:var(--ok);background:#02140a">
+          <p style="font-size:20px;line-height:1.55">${esc(d.text||'')}</p>
+        </div>
+      </div>`;
+    } else {
+      stage.innerHTML = `<div class="center glow-box">
+        <div class="center" style="margin-bottom:16px">${prog}</div>
+        <h1 class="huge neon-yellow pixel">🔓 ${esc(d.title||'AFFAIRE RÉSOLUE')}</h1>
+        <p class="big neon-pink">Le meurtrier : <b class="neon-yellow">${esc(d.culprit||'')}</b></p>
+        <p class="big">${esc(d.role||'')}</p>
+        <div class="card" style="max-width:900px;margin:18px auto;text-align:left;border-color:var(--neon3)">
+          <div class="pill neon-cyan">MOBILE</div><p>${esc(d.mobile||'')}</p>
+        </div>
+        ${d.cast?`<div class="card" style="max-width:900px;margin:0 auto 14px;text-align:left;border-color:var(--neon4)">
+          <div class="pill" style="color:var(--neon4)">🎭 LE RÉSEAU</div><p>${esc(d.cast)}</p></div>`:''}
+      </div>`;
+    }
+    tickerEl.textContent = `DÉBRIEF — diapo ${d.slide+1}/${d.total} — ${d.type==='act'?('ACTE '+d.num+' : '+d.title):'AFFAIRE RÉSOLUE'}`;
+    return;
+  }
   if (a.done && a.finale){
     const f = a.finale;
     stage.innerHTML = `<div class="center glow-box">
@@ -1698,7 +1728,7 @@ function syncBlindtest(s) {
 }
 
 // =================== YOUTUBE (ambiance gaming + blind-test rock + pac-man) ===================
-let ytAmb = null, ytBrief = null, ytEnq = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
+let ytAmb = null, ytBrief = null, ytEnq = null, ytDebrief = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
 
 window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; initYT(); }; // démarre muet sans attendre de clic
 
@@ -1779,6 +1809,17 @@ function initYT(){
       playerVars:{ autoplay:0, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1 },
       events:{ onReady(e){ try{ e.target.mute(); }catch(_){} } }
     });
+    if (cfg.debrief && cfg.debrief.id) {
+      const did = cfg.debrief.id, dstart = cfg.debrief.start || 0;
+      ytDebrief = new YT.Player('yt-debrief', {
+        height:'1', width:'1', videoId: did,
+        playerVars:{ autoplay:1, loop:1, playlist:did, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:dstart },
+        events:{
+          onReady(e){ try{ e.target.mute(); }catch(_){} },
+          onStateChange(e){ if(e.data===YT.PlayerState.ENDED){ try{ e.target.seekTo(dstart); e.target.playVideo(); }catch(_){} } }
+        }
+      });
+    }
     if (cfg.pacman && cfg.pacman.id) {
       const pid = cfg.pacman.id, pstart = cfg.pacman.start || 0;
       ytPac = new YT.Player('yt-pac', {
@@ -1835,7 +1876,18 @@ function syncYT(s){
   // 🕵️ ENQUÊTE : musique dédiée (si configurée) à la place de l'ambiance normale.
   if (isEnq && ytEnq) {
     pauseBrief();
-    try { ytEnq.unMute(); ytEnq.playVideo(); if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
+    try { ytEnq.unMute(); ytEnq.playVideo(); if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); if (ytDebrief) ytDebrief.pauseVideo(); } catch(_){}
+    return;
+  }
+  // 🔓 DÉBRIEF ENQUÊTE : musique de révélation (si configurée), sinon enquête continue.
+  const isDebrief = live && a.type === 'enquete' && a.sub === 'debrief';
+  if (isDebrief) {
+    pauseBrief();
+    try {
+      if (ytDebrief) { ytDebrief.unMute(); ytDebrief.playVideo(); if (ytEnq) ytEnq.pauseVideo(); }
+      else if (ytEnq) { ytEnq.unMute(); ytEnq.playVideo(); }
+      if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo();
+    } catch(_){}
     return;
   }
   // Hero-quiz (Anecdote 3) : la vidéo / la fête fournissent le son → on coupe le reste.

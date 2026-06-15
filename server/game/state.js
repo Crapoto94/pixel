@@ -1392,6 +1392,10 @@ export class GameState {
       myFragmentsPending: (forPlayerId && act && act.fragmentsHidden)
         ? (a.frag?.[forPlayerId] || []).filter((f) => (f._i ?? 0) >= (a.fragRevealed || 0)).length
         : 0,
+      // Compteur d'indices révélés (fragments ou hints classiques) — utilisé par la borne pour le ting.
+      hintsRevealedCount: act
+        ? (act.fragmentsHidden ? (a.fragRevealed || 0) : (a.hints?.[a.actIndex] || 0))
+        : 0,
       // Indices : verrou de 3 min par acte + nb encore révélables (pour Vincent/MJ).
       hintUnlockAt: (a.actStartedAt || 0) + ENQUETE_HINT_LOCK_MS,
       hintsLeft: act

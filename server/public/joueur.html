@@ -45,9 +45,20 @@ let lastSse = 0;
 // recréerait l'<input> et effacerait le code en cours de frappe + le focus.
 let _lastJoueurJson = null;
 let _prevEnqCount = -1;
+let _tingCtx = null;
+function _getTingCtx(){
+  if (!_tingCtx) try { _tingCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){}
+  if (_tingCtx && _tingCtx.state === 'suspended') _tingCtx.resume().catch(()=>{});
+  return _tingCtx;
+}
+// Crée + résume l'AudioContext dès le premier geste (obligatoire iOS/Android)
+['click','touchstart'].forEach(ev => document.addEventListener(ev, () => {
+  if (!_tingCtx) try { _tingCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){}
+  if (_tingCtx && _tingCtx.state === 'suspended') _tingCtx.resume().catch(()=>{});
+}, { passive: true }));
 function playTing(){
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _getTingCtx(); if (!ctx) return;
     const osc = ctx.createOscillator(); const gain = ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
     osc.type = 'sine';

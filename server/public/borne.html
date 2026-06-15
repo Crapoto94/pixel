@@ -65,7 +65,7 @@ let STATE = null;
 let lastSse = 0;
 let _lastBorneJson = null;
 function applyState(s){
-  STATE = s; detectSounds(STATE); detectMusic(STATE); detectPiano(STATE); syncYT(STATE); syncBlindtest(STATE);
+  STATE = s; detectSounds(STATE); checkBorneEnqHint(STATE); detectMusic(STATE); detectPiano(STATE); syncYT(STATE); syncBlindtest(STATE);
   // On ne reconstruit le DOM que si l'état a changé (évite le clignotement à chaque poll).
   const j = JSON.stringify(s);
   if (j !== _lastBorneJson) { _lastBorneJson = j; render(); }
@@ -91,6 +91,37 @@ function enableSound(){
 }
 document.getElementById('soundhint').addEventListener('click', enableSound);
 ['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: false }));
+
+// --- Ting enquête (borne) ---
+let _borneEnqCount = -1, _borneCtx = null;
+function _getBorneCtx(){
+  if (!_borneCtx && SOUND_ON) try { _borneCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){}
+  if (_borneCtx && _borneCtx.state === 'suspended') _borneCtx.resume().catch(()=>{});
+  return _borneCtx;
+}
+function borneTing(){
+  if (!SOUND_ON) return;
+  try {
+    const ctx = _getBorneCtx(); if (!ctx) return;
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1047, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1568, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 1.4);
+  } catch(_){}
+}
+function checkBorneEnqHint(s){
+  const a = s && s.activity;
+  if (!a || a.type !== 'enquete'){ _borneEnqCount = -1; return; }
+  const eq = a.enquete;
+  if (!eq){ _borneEnqCount = -1; return; }
+  const cur = (eq.hintsRevealedCount || 0);
+  if (_borneEnqCount >= 0 && cur > _borneEnqCount) borneTing();
+  _borneEnqCount = cur;
+}
 
 // --- Déclenche les bruitages sur les transitions d'état ---
 let _p = { phase: null, world: null, gageId: null, act: null, sub: null };

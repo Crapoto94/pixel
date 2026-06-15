@@ -270,9 +270,11 @@ export const ENQUETE = {
       kind: 'logic',
       title: 'LE FALSIFICATEUR EN CHEF',
       place: "Direction des Finances — régie comptable & salle des serveurs",
+      // La table est sur les TÉLÉPHONES (doc global), pas sur la borne.
       article: {
         source: "TABLE DES COMPTES ADMIN & PRESTATAIRES — restaurée",
         date: "—",
+        hideOnBorne: true,
         body:
           "Carla LENOIR ...... comptable titulaire ... compte AD-114 (marché régulier) ... EN POSTE\n" +
           "Kevin LARENNE ..... stagiaire BTS ......... compte AD-207 (temporaire) ........ parti en fin de stage\n" +
@@ -280,6 +282,20 @@ export const ENQUETE = {
           "Sté NOVERIA ....... maintenance ........... compte AD-300 (marché régulier) ... actif\n" +
           "Indice serveur : les journaux d'audit ont été PURGÉS la nuit du 24 par le compte AD-666.",
       },
+      docs: [
+        {
+          id: 'comptes',
+          label: '📋 TABLE DES COMPTES',
+          title: '💼 TABLE DES COMPTES ADMIN & PRESTATAIRES — restaurée',
+          global: true,
+          body:
+            "Carla LENOIR ...... comptable titulaire ... compte AD-114 (marché régulier) ... EN POSTE\n" +
+            "Kevin LARENNE ..... stagiaire BTS ......... compte AD-207 (temporaire) ........ parti en fin de stage\n" +
+            "Camus LEJARRE ..... prestataire info ...... compte AD-666 (HORS MARCHÉ) ....... PARTI sans préavis\n" +
+            "Sté NOVERIA ....... maintenance ........... compte AD-300 (marché régulier) ... actif\n\n" +
+            "⚠️ Indice serveur : les journaux d'audit ont été PURGÉS la nuit du 24 par le compte AD-666.",
+        },
+      ],
       scene:
         "Erzen savait gonfler des montants, pas pirater un logiciel. Un « falsificateur en chef » " +
         "a ouvert la compta et effacé les logs, puis a filé se mettre au vert. Plusieurs noms " +
@@ -321,9 +337,11 @@ export const ENQUETE = {
       place: "Boucle de la Marne — du RER de Champigny à La Varenne",
       // Les pièces (repères/méthode) sont des indices révélés UN PAR UN par le MJ.
       fragmentsHidden: true,
+      // Le traceur GPS est sur les TÉLÉPHONES (doc global), la borne n'affiche que la carte.
       article: {
         source: "TRACEUR GPS de N. NEVES — 10 derniers points",
         date: "Soir du crime",
+        hideOnBorne: true,
         body:
           "• Place des Molènes ............. 21 h 53\n" +
           "• RER Champigny–Saint-Maur ...... 21 h 04\n" +
@@ -336,6 +354,27 @@ export const ENQUETE = {
           "• Stade Chéron .................. 21 h 12\n" +
           "• Place Adamville ............... 21 h 38",
       },
+      docs: [
+        {
+          id: 'gps',
+          label: '📍 TRACEUR GPS',
+          title: '📍 TRACEUR GPS de N. NEVES — Soir du crime (10 derniers points)',
+          global: true,
+          body:
+            "Points enregistrés (ordre BRUT du traceur — À REMETTRE dans l'ordre des heures) :\n\n" +
+            "• Place des Molènes ............. 21 h 53\n" +
+            "• RER Champigny–Saint-Maur ...... 21 h 04\n" +
+            "• Collège Louis Blanc ........... 21 h 46\n" +
+            "• Infocom94 ..................... 22 h 01\n" +
+            "• Mairie ........................ 21 h 21\n" +
+            "• Impasse de la Ferme ........... 22 h 17\n" +
+            "• L'atelier du golfeur .......... 21 h 29\n" +
+            "• La Varenne–Chennevières ....... 22 h 09\n" +
+            "• Stade Chéron .................. 21 h 12\n" +
+            "• Place Adamville ............... 21 h 38\n\n" +
+            "👉 Remettez ces 10 points dans l'ordre des heures, puis reliez-les sur le plan de la borne.",
+        },
+      ],
       scene:
         "Le traceur GPS de la directrice a gardé en mémoire ses 10 derniers arrêts, cette nuit-là. " +
         "Son tout dernier parcours dessine une LETTRE — votre CLÉ pour la fin de l'enquête. " +
@@ -424,7 +463,7 @@ export const ENQUETE = {
         { label: "Au sujet de MARC", text: "À l'heure du crime, une photo le montre micro en main sur la scène du Théâtre de Saint-Maur, salle comble." },
         { label: "Au sujet de DJALAL", text: "Son passeport porte un tampon d'entrée à l'étranger daté de l'avant-veille. Aucun retour enregistré depuis." },
         { label: "Au sujet de VINCENT", text: "VINCENT est l'ADJOINT au maire (jamais à la DSI). Les caméras des marchés de Noël l'ont filmé sans interruption de 20 h à 23 h." },
-        { label: "Au sujet de GUILLAUME", text: "Ancien DSI. Parti précipitamment il y a quelques mois. Pour cette nuit-là, il n'a fourni aucun emploi du temps et personne ne se souvient de l'avoir croisé." },
+        { label: "Au sujet de GUILLAUME", text: "Ancien responsable des systèmes d'information, parti il y a quelques mois pour « convenances personnelles ». Cette nuit-là, son téléphone était injoignable à partir de 19 h 30. Un voisin croit l'avoir vu rentrer tard — mais ne peut ni préciser l'heure ni le jurer. Aucun ticket, aucun paiement, aucune caméra n'atteste où il se trouvait." },
         { label: "La porte des archives", text: "Le meurtrier est entré dans le local d'archives sans forcer : il en connaissait le code. Seuls les anciens de la DSI au badge non désactivé l'ont encore." },
         { label: "Note de la DSI", text: "À un départ, le badge est coupé sous 48 h… sauf oubli. Un seul oubli a été signalé : celui d'un agent parti dans la précipitation." },
       ],

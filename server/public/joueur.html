@@ -1000,6 +1000,17 @@ function enqueteController(act) {
       <div class="pill neon-yellow" style="font-size:11px">${esc(f.label||'PIÈCE')}</div>
       <div style="font-size:15px;margin-top:4px">${esc(f.text||'')}</div>
     </div>`).join('');
+  // Indices classiques révélés par le MJ (pour les actes sans fragmentsHidden).
+  const hints = (act.hintList||[]).map((h,i)=>`
+    <div style="border:2px solid var(--neon);border-radius:10px;padding:10px;margin:8px 0;background:#14000e">
+      <div class="pill neon-pink" style="font-size:11px">💡 INDICE MJ ${i+1}</div>
+      <div style="font-size:14px;margin-top:6px">${esc(h)}</div>
+    </div>`).join('');
+  // Liens vers les articles sources de l'acte (si disponibles).
+  const srcLinks = (a.sources||[]).filter(s=>s.url).map(s=>`
+    <a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"
+       style="display:block;border:2px solid var(--neon2);border-radius:8px;padding:10px 12px;margin:6px 0;background:#021018;color:var(--neon2);text-decoration:none;font-size:13px">
+      🔗 ${esc(s.source)}</a>`).join('');
   // Documents à VISUALISER : chacun s'ouvre/se ferme en cliquant (état conservé).
   const docs = (act.myDocs||[]).map(d=>`
     <div style="border:2px solid var(--neon3);border-radius:10px;margin:8px 0;background:#05030f;overflow:hidden">
@@ -1016,6 +1027,7 @@ function enqueteController(act) {
     <h2 class="neon-cyan">${esc(a.title||'')}</h2>
     <p class="muted" style="font-size:13px">📍 ${esc(a.place||'')}</p>
     <p style="font-size:15px"><b class="neon-pink">Énigme :</b> ${esc(a.riddle||'')}</p>
+    ${srcLinks ? `<div style="margin-top:8px"><div class="pill neon-cyan" style="font-size:11px">🔗 ARTICLES SOURCES</div>${srcLinks}</div>` : ''}
     ${docs ? `<div class="pill neon-cyan mt">🗂️ TES DOCUMENTS — ouvre-les et lis-les à voix haute</div>${docs}
       <p class="muted" style="font-size:12px">Aucun joueur n'a tout : c'est en recoupant VOS documents que le code apparaît.</p>` : ''}
     ${frags ? `<div class="pill neon-cyan mt">🔍 TES INDICES</div>${frags}
@@ -1028,12 +1040,46 @@ function enqueteController(act) {
               <p style="font-size:13px">Le MJ les dévoilera un par un. Reste attentif·ve à la borne et à la table !</p>
             </div>`
           : (docs ? '' : `<p class="muted mt">Tu n'as pas d'indice sur cet acte — écoute les autres et aide à trouver le code. 👂</p>`))}
+    ${hints ? `<div class="pill neon-pink mt" style="font-size:11px">💡 INDICES DU MJ</div>${hints}` : ''}
     <input id="enqCode" type="text" placeholder="CODE DE L'ACTE" style="text-transform:uppercase"
       value="${esc(_enqDraft)}" oninput="_enqDraft=this.value" onkeydown="if(event.key==='Enter')enqueteCode()" autocomplete="off" />
     <button class="btn warn mt" onclick="enqueteCode()">🔓 VALIDER LE CODE</button>
     <div id="enqMsg" class="center mt">${wrong}</div>
+    ${(STATE.me && (STATE.me.gameMaster || STATE.me.isHost)) ? `
+      <div style="border-top:1px solid #ffffff22;margin-top:12px;padding-top:10px">
+        <div class="pill neon-yellow" style="font-size:11px">👑 MJ — INDICES</div>
+        <button id="enqHintBtn" class="btn mt" style="width:100%" onclick="heroEnqueteHint()">💡 Donner un indice</button>
+        <div id="enqHintMsg" class="muted center" style="font-size:12px;margin-top:4px"></div>
+      </div>` : ''}
   </div>`;
 }
+// Vincent (ou l'hôte) demande un indice d'enquête. Verrou de 3 min géré côté serveur.
+function heroEnqueteHint(){
+  api('/api/gm/hero', { action:'enqueteHint' }).then(r=>{
+    const m = document.getElementById('enqHintMsg');
+    if (m && r && r.reason === 'locked') m.innerHTML = `<span style="color:var(--danger)">⏳ Indices dispo dans ${Math.ceil((r.remaining||0)/1000)}s</span>`;
+    poll();
+  });
+}
+// Minuterie : met à jour le bouton « Donner un indice » (compte à rebours 3 min).
+function updateEnqHintBtn(){
+  const btn = document.getElementById('enqHintBtn');
+  if (!btn || !STATE || !STATE.activity || STATE.activity.type!=='enquete') return;
+  const a = STATE.activity;
+  const remaining = Math.max(0, (a.hintUnlockAt||0) - Date.now());
+  const left = a.hintsLeft || 0;
+  if (left <= 0){ btn.disabled = true; btn.textContent = '✔ Tous les indices donnés'; return; }
+  if (remaining > 0){
+    btn.disabled = true;
+    const s = Math.ceil(remaining/1000);
+    const mm = Math.floor(s/60), ss = String(s%60).padStart(2,'0');
+    btn.textContent = `⏳ Indice dispo dans ${mm}:${ss}`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = '💡 Donner un indice';
+  }
+}
+setInterval(updateEnqHintBtn, 1000);
 // brouillon de code conservé entre les rendus ; réinitialisé à chaque acte
 let _enqDraft = '';
 let _enqActSeen = null;

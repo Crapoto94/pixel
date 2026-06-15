@@ -32,6 +32,9 @@ import { SCENARIO_SLIDES } from '../data/briefing.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_FILE = path.join(__dirname, '..', 'save.json');
 
+// Enquête : on ne peut demander un indice qu'au bout de 3 min sur un acte non résolu.
+const ENQUETE_HINT_LOCK_MS = 3 * 60 * 1000;
+
 // Mosaïque : répartit L lettres en n parts entières aussi égales que possible.
 function mosaicSplit(L, n) {
   const base = Math.floor(L / n), rem = L % n;
@@ -1156,6 +1159,7 @@ export class GameState {
     a.docDist = {};
     if (!act) return;
     a.fragRevealed = 0; // pièces déjà dévoilées (acts « fragmentsHidden » : 1 par indice MJ)
+    a.actStartedAt = Date.now(); // début de l'acte → sert au verrou de 3 min des indices
     const players = this.players.filter((p) => p.connected);
     if (!players.length) return;
     (act.fragments || []).forEach((f, i) => {
@@ -1212,12 +1216,27 @@ export class GameState {
     return { ok: false, reason: 'Code incorrect.' };
   }
 
-  // Le GM révèle un indice de plus sur l'acte courant.
+  // Combien de temps reste-t-il avant de pouvoir demander un indice (ms) ?
+  enqueteHintLockRemaining() {
+    const a = this.activity;
+    if (!a || a.type !== 'enquete') return 0;
+    return Math.max(0, ENQUETE_HINT_LOCK_MS - (Date.now() - (a.actStartedAt || 0)));
+  }
+
+  // Le GM (Marc OU Vincent éveillé) révèle un indice de plus sur l'acte courant.
+  // Verrou : indisponible pendant les 3 premières minutes de l'acte.
   enqueteHint() {
     const a = this.activity;
     if (!a || a.type !== 'enquete') return;
+    if (a.sub === 'briefing') return;
     const act = ENQUETE.acts[a.actIndex];
     if (!act) return;
+    if (this.enqueteHintLockRemaining() > 0) {
+      const s = Math.ceil(this.enqueteHintLockRemaining() / 1000);
+      this.addLog(`⏳ Indices verrouillés encore ${s}s (3 min par acte).`);
+      this.touch();
+      return;
+    }
     // Actes « fragmentsHidden » (ex. Acte 1) : « Donner un indice » dévoile la
     // PIÈCE suivante sur le téléphone du joueur qui la détient (une par une).
     if (act.fragmentsHidden) {
@@ -1312,8 +1331,21 @@ export class GameState {
       myFragmentsPending: (forPlayerId && act && act.fragmentsHidden)
         ? (a.frag?.[forPlayerId] || []).filter((f) => (f._i ?? 0) >= (a.fragRevealed || 0)).length
         : 0,
-      // Documents que CE joueur détient et peut ouvrir (bodies envoyés au seul porteur).
-      myDocs: forPlayerId ? (a.docDist?.[forPlayerId] || []) : [],
+      // Indices : verrou de 3 min par acte + nb encore révélables (pour Vincent/MJ).
+      hintUnlockAt: (a.actStartedAt || 0) + ENQUETE_HINT_LOCK_MS,
+      hintsLeft: act
+        ? (act.fragmentsHidden
+            ? Math.max(0, (act.fragments || []).length - (a.fragRevealed || 0))
+            : Math.max(0, (act.hints || []).length - (a.hints?.[a.actIndex] || 0)))
+        : 0,
+      // Documents que CE joueur détient + docs globaux (global:true) visibles par tous.
+      myDocs: (() => {
+        if (!forPlayerId) return [];
+        const priv = a.docDist?.[forPlayerId] || [];
+        const privIds = new Set(priv.map(d => d.id));
+        const globals = act ? (act.docs || []).filter(d => d.global && !privIds.has(d.id)) : [];
+        return [...priv, ...globals];
+      })(),
       finale: a.done ? ENQUETE.finale : null,
     };
   }
@@ -1337,6 +1369,8 @@ export class GameState {
       fragmentsHidden: fragHidden,
       hintsShown: fragHidden ? (a.fragRevealed || 0) : (a.hints?.[a.actIndex] || 0),
       hintsTotal: fragHidden ? ((act.fragments || []).length) : (act ? (act.hints || []).length : 0),
+      hintUnlockAt: (a.actStartedAt || 0) + ENQUETE_HINT_LOCK_MS,
+      hintLockRemaining: this.enqueteHintLockRemaining(),
       attempts: a.attempts || 0,
     };
   }

@@ -264,10 +264,12 @@ function render(){
       <div class="pixel neon-yellow" style="font-size:11px">🕵️ ENQUÊTE — ACTE ${em.num}/${em.total} : ${esc(em.title||'')}</div>
       <div class="mt">✔ Code attendu : <code>${esc(em.answer||'')}</code></div>
       <div class="muted mt" style="font-size:13px">Indices révélés : ${em.hintsShown}/${em.hintsTotal} · tentatives ratées : ${em.attempts}</div>
-      <div class="grid mt">
-        <button class="btn warn" ${em.hintsShown>=em.hintsTotal?'disabled':''} onclick="act('enqueteHint')">💡 Donner un indice</button>
+      ${(()=>{ const rem=Math.max(0,(em.hintUnlockAt||0)-Date.now()); const locked=rem>0; const done=em.hintsShown>=em.hintsTotal;
+        const s=Math.ceil(rem/1000); const lbl=done?'✔ Tous les indices donnés':(locked?`⏳ Indice dispo dans ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`:'💡 Donner un indice');
+        return `<div class="grid mt">
+        <button class="btn warn" ${(locked||done)?'disabled':''} onclick="act('enqueteHint')">${lbl}</button>
         <button class="btn secondary" onclick="if(confirm('Débloquer cet acte sans le résoudre ?'))act('enqueteSkip')">⏭ Forcer l'acte</button>
-      </div>
+      </div>`; })()}
     </div>`;
   })() : ''}
 

@@ -391,6 +391,13 @@ app.post('/api/gm/hero', (req, res) => {
   const { action, payload = {} } = req.body || {};
   if (action === 'validate') return res.json(game.heroValidateWorld());
   if (action === 'stop') { game.stopActivity(); return res.json({ ok: true }); }
+  // Vincent (Game Master) peut demander un indice d'enquête (verrou de 3 min géré côté state).
+  if (action === 'enqueteHint') {
+    const remaining = game.enqueteHintLockRemaining();
+    if (remaining > 0) return res.json({ ok: false, reason: 'locked', remaining });
+    game.enqueteHint();
+    return res.json({ ok: true });
+  }
   if (action === 'launch') {
     const allowedTypes = ['videoshow', 'blindtest', 'quiz', 'roue_des_gages', 'tetris', 'pacman', 'draw', 'pong', 'anecdote'];
     const type = payload.type;

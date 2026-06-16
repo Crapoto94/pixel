@@ -52,7 +52,8 @@
 <div id="yt-enq"     style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-debrief" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="yt-bt"    style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
-<div id="yt-pac"   style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-pac"       style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
+<div id="yt-pac-intro" style="position:fixed;width:1px;height:1px;top:-9px;left:-9px"></div>
 <div id="soundhint" class="pixel">🔊 Activer le son</div>
 <div class="stage" id="stage"><div class="center huge pixel blink">INSERT COIN</div></div>
 <div class="ticker"><span id="ticker">PIXEL PANIC — la réalité a buggé…</span></div>
@@ -400,7 +401,7 @@ function w6BorneBody(){
 }
 
 function activityView(act){
-  if (act.type==='quiz' || act.type==='blindtest'){
+  if (act.type==='quiz' || act.type==='quiz_vincent' || act.type==='blindtest'){
     return quizBorne(act);
   }
   if (act.type==='reaction_race'){
@@ -468,8 +469,9 @@ function activityView(act){
 function quizBorne(act){
   const letters=['A','B','C','D','E'];
   const reveal = act.sub==='reveal';
-  const BT_LABELS = { rock:'ROCK', francais:'CHANSONS FR', dessins:'DESSINS ANIMÉS' };
-  const title = act.type==='blindtest' ? ('🎵 BLIND-TEST '+(BT_LABELS[act.theme]||'')).trim() : '❓ QUIZ ARCADE';
+  const BT_LABELS = { rock:'ROCK', francais:'CHANSONS FR', dessins:'DESSINS ANIMÉS', annees83:'ANNÉES 83' };
+  const title = act.type==='blindtest' ? ('🎵 BLIND-TEST '+(BT_LABELS[act.theme]||'')).trim()
+              : act.type==='quiz_vincent' ? '🎭 QUIZ VINCENT' : '❓ QUIZ ARCADE';
   // Blind-test = pastille VIOLETTE ; quiz = cyan.
   const pill = act.type==='blindtest' ? 'class="pill" style="color:#fff;background:#7a5cff"' : 'class="pill neon-cyan"';
 
@@ -525,9 +527,11 @@ function quizBorne(act){
       <div class="pixel neon-yellow center" style="font-size:13px">RÉSULTATS</div>
       ${act.leaderboard.map(p=>`<div>${p.correct?'✅':'❌'} ${esc(p.name)}${p.pts?` <span class="coins">+${p.pts}</span>`:''}</div>`).join('')||'<div class="muted center">Aucun joueur.</div>'}
     </div>`;
+    const revPhotoHtml = act.photo ? `<img src="${esc(act.photo)}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:3px solid var(--ok);margin:4px 0">` : '';
     return `<div class="center">
       <div ${pill}>${title} — ${qnum}</div>
-      <h1 class="big neon-pink" style="margin:6px 0">${esc(act.prompt)}</h1>
+      ${revPhotoHtml}
+      <h1 class="big neon-pink" style="margin:4px 0">${esc(act.prompt)}</h1>
       ${champ}
       <div style="display:flex;gap:22px;justify-content:center;align-items:flex-start;flex-wrap:wrap;max-width:1000px;margin:4px auto 0">
         <div style="flex:1 1 300px;max-width:520px;text-align:left">${choices}</div>
@@ -537,9 +541,11 @@ function quizBorne(act){
   }
 
   // QUESTION en cours
+  const photoHtml = act.photo ? `<img src="${esc(act.photo)}" style="width:200px;height:200px;object-fit:cover;border-radius:12px;border:3px solid #fff3;margin:8px 0">` : '';
   return `<div class="center">
     <div ${pill}>${title} — ${qnum}</div>
-    <h1 class="big neon-pink" style="margin:10px 0">${esc(act.prompt)}</h1>
+    ${photoHtml}
+    <h1 class="big neon-pink" style="margin:6px 0">${esc(act.prompt)}</h1>
     ${act.type==='blindtest' && !reveal ? '<p class="big neon-yellow blink">🔊 ÉCOUTEZ…</p>':''}
     <div style="max-width:760px;margin:auto;text-align:left">${choices}</div>
     <p class="big muted center mt">${progress}</p>${audio}
@@ -1317,7 +1323,17 @@ function renderPacmanBorne(){
         <div id="pacroles" class="muted" style="font-size:18px;margin-top:8px"></div>
       </div>`;
     _pacAudio = { dots: null, fright: false, status: 'playing' }; // reset sons
-    if (SOUND_ON && window.SFX && SFX.pac) SFX.pac.intro(); // coup d'envoi
+    // Jingle intro YouTube (10 s), puis la musique Pac-Man prend le relais via syncYT
+    if (SOUND_ON && ytPacIntro) {
+      _pacIntroPlaying = true;
+      try { ytPacIntro.seekTo(0); ytPacIntro.unMute(); ytPacIntro.setVolume(100); ytPacIntro.playVideo(); } catch(_){}
+      setTimeout(() => {
+        _pacIntroPlaying = false;
+        try { ytPacIntro.mute(); ytPacIntro.pauseVideo(); } catch(_){}
+      }, 10000);
+    } else if (SOUND_ON && window.SFX && SFX.pac) {
+      SFX.pac.intro();
+    }
   }
   const canvas = document.getElementById('paccanvas');
   if (canvas) drawPacman(canvas, pm, null, { names: true });
@@ -1773,7 +1789,8 @@ function syncBlindtest(s) {
 }
 
 // =================== YOUTUBE (ambiance gaming + blind-test rock + pac-man) ===================
-let ytAmb = null, ytBrief = null, ytEnq = null, ytDebrief = null, ytBt = null, ytPac = null, ytApiReady = false, ytInited = false;
+let ytAmb = null, ytBrief = null, ytEnq = null, ytDebrief = null, ytBt = null, ytPac = null, ytPacIntro = null, ytApiReady = false, ytInited = false;
+let _pacIntroPlaying = false;
 
 window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; initYT(); }; // démarre muet sans attendre de clic
 
@@ -1871,11 +1888,17 @@ function initYT(){
         height:'1', width:'1', videoId: pid,
         playerVars:{ autoplay:1, loop:1, playlist:pid, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:pstart },
         events:{
-          onReady(e){ e.target.mute(); }, // prêt, muet ; lancé pendant Pac-Man
+          onReady(e){ e.target.mute(); },
           onStateChange(e){ if(e.data===YT.PlayerState.ENDED){ try{ e.target.seekTo(pstart); e.target.playVideo(); }catch(_){} } }
         }
       });
     }
+    // Jingle intro Pac-Man (10 premières secondes) — joué une fois au lancement
+    ytPacIntro = new YT.Player('yt-pac-intro', {
+      height:'1', width:'1', videoId:'SPjEhbRFTUk',
+      playerVars:{ autoplay:0, controls:0, disablekb:1, fs:0, modestbranding:1, mute:1, start:0 },
+      events:{ onReady(e){ e.target.mute(); } }
+    });
   }).catch(()=>{});
 }
 
@@ -1950,10 +1973,15 @@ function syncYT(s){
   pauseBrief(); pauseEnq();
   try {
     if (isPac) {
-      // 🟡 PAC-MAN : musique dédiée, ambiance et rock en pause
-      if (ytPac) { ytPac.unMute(); ytPac.playVideo(); }
-      if (ytAmb) ytAmb.pauseVideo();
-      if (ytBt) ytBt.mute();
+      // 🟡 PAC-MAN : jingle intro 10 s, puis musique dédiée
+      if (_pacIntroPlaying) {
+        if (ytAmb) ytAmb.pauseVideo();
+        if (ytBt) ytBt.mute();
+      } else {
+        if (ytPac) { ytPac.unMute(); ytPac.playVideo(); }
+        if (ytAmb) ytAmb.pauseVideo();
+        if (ytBt) ytBt.mute();
+      }
     } else if (songOn) {
       if (ytPac) ytPac.pauseVideo();
       if (ytBt) { ytBt.unMute(); ytBt.playVideo(); }

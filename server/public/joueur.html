@@ -339,8 +339,8 @@ function controllerView(act) {
   if (act.type === 'piano') {
     return pianoController(act);
   }
-  // QUIZ / BLIND-TEST : QCM (question sur la BORNE, réponse ici)
-  if (act.type === 'quiz' || act.type === 'blindtest') {
+  // QUIZ / BLIND-TEST / QUIZ VINCENT : QCM (question sur la BORNE, réponse ici)
+  if (act.type === 'quiz' || act.type === 'quiz_vincent' || act.type === 'blindtest') {
     return quizController(act);
   }
   // ENQUÊTE : pièces à conviction perso + saisie de code
@@ -1175,7 +1175,7 @@ function enqueteCode(){
 
 function quizController(act) {
   const letters = ['A','B','C','D','E'];
-  const title = act.type==='blindtest' ? '🎵 BLIND-TEST' : '❓ QUIZ';
+  const title = act.type==='blindtest' ? '🎵 BLIND-TEST' : act.type==='quiz_vincent' ? '🎭 QUIZ VINCENT' : '❓ QUIZ';
   // Fin de manche blind-test : classement + perdant
   if (act.sub === 'final') {
     const board = act.finalBoard || [];
@@ -1220,10 +1220,12 @@ function quizController(act) {
     status = '<p>Question ' + (act.qIndex+1) + '/' + act.total + ' — réponds vite !</p>';
   }
 
+  const joueurPhoto = act.photo ? `<img src="${esc(act.photo)}" style="width:140px;height:140px;object-fit:cover;border-radius:10px;border:2px solid #fff3;margin:8px auto;display:block">` : ‘’;
   return `<div class="card glow-box">
     <div class="pill neon-cyan">${title} — Q${act.qIndex+1}/${act.total}</div>
+    ${joueurPhoto}
     <h2 class="neon-pink">${esc(act.prompt)}</h2>
-    ${act.type==='blindtest' && !reveal ? '<p class="muted">🔊 Écoute l’extrait joué sur la BORNE.</p>':''}
+    ${act.type===’blindtest’ && !reveal ? ‘<p class="muted">🔊 Écoute l’extrait joué sur la BORNE.</p>’:’’}
     <div>${choices}</div>
     <div class="center mt">${status}</div>
   </div>`;

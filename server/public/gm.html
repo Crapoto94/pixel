@@ -148,6 +148,7 @@ function render(){
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(4,'WDlKntyIfPk')">💡 Anecdote 4</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(5,'b5KKHhlWR5c')">💡 Anecdote 5</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(6,'l-r6pi1X3dk')">💡 Anecdote 6</button>
+      <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(7,'VV4Z5Yer5yQ')">💡 Anecdote 7</button>
       <button class="btn" style="background:#5b1fa8;border-color:#9b59b6;color:#fff" onclick="act('startActivity',{type:'videoshow',opts:{video:'6EEGmdH9Vu0',topLabel:'🎬 ANNIVERSAIRE',chyron:'Bonne fête Vincent !',skipIntro:true,borneOnly:true}})">🎬 Vidéo anniversaire (borne)</button>
       <button class="btn" style="background:#c026d3;color:#fff" onclick="anecdote3()">🎬 Anecdote JFO ★ (Vincent devine)</button>
       <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(1)">🎉 Fête 1</button>
@@ -162,6 +163,7 @@ function render(){
       <button class="btn secondary" onclick="startAct('quiz',{deck:'anime'})">🍙 Animés</button>
       <button class="btn secondary" onclick="startAct('quiz',{deck:'cultureT'})">🏛️ Culture T</button>
       <button class="btn secondary" onclick="startAct('quiz',{deck:'saintmaur'})">🏘️ Saint-Maur</button>
+      <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="startAct('quiz_vincent')">🎭 Quiz Vincent</button>
     </div>
     ${S.activity && S.activity.type === 'heroquiz' && S.activity.sub === 'play'
       ? `<button class="btn mt" style="background:#c026d3;color:#fff" onclick="act('heroQuizReveal')">❓ Poser la question maintenant</button>` : ''}

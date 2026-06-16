@@ -598,7 +598,7 @@ export class GameState {
     const q = this.heroQuest;
     if (type === 'videoshow') q.video = true;
     else if (type === 'blindtest') q.blindtest = true;
-    else if (type === 'quiz') q.quiz = true;
+    else if (type === 'quiz' || type === 'quiz_vincent') q.quiz = true;
     else if (type === 'roue_des_gages') q.roue = true;
     else if (type === 'anecdote') q.anecdote = true;
     else if (Object.prototype.hasOwnProperty.call(q.games, type)) q.games[type] = true;
@@ -751,13 +751,14 @@ export class GameState {
       this.activity.demo = null;
       this.activity.wrongAt = 0;
     }
-    // Quiz / blind-test : on initialise le déroulé QCM
-    if (type === 'quiz' || type === 'blindtest') {
-      const deck = type === 'blindtest' ? 'blindtest' : (opts.deck || 'videogame');
+    // Quiz / blind-test / quiz_vincent : on initialise le déroulé QCM
+    if (type === 'quiz' || type === 'quiz_vincent' || type === 'blindtest') {
+      const deck = type === 'blindtest' ? 'blindtest' : type === 'quiz_vincent' ? 'vincent' : (opts.deck || 'videogame');
       this.activity.deck = deck;
       this.activity.qIndex = 0;
       this.activity.sub = 'question'; // question | reveal
       this.activity.answers = {}; // { playerId: { choice, t } }
+      this.activity.scores = {};
     }
     // Dessine-moi : un joueur dessine, les autres devinent (rotation des dessinateurs).
     if (type === 'draw') {
@@ -947,7 +948,7 @@ export class GameState {
   // ---- Quiz / blind-test : QCM affiché borne, réponse smartphone ----
   quizQuestion() {
     const a = this.activity;
-    if (!a || (a.type !== 'quiz' && a.type !== 'blindtest')) return null;
+    if (!a || (a.type !== 'quiz' && a.type !== 'quiz_vincent' && a.type !== 'blindtest')) return null;
     if (a.dynamicBlindtest) return a.generatedQuestion || null; // null = avant la 1ère chanson
     const list = QUESTIONS[a.deck] || [];
     return list[a.qIndex] || null;
@@ -1037,7 +1038,7 @@ export class GameState {
     if (a.type === 'mosaic') return this.mosaicPublic(forPlayerId);
     if (a.type === 'enquete') return this.enquetePublic(forPlayerId);
     if (a.type === 'draw') return this._drawPublic(forPlayerId);
-    if (a.type !== 'quiz' && a.type !== 'blindtest') return a;
+    if (a.type !== 'quiz' && a.type !== 'quiz_vincent' && a.type !== 'blindtest') return a;
     const q = this.quizQuestion();
     const list = a.dynamicBlindtest ? [] : (QUESTIONS[a.deck] || []);
     const reveal = a.sub === 'reveal';
@@ -1050,6 +1051,7 @@ export class GameState {
       total: a.dynamicBlindtest ? (a.total || 15) : list.length,
       asked: a.asked || 0,
       prompt: q ? q.prompt : '',
+      photo: q ? (q.photo || null) : null,
       choices: q ? q.choices : [],
       media: q ? (q.media || null) : null,
       audioUrl: q && reveal ? (q.audioUrl || null) : null,

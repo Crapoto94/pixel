@@ -142,6 +142,7 @@ function render(){
       <button class="btn warn" onclick="mosaic()">🧩 Mosaïque</button>
       <button class="btn danger" onclick="startAct('enquete')">🕵️ Enquête</button>
       <button class="btn warn" onclick="duckDance()">🦆 Danse des canards</button>
+      <button class="btn warn" onclick="lambada()">💃 Lambada</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(2,'wN_-cmnOAfs')">💡 Anecdote 2</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(3,'tslKyngY0zg')">💡 Anecdote 3</button>
@@ -396,6 +397,11 @@ function duckDance(){
   startAct('videoshow',{video:'7kyY29BHTZs',topLabel:'🔴 BREAKING NEWS',
     chyron:'CONCOURS DE DANSE 🦆<br>DANSEZ TOUS LA DANSE DES CANARDS !',
     footer:'À VOS PLUMES — TOUT LE MONDE DANSE ! 🪿'});
+}
+function lambada(){
+  startAct('videoshow',{video:'YBa-SxJLs3A',topLabel:'💃 LAMBADA',
+    chyron:'ON ENCHAÎNE AVEC LA LAMBADA 💃<br>TOUT LE MONDE SE DÉHANCHE !',
+    footer:'CHAUD DEVANT — PLACE À LA LAMBADA ! 🕺'});
 }
 function anecdote(n,video){
   startAct('videoshow',{video,topLabel:'💡 ANECDOTE #'+n,

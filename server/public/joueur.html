@@ -1221,11 +1221,12 @@ function quizController(act) {
   }
 
   const joueurPhoto = act.photo ? `<img src="${esc(act.photo)}" style="width:140px;height:140px;object-fit:cover;border-radius:10px;border:2px solid #fff3;margin:8px auto;display:block">` : ‘’;
+  const btHint = act.type===’blindtest’ && !reveal ? "<p class=’muted’>🔊 Écoute l’extrait joué sur la BORNE.</p>" : ‘’;
   return `<div class="card glow-box">
     <div class="pill neon-cyan">${title} — Q${act.qIndex+1}/${act.total}</div>
     ${joueurPhoto}
     <h2 class="neon-pink">${esc(act.prompt)}</h2>
-    ${act.type===’blindtest’ && !reveal ? ‘<p class="muted">🔊 Écoute l’extrait joué sur la BORNE.</p>’:’’}
+    ${btHint}
     <div>${choices}</div>
     <div class="center mt">${status}</div>
   </div>`;

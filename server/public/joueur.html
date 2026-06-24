@@ -1266,6 +1266,10 @@ function heroFete(n){ heroLaunch('videoshow', { video: HERO_FETE[n],
   topLabel:'🎉 FÊTE '+n, chyron:'FÊTE '+n+' 🎊<br>À LA SANTÉ DE VINCENT !', footer:'🥂 TCHIN TCHIN !' }); }
 function heroDuck(){ heroLaunch('videoshow', { video:'7kyY29BHTZs',
   topLabel:'🔴 BREAKING NEWS', chyron:'CONCOURS DE DANSE 🦆<br>DANSEZ TOUS !', footer:'TOUT LE MONDE DANSE ! 🪿' }); }
+// HELL : vidéos jouées DIRECTEMENT (sans intro « breaking news »), borne + téléphones.
+const HERO_HELL = ['tofASIZJeIc','zCKDQNJH7d0','4k7Z9mj4zu4','rX6cEb--QAU','aY0Or8STsPc','PdPydkpaSBE','L8ga6tvWDmc','Cltpjo6vmAk'];
+function heroHell(n){ heroLaunch('videoshow', { video: HERO_HELL[n-1], skipIntro:true,
+  topLabel:'🔥 HELL '+n, chyron:'🔥 HELL '+n, footer:'🔥🔥🔥' }); }
 
 // Les groupes de boutons du panneau de contrôle. `q` = quête (Monde 4) avec
 // l'état d'avancement ✅, ou null en mode « pouvoirs libres » (Mondes 5-6).
@@ -1316,6 +1320,14 @@ function heroSections(q) {
     ${head(q&&q.anecdote, '📖 Anecdote')}
     <div class="row" style="gap:6px;flex-wrap:wrap">
       ${pick('📖 Anecdote au hasard',"heroLaunch('anecdote')",q&&q.anecdote)}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px">
+      <span style="font-size:18px">🔥</span>
+      <div style="flex:1;font-size:14px;color:#ff6a00">HELL — lecture directe (borne + téléphones)</div>
+    </div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${[1,2,3,4,5,6,7,8].map(n=>`<button class="btn" style="flex:1 1 auto;min-width:70px;font-size:11px;padding:8px 6px;background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="heroHell(${n})">🔥 HELL${n}</button>`).join('')}
     </div>
 
     ${head(gamesDone, '🎮 Jeux (Tetris · Pac-Man · Dessine · Pong)')}

@@ -157,6 +157,17 @@ function render(){
       <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(2)">🎉 Fête 2</button>
       <button class="btn" style="background:#c026d3;color:#fff" onclick="fete(3)">🎉 Fête 3</button>
     </div>
+    <div class="pixel mt" style="font-size:11px;color:#ff6a00">🔥 HELL — LECTURE DIRECTE (borne + téléphones)</div>
+    <div class="grid3 mt">
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(1,'tofASIZJeIc')">🔥 HELL1</button>
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(2,'zCKDQNJH7d0')">🔥 HELL2</button>
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(3,'4k7Z9mj4zu4')">🔥 HELL3</button>
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(4,'rX6cEb--QAU')">🔥 HELL4</button>
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(5,'aY0Or8STsPc')">🔥 HELL5</button>
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(6,'PdPydkpaSBE')">🔥 HELL6</button>
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(7,'L8ga6tvWDmc')">🔥 HELL7</button>
+      <button class="btn" style="background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="hell(8,'Cltpjo6vmAk')">🔥 HELL8</button>
+    </div>
     <div class="pixel neon-cyan mt" style="font-size:11px">QUIZ — THÈMES</div>
     <div class="grid3 mt">
       <button class="btn secondary" onclick="startAct('quiz',{deck:'videogame'})">🎮 Jeu vidéo</button>
@@ -419,6 +430,14 @@ function anecdote3(){
     hintLabel:'ses 3 INITIALES',
     answer:'JFO',
   }});
+}
+// HELL : lecture DIRECTE d'une vidéo (sans intro « breaking news »),
+// diffusée sur la borne ET les téléphones (pas de borneOnly).
+function hell(n,video){
+  act('startActivity',{type:'videoshow',opts:{video,skipIntro:true,
+    topLabel:'🔥 HELL '+n,
+    chyron:'🔥 HELL '+n,
+    footer:'🔥🔥🔥'}});
 }
 function fete(n){
   const videos = { 1:'HpCZqG7lxD8', 2:'NoxgPqw4rSY', 3:'dhCDATSf3Ss' };

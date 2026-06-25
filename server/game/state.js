@@ -846,6 +846,7 @@ export class GameState {
       this.activity.footer = opts.footer || '';
       this.activity.skipIntro = opts.skipIntro || false;
       this.activity.borneOnly = opts.borneOnly || false;
+      this.activity.landscape = opts.landscape || false;
     }
     // Hero-quiz (Anecdote 3) : la borne joue une vidéo, puis VINCENT devine.
     //  Bonne réponse → écran « BRAVO VINCENT » (feux d'artifice + musique).

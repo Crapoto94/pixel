@@ -469,8 +469,8 @@ function renderVideoPlayer(me) {
   app.innerHTML = `
     <div class="center">
       <div style="background:#d40000;color:#fff;font-family:var(--pixel);font-size:13px;padding:7px 12px;border-radius:6px;display:inline-block" class="blink">${a.topLabel||'📺 VIDÉO'}</div>
-      <div style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:340px">
-        <iframe id="videoframe" width="100%" style="aspect-ratio:9/16;display:block;border:0"
+      <div style="position:relative;margin:8px auto 0;border:3px solid #ff2e88;border-radius:10px;overflow:hidden;background:#000;max-width:${a.landscape?'min(94vw,560px)':'340px'}">
+        <iframe id="videoframe" width="100%" style="aspect-ratio:${a.landscape?'16/9':'9/16'};display:block;border:0"
           src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
         ${a.chyron?`<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(212,0,0,.92);color:#fff;
           font-family:var(--pixel);font-size:11px;line-height:1.5;padding:8px;text-align:center">${a.chyron}</div>`:''}

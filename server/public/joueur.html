@@ -1267,7 +1267,8 @@ function heroFete(n){ heroLaunch('videoshow', { video: HERO_FETE[n],
 function heroDuck(){ heroLaunch('videoshow', { video:'7kyY29BHTZs',
   topLabel:'🔴 BREAKING NEWS', chyron:'CONCOURS DE DANSE 🦆<br>DANSEZ TOUS !', footer:'TOUT LE MONDE DANSE ! 🪿' }); }
 // HELL : vidéos jouées DIRECTEMENT (sans intro « breaking news »), borne + téléphones.
-const HERO_HELL = ['tofASIZJeIc','zCKDQNJH7d0','4k7Z9mj4zu4','rX6cEb--QAU','aY0Or8STsPc','PdPydkpaSBE','L8ga6tvWDmc','Cltpjo6vmAk'];
+const HERO_HELL = ['tofASIZJeIc','zCKDQNJH7d0','4k7Z9mj4zu4','rX6cEb--QAU','aY0Or8STsPc','PdPydkpaSBE','L8ga6tvWDmc','Cltpjo6vmAk',
+  'CIx0tZ8TwLI','4CN5pMucY4c','vbvkZZZCw3s','_a1NXpp5-h8','T3VtAOflJVA','a-TlvrP22A4','QBZtnFhYyNs','YKAcRwHWlQw','36s1DWf4DOA','KyFAe9Yr_oI','s9OBfkos7Is','2rhP6Mphitc','-Q4eZPv5PjY'];
 function heroHell(n){ heroLaunch('videoshow', { video: HERO_HELL[n-1], skipIntro:true,
   topLabel:'🔥 HELL '+n, chyron:'🔥 HELL '+n, footer:'🔥🔥🔥' }); }
 
@@ -1327,7 +1328,7 @@ function heroSections(q) {
       <div style="flex:1;font-size:14px;color:#ff6a00">HELL — lecture directe (borne + téléphones)</div>
     </div>
     <div class="row" style="gap:6px;flex-wrap:wrap">
-      ${[1,2,3,4,5,6,7,8].map(n=>`<button class="btn" style="flex:1 1 auto;min-width:70px;font-size:11px;padding:8px 6px;background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="heroHell(${n})">🔥 HELL${n}</button>`).join('')}
+      ${HERO_HELL.map((_,i)=>`<button class="btn" style="flex:1 1 auto;min-width:70px;font-size:11px;padding:8px 6px;background:#7f0000;border-color:#ff3d00;color:#ffcc00" onclick="heroHell(${i+1})">🔥 HELL${i+1}</button>`).join('')}
     </div>
 
     ${head(gamesDone, '🎮 Jeux (Tetris · Pac-Man · Dessine · Pong)')}

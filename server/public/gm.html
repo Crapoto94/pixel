@@ -144,6 +144,8 @@ function render(){
       <button class="btn warn" onclick="duckDance()">🦆 Danse des canards</button>
       <button class="btn warn" onclick="lambada()">💃 Lambada</button>
       <button class="btn" style="background:#1a1a4a;border-color:#7a5cff;color:#fff" onclick="bohemian()">🎸 Bohemian Rhapsody</button>
+      <button class="btn" style="background:#5a2d00;border-color:#ff9500;color:#fff" onclick="indignite(1,'WzDo0Rq8WnQ')">😱 Quelle indignité 1</button>
+      <button class="btn" style="background:#5a2d00;border-color:#ff9500;color:#fff" onclick="indignite(2,'xKlK1nZp-2M')">😱 Quelle indignité 2</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(1,'C3oIfqyEcJo')">💡 Anecdote 1</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(2,'wN_-cmnOAfs')">💡 Anecdote 2</button>
       <button class="btn" style="background:#e91e8c;border-color:#ff6ec7;color:#fff" onclick="anecdote(3,'tslKyngY0zg')">💡 Anecdote 3</button>
@@ -434,6 +436,11 @@ function bohemian(){
   startAct('videoshow',{video:'thyJOnasHVE',topLabel:'🎸 BOHEMIAN RHAPSODY',
     chyron:'BOHEMIAN RHAPSODY 🎸<br>TOUT LE MONDE CHANTE !',
     footer:'IS THIS THE REAL LIFE ? 🎤'});
+}
+function indignite(n,video){
+  startAct('videoshow',{video,topLabel:'😱 QUELLE INDIGNITÉ '+n,
+    chyron:'QUELLE INDIGNITÉ ! 😱<br>'+n,
+    footer:'OH NON… QUELLE INDIGNITÉ ! 🙀'});
 }
 function anecdote(n,video){
   startAct('videoshow',{video,topLabel:'💡 ANECDOTE #'+n,

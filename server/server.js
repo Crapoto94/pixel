@@ -46,6 +46,7 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 app.get('/', (req, res) => res.redirect('/borne'));
 app.get('/borne', (req, res) => res.sendFile(path.join(__dirname, 'public', 'borne.html')));
 app.get('/gm', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gm.html')));
+app.get('/gm2', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gm2.html')));
 app.get('/print', (req, res) => res.sendFile(path.join(__dirname, 'public', 'print.html')));
 app.get('/print-enquete', (req, res) => res.sendFile(path.join(__dirname, 'public', 'print-enquete.html')));
 

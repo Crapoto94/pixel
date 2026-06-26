@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PIXEL PANIC — Aperçu Game Master (Vincent)</title>
+<link rel="stylesheet" href="/static/arcade.css" />
+<style>
+  body{font-size:18px}
+  .btn{font-size:11px;padding:8px}
+  .row{display:flex;gap:6px;flex-wrap:wrap}
+  .note{background:#021a16;border:1px solid var(--neon2);border-radius:6px;padding:8px;font-size:13px;margin-top:8px}
+  .note b{color:var(--neon2)}
+  .when{color:#ffd000;font-size:12px}
+  .head{display:flex;align-items:center;gap:8px;margin:10px 0 4px}
+  .pick{flex:1 1 auto;min-width:96px;font-size:11px;padding:8px 6px}
+  h1{font-size:18px}
+  .toc a{color:var(--neon3);font-size:13px;display:block;margin:3px 0}
+</style>
+</head>
+<body class="scanlines">
+<div class="wrap">
+
+  <div class="card">
+    <h1 class="neon-pink pixel">👑 APERÇU — CE QUE VINCENT VOIT EN GAME MASTER</h1>
+    <p class="muted" style="font-size:14px">Page de visualisation (réservée à l'hôte). Elle reproduit, à l'identique, les
+    panneaux qui apparaissent sur le téléphone de <b>Vincent (Player One)</b> une fois qu'il est éveillé en Game Master.
+    Les boutons ici sont <b>inactifs</b> — c'est un aperçu, rien n'est lancé.</p>
+    <div class="note">
+      <b>🔓 Quand ces pouvoirs s'activent :</b> Vincent doit être le <code>héros (Player One)</code> ET le jeu doit l'avoir
+      <code>éveillé</code> (<code>heroAwakened</code>). C'est ce qui se produit à l'arrivée du <b>Monde 4</b>.
+      Côté serveur : <code>p.isHero &amp;&amp; game.heroAwakened</code> (voir <code>/api/gm/hero</code>).
+    </div>
+    <div class="toc mt">
+      <b class="neon-cyan pixel" style="font-size:11px">SUR CETTE PAGE :</b>
+      <a href="#bar">① Barre flottante « STOP » (pendant une activité)</a>
+      <a href="#quest">② Panneau Monde 4 — checklist de missions</a>
+      <a href="#free">③ Panneau Mondes 5-6 — pouvoirs libres</a>
+      <a href="#enquete">④ Bouton indice d'enquête (Monde 5)</a>
+      <a href="#gage">⑤ Panneau « lancer un gage »</a>
+    </div>
+  </div>
+
+  <!-- ① BARRE FLOTTANTE -->
+  <div class="card" id="bar" style="border-color:var(--neon)">
+    <div class="pixel neon-yellow" style="font-size:11px">① BARRE FLOTTANTE — STOP</div>
+    <p class="when">▶ Apparaît en bas de l'écran de Vincent UNIQUEMENT pendant une activité (phase = activity).</p>
+    <div style="background:#14001aee;border-top:2px solid var(--neon);text-align:center;padding:8px;border-radius:6px" class="mt">
+      <span class="pixel neon-yellow" style="font-size:11px;margin-right:10px">👑 GAME MASTER</span>
+      <button class="btn warn" style="font-size:12px;padding:8px 14px">⏹ STOP — revenir aux missions</button>
+    </div>
+    <div class="note">Permet à Vincent de <b>couper l'activité en cours</b> qu'il a lancée et de revenir à sa checklist /
+      ses pouvoirs. (Action serveur : <code>hero → stop</code>.)</div>
+  </div>
+
+  <!-- ② PANNEAU MONDE 4 (checklist) -->
+  <div class="card" id="quest" style="border-color:var(--neon);background:#14001a">
+    <div class="pixel neon-yellow" style="font-size:11px">② PANNEAU DU GAME MASTER — MONDE 4 (avec checklist)</div>
+    <p class="when">▶ Monde 4 : Vincent doit lancer chaque type d'activité au moins une fois pour valider le monde.</p>
+    <div class="pill neon-pink mt">👑 PANNEAU DU GAME MASTER</div>
+    <p class="muted" style="font-size:13px">À toi d'animer ! Choisis et lance chaque activité. Le Monde 5 s'ouvre quand tout est ✅.</p>
+    <div id="sections-quest"></div>
+    <div class="mt" style="border-top:1px solid #ffffff22;padding-top:10px">
+      <div class="muted center" style="font-size:12px">🔒 Termine toutes les missions pour valider le monde.</div>
+      <button class="btn mt" style="width:100%;background:var(--ok);color:#001;font-size:14px">✅ VALIDER LE MONDE → MONDE 5</button>
+      <div class="muted center" style="font-size:11px;margin-top:4px">(le bouton vert n'apparaît chez Vincent qu'une fois toutes les missions ✅)</div>
+    </div>
+  </div>
+
+  <!-- ③ PANNEAU MONDES 5-6 (libre) -->
+  <div class="card" id="free" style="border-color:var(--neon);background:#14001a">
+    <div class="pixel neon-yellow" style="font-size:11px">③ POUVOIRS DU GAME MASTER — MONDES 5-6 (libres)</div>
+    <p class="when">▶ Mondes 5 et 6 : Vincent garde tous ses pouvoirs, sans checklist ni validation.</p>
+    <div class="pill neon-pink mt">👑 POUVOIRS DU GAME MASTER</div>
+    <p class="muted" style="font-size:13px">Tu gardes le contrôle ! Lance une activité quand tu veux.</p>
+    <div id="sections-free"></div>
+  </div>
+
+  <!-- ④ INDICE ENQUÊTE -->
+  <div class="card" id="enquete" style="border-color:var(--neon3)">
+    <div class="pixel neon-yellow" style="font-size:11px">④ INDICE D'ENQUÊTE (Monde 5 — La Grande Enquête)</div>
+    <p class="when">▶ Apparaît dans le bloc enquête pendant l'activité « enquete ».</p>
+    <div style="border-top:1px solid #ffffff22;margin-top:8px;padding-top:10px">
+      <div class="pill neon-yellow" style="font-size:11px">👑 MJ — INDICES</div>
+      <button class="btn mt" style="width:100%">💡 Donner un indice</button>
+      <div class="muted center" style="font-size:12px;margin-top:4px"></div>
+    </div>
+    <div class="note">Vincent peut <b>débloquer un indice</b> pour aider la table. Verrou de <b>3 minutes</b> entre deux indices
+      (géré côté serveur). Action : <code>hero → enqueteHint</code>.</div>
+  </div>
+
+  <!-- ⑤ GAGE -->
+  <div class="card" id="gage" style="border-color:var(--neon3);background:#1a1400">
+    <div class="pixel neon-yellow" style="font-size:11px">⑤ LANCER UN GAGE</div>
+    <p class="when">▶ Toujours visible tant que Vincent est Game Master.</p>
+    <div class="pill neon-yellow mt">👑 POUVOIRS DU GAME MASTER</div>
+    <p class="muted">Distribue un gage à qui tu veux. Longue vie au roi.</p>
+    <select style="width:100%;padding:10px;font-family:var(--term);font-size:20px">
+      <option>— choisir un joueur —</option>
+    </select>
+    <button class="btn warn mt">🎲 LANCER UN GAGE</button>
+    <div class="note">Vincent choisit une cible et lui inflige un gage. (Action serveur : <code>/api/gm/gage</code>.)</div>
+  </div>
+
+  <div class="card">
+    <div class="pixel neon-cyan" style="font-size:11px">📋 RÉCAP DES ACTIVITÉS QUE VINCENT PEUT LANCER</div>
+    <p class="muted" style="font-size:13px">Liste blanche autorisée côté serveur (<code>/api/gm/hero → launch</code>) :</p>
+    <ul style="font-size:14px;line-height:1.6">
+      <li>🎉 <b>Vidéos de fête</b> (Fête 1-3) + 🦆 Danse des canards</li>
+      <li>🔥 <b>HELL 1 à 21</b> — lecture directe (borne + téléphones)</li>
+      <li>🎵 <b>Blind-test</b> : Rock · Chansons FR · Dessins animés</li>
+      <li>❓ <b>Quiz</b> : Jeu vidéo · 80s · 90s · Animés · Culture T · Saint-Maur</li>
+      <li>🎰 <b>Roue des gages</b></li>
+      <li>📖 <b>Anecdote</b> au hasard</li>
+      <li>🎮 <b>Jeux</b> : Tetris · Pac-Man · Dessine-moi · Pong</li>
+    </ul>
+    <div class="note">⚠️ Les boutons réservés à l'hôte (Marc) sur la console <code>/gm</code> — RESET, validation forcée,
+      enquête complète, spotlight, mosaïque, indignités, etc. — ne sont <b>pas</b> accessibles à Vincent.</div>
+  </div>
+
+  <p class="muted center" style="font-size:12px;margin:16px 0">Console hôte complète : <a href="/gm" style="color:var(--neon3)">/gm</a></p>
+</div>
+
+<script>
+// Reproduit fidèlement heroSections() de joueur.html (boutons d'aperçu, inactifs).
+const HELL_N = 21;
+function head(icon, label, color){
+  return `<div class="head"><span style="font-size:18px">${icon}</span>
+    <div style="flex:1;font-size:14px;color:${color||'#fff'}">${label}</div></div>`;
+}
+function pick(label){ return `<button class="btn warn pick">${label}</button>`; }
+
+// q = true → mode quête (Monde 4, pastilles ⬜) ; q = false → mode libre (🎛️)
+function sections(q){
+  const ic = q ? '⬜' : '🎛️';
+  let h = '';
+  h += head(ic, '🎉 Vidéo de fête');
+  h += `<div class="row">${pick('🎉 Fête 1')}${pick('🎉 Fête 2')}${pick('🎉 Fête 3')}${pick('🦆 Canards')}</div>`;
+
+  h += head(ic, '🎵 Blind-test');
+  h += `<div class="row">${pick('🎸 Rock')}${pick('🎤 Chansons FR')}${pick('📺 Dessins animés')}</div>`;
+
+  h += head(ic, '❓ Quiz');
+  h += `<div class="row">${pick('🎮 Jeu vidéo')}${pick('📼 80s')}${pick('💿 90s')}${pick('🍙 Animés')}${pick('🏛️ Culture T')}${pick('🏘️ Saint-Maur')}</div>`;
+
+  h += head(ic, '🎰 Roue des gages');
+  h += `<div class="row">${pick('🎰 Lancer la roue')}</div>`;
+
+  h += head(ic, '📖 Anecdote');
+  h += `<div class="row">${pick('📖 Anecdote au hasard')}</div>`;
+
+  h += `<div class="head"><span style="font-size:18px">🔥</span>
+    <div style="flex:1;font-size:14px;color:#ff6a00">HELL — lecture directe (borne + téléphones)</div></div>`;
+  let hell = '';
+  for (let i=1;i<=HELL_N;i++) hell += `<button class="btn pick" style="min-width:70px;background:#7f0000;border-color:#ff3d00;color:#ffcc00">🔥 HELL${i}</button>`;
+  h += `<div class="row">${hell}</div>`;
+
+  h += head(ic, '🎮 Jeux (Tetris · Pac-Man · Dessine · Pong)');
+  h += `<div class="row">${pick('Tetris')}${pick('Pac-Man')}${pick('Dessine')}${pick('Pong')}</div>`;
+  return h;
+}
+document.getElementById('sections-quest').innerHTML = sections(true);
+document.getElementById('sections-free').innerHTML = sections(false);
+</script>
+</body>
+</html>

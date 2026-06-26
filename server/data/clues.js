@@ -12,6 +12,7 @@ export const AVATAR_MISSION = {
   super_mariano: "Trouve et utilise un indice « nature » pour débloquer un monde.",
   lara_croute:  "Repère les 3 indices cachés et sors-les au bon moment.",
   glouton:      "Ne laisse aucun verre orphelin et finis 2 énigmes en premier.",
+  lorenzo_auditore: "Reste discret puis frappe : remporte 2 défis au tout dernier moment.",
 };
 
 // Petits faits amusants utilisés dans les indices « tu sais un truc sur X »

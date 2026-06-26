@@ -107,8 +107,8 @@ export const PLAYERS = [
   },
   {
     id: 'lorenzo',
-    name: 'Lorenzo sama',
-    avatar: 'glouton',
+    name: 'Lorenzo',
+    avatar: 'lorenzo_auditore',
     token: 'PXL-LRNZ-7000',
   },
 ];

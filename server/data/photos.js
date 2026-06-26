@@ -39,4 +39,9 @@ export const PHOTO_MISSIONS = {
     { label: "L'Appétit Légendaire",   desc: "Capture quelqu'un en train de regarder de la nourriture avec des yeux brillants." },
     { label: 'La Scène Post-Festin',   desc: "Photo dramatique d'un verre vide ou d'assiette terminée — le vide, la tristesse." },
   ],
+  lorenzo_auditore: [
+    { label: 'La Photo de l\'Ombre',   desc: "Selfie discret où l'on ne voit que ta silhouette ou ton reflet." },
+    { label: 'Le Saut de la Foi',      desc: "Capture quelqu'un en plein élan : saut, geste large ou pose héroïque." },
+    { label: 'La Cible Démasquée',     desc: "Photo volée de quelqu'un qui ne s'y attendait pas du tout." },
+  ],
 };

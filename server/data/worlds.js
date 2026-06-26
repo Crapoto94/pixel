@@ -45,6 +45,7 @@ export const WORLDS = [
       super_mariano: ['GAUCHE', 'DROITE'],
       lara_croute: ['B', 'A'],
       glouton: ['(rien — tu observes)', ''],
+      lorenzo_auditore: ['(rien — tu observes)', ''],
     },
     activite: 'reaction_race',
     gagePool: 'collectif',

@@ -30,4 +30,5 @@ export const AVATAR_BRIEF = {
   super_mariano: "Cultive les indices « nature » et fais grimper le score de l'équipe.",
   lara_croute:  "Explore : tu reçois les indices cachés que les autres ne voient pas.",
   glouton:      "Ne laisse aucun verre orphelin et gobe les énigmes.",
+  lorenzo_auditore: "Avance dans l'ombre : observe, attends le bon moment, puis frappe pour l'équipe.",
 };

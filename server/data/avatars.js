@@ -53,4 +53,11 @@ export const AVATARS = {
     tagline: 'Mange tout, surtout les verres orphelins.',
     power: 'GLOUTONNERIE — finis les verres abandonnés.',
   },
+  lorenzo_auditore: {
+    name: 'LORENZO AUDITORE',
+    emoji: '🥷',
+    color: '#9b59b6',
+    tagline: 'Assassin florentin. Frappe dans l’ombre, signe en pixels.',
+    power: 'SAUT DE LA FOI — rejoue un défi que tu viens de rater (1×/monde).',
+  },
 };

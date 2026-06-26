@@ -282,7 +282,7 @@ function render(){
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='videoshow'){
     renderVideoBorne(STATE.activity); return;
   }
-  if (videoKey){ videoKey = null; destroyShowPlayer(); } // on a quitté : coupe le son
+  if (videoKey){ videoKey = null; destroyShowPlayer(); document.body.classList.add('scanlines'); } // on a quitté : coupe le son + rétablit l'effet CRT
   // --- Mosaïque de téléphones ---
   if (STATE.phase==='activity' && STATE.activity && STATE.activity.type==='mosaic'){
     const a = STATE.activity;
@@ -791,6 +791,7 @@ function startHintPlayer(vid, start){
 function renderVideoBorne(a){
   if (videoKey === a.startedAt) return; // construit une seule fois (sinon la vidéo redémarre)
   videoKey = a.startedAt;
+  document.body.classList.remove('scanlines'); // pas de filtre CRT par-dessus la vidéo
   try { if (ytAmb) ytAmb.pauseVideo(); if (ytBt) ytBt.mute(); if (ytPac) ytPac.pauseVideo(); } catch(_){}
   if (a.borneOnly) {
     // Plein écran natif — pas de cadre, pas de bandeau, juste la vidéo.

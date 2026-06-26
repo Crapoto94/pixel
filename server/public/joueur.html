@@ -185,7 +185,7 @@ function render() {
     }
     renderVideoPlayer(me); return;
   }
-  videoKey = null;
+  if (videoKey){ videoKey = null; document.body.classList.add('scanlines'); } // sorti de la vidéo : rétablit l'effet CRT
 
   const av = me.avatarInfo;
   const hearts = '❤️'.repeat(me.lives) + '🖤'.repeat(Math.max(0,3-me.lives));
@@ -463,6 +463,7 @@ function heroQuizAnswer(){
 function renderVideoPlayer(me) {
   if (videoKey === STATE.activity.startedAt) return; // une seule fois (sinon la vidéo redémarre)
   videoKey = STATE.activity.startedAt;
+  document.body.classList.remove('scanlines'); // pas de filtre CRT par-dessus la vidéo
   const a = STATE.activity;
   const v = a.video || '7kyY29BHTZs';
   const src = 'https://www.youtube.com/embed/' + v + '?autoplay=1&playsinline=1&loop=1&playlist=' + v + '&rel=0';

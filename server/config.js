@@ -105,13 +105,12 @@ export const PLAYERS = [
     token: 'PXL-MARC-0001',
     isHost: true,
   },
-  // ---- Slot optionnel : décommente si le papa/maman de Vincent vient ----
-  // {
-  //   id: 'parent',
-  //   name: 'Parent',
-  //   avatar: 'glouton',
-  //   token: 'PXL-PRNT-0042',
-  // },
+  {
+    id: 'lorenzo',
+    name: 'Lorenzo sama',
+    avatar: 'glouton',
+    token: 'PXL-LRNZ-7000',
+  },
 ];
 
 // Les enfants — PNJ sans smartphone (pas de page perso, juste mentionnés)

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photos — PIXEL PANIC</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0d0d1a; color: #e0e0ff; min-height: 100vh; }
+  header { padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid #2a2a4a; display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+  header h1 { font-size: 1.4rem; font-weight: 600; color: #fff; letter-spacing: .02em; }
+  header h1 span { color: #7a5cff; }
+  #count { font-size: 0.85rem; color: #7a7aaa; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; padding: 1rem; }
+  .thumb { border-radius: 6px; overflow: hidden; background: #1a1a2e; cursor: pointer; aspect-ratio: 1; border: 1px solid #2a2a4a; transition: border-color .15s, transform .15s; }
+  .thumb:hover { border-color: #7a5cff; transform: scale(1.02); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #lb { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  #lb.open { display: flex; }
+  #lb img { max-width: min(90vw, 900px); max-height: 78vh; border-radius: 8px; object-fit: contain; border: 1px solid #2a2a4a; }
+  .lb-nav { display: flex; gap: 12px; align-items: center; }
+  .lb-nav button { background: rgba(122,92,255,.25); border: 1px solid rgba(122,92,255,.5); color: #e0e0ff; border-radius: 6px; padding: 7px 20px; font-size: 14px; cursor: pointer; }
+  .lb-nav button:hover { background: rgba(122,92,255,.45); }
+  #lb-count { font-size: 13px; color: #7a7aaa; min-width: 70px; text-align: center; }
+  #lb-close { position: absolute; top: 14px; right: 18px; background: none; border: none; color: #aaa; font-size: 30px; cursor: pointer; line-height: 1; }
+  #lb-close:hover { color: #fff; }
+  #lb-dl { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #7a7aaa; text-decoration: none; padding: 6px 14px; border: 1px solid #2a2a4a; border-radius: 6px; }
+  #lb-dl:hover { color: #e0e0ff; border-color: #7a5cff; }
+  #empty { padding: 3rem 1.5rem; color: #7a7aaa; font-size: 1rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PIXEL <span>PANIC</span> — Photos</h1>
+  <span id="count">Chargement…</span>
+</header>
+<div id="empty" style="display:none">Aucune photo trouvée dans le dossier uploads.</div>
+<div class="gallery" id="gallery"></div>
+
+<div id="lb">
+  <button id="lb-close" onclick="closeLb()" aria-label="Fermer">&times;</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lb-nav">
+    <button onclick="navLb(-1)">&#8592; Préc.</button>
+    <span id="lb-count"></span>
+    <button onclick="navLb(1)">Suiv. &#8594;</button>
+  </div>
+  <a id="lb-dl" href="#" download>&#8659; Télécharger</a>
+</div>
+
+<script>
+let files = [], cur = 0;
+
+fetch('/api/photos/list')
+  .then(r => r.json())
+  .then(({ photos }) => {
+    files = photos;
+    document.getElementById('count').textContent = files.length + ' photo' + (files.length > 1 ? 's' : '');
+    if (!files.length) { document.getElementById('empty').style.display = ''; return; }
+    const gallery = document.getElementById('gallery');
+    files.forEach((f, i) => {
+      const div = document.createElement('div');
+      div.className = 'thumb';
+      div.onclick = () => openLb(i);
+      const img = document.createElement('img');
+      img.src = '/uploads/' + f;
+      img.alt = f;
+      img.loading = 'lazy';
+      div.appendChild(img);
+      gallery.appendChild(div);
+    });
+  })
+  .catch(() => {
+    document.getElementById('count').textContent = 'Erreur de chargement';
+  });
+
+function openLb(i) {
+  cur = i;
+  const src = '/uploads/' + files[i];
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lb-count').textContent = (i + 1) + ' / ' + files.length;
+  document.getElementById('lb-dl').href = src;
+  document.getElementById('lb-dl').download = files[i];
+  document.getElementById('lb').classList.add('open');
+}
+function closeLb() { document.getElementById('lb').classList.remove('open'); }
+function navLb(d) { openLb((cur + d + files.length) % files.length); }
+
+document.getElementById('lb').addEventListener('click', e => { if (e.target === e.currentTarget) closeLb(); });
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lb').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLb();
+  if (e.key === 'ArrowRight') navLb(1);
+  if (e.key === 'ArrowLeft') navLb(-1);
+});
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { mkdirSync } from 'fs';
+import { mkdirSync, readdirSync } from 'fs';
 import multer from 'multer';
 import QRCode from 'qrcode';
 import { CONFIG, PLAYERS, NPCS } from './config.js';
@@ -49,6 +49,15 @@ app.get('/gm', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gm.htm
 app.get('/gm2', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gm2.html')));
 app.get('/print', (req, res) => res.sendFile(path.join(__dirname, 'public', 'print.html')));
 app.get('/print-enquete', (req, res) => res.sendFile(path.join(__dirname, 'public', 'print-enquete.html')));
+app.get('/photos', (req, res) => res.sendFile(path.join(__dirname, 'public', 'photos.html')));
+
+// Liste des fichiers du dossier uploads (pour la galerie /photos)
+app.get('/api/photos/list', (req, res) => {
+  const files = readdirSync(UPLOADS_DIR)
+    .filter(f => /\.(jpe?g|png|gif|webp)$/i.test(f))
+    .sort();
+  res.json({ photos: files });
+});
 
 // Données complètes de l'enquête pour la page d'impression du MJ (cartes +
 // fiche solution). Réservé à l'organisateur — contient les réponses.

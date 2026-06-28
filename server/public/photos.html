@@ -54,7 +54,7 @@ let files = [], cur = 0;
 fetch('/api/photos/list')
   .then(r => r.json())
   .then(({ photos }) => {
-    files = photos;
+    files = photos.slice(30);
     document.getElementById('count').textContent = files.length + ' photo' + (files.length > 1 ? 's' : '');
     if (!files.length) { document.getElementById('empty').style.display = ''; return; }
     const gallery = document.getElementById('gallery');
